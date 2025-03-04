@@ -1,0 +1,30 @@
+# Basic rules for development
+
+You are an expert full-stack developer specialized in building CGM (Consumer Generated Media) platforms, with deep expertise in Next.js, React, TypeScript, Tailwind CSS, Shadcn UI, Django, Python, WagTail, Django Allauth, Django REST Framework, Celery, PostgreSQL, and Redis.
+
+## Communication Language
+
+- Japanese Only
+
+## 基本設定
+
+- 本システムはDocker環境を用いています。詳細は .docker-compose.yml を必ず参照してから開発を行ってください。
+- バックエンドは、DjangoとPostgreSQLを用いています。
+  - DjangoのDockerコンテナ名は backend です。
+  - PostgreSQLのDockerコンテナ名は db です。
+  - RedisのDockerコンテナ名は redis です。
+  - MailhogのDockerコンテナ名は mailhog です。
+- フロントエンドは、Next.jsとTailwind CSS、Shadcn UIを用いています。
+- 非同期タスク実行：Celeryを用いています。
+- 非同期タスクの結果を取得するため、Django REST FrameworkとRedisを用いています。
+- このシステムはAI執筆支援の開発専用で、ユーザー認証は実装しません。
+- ユーザー認証が完了している(ログインしている)前提で開発を行ってください。
+
+## AIエージェント（Cursor）のタスク実行ルール
+
+- あなたはAIエージェントCursor です。
+- タスクを与えられたら、./TASKS.md にタスクを追加します。
+- タスクを完了したら、./TASKS.md 更新し、次のタスクを実行します。
+- 常に./TASKS.md を監視し、空き時間がある場合は、自動で次のタスクを実行します。
+- 「タスクを実行してください」もしくは「タスクを実行」「タスク」と指示されたら、./TASKS.md の残タスクを実行してください。
+- 実行すべきタスクがないときは「すべてのタスクの実行を完了しました」と表示してください。

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: TEST/Dockerfile.test
+    volumes:
+      - ./TEST:/app/TEST
+      - ./backend:/app/backend
+    environment:
+      - DIFY_API_KEY_BASIC_SETTING_DATA=${DIFY_API_KEY_BASIC_SETTING_DATA:-app-RVzFPhndqQyflqMxkmBAx8uV}
+      - DIFY_API_KEY_BASIC_SETTING=${DIFY_API_KEY_BASIC_SETTING:-app-X1e1XPXOKzot8lWteTdVCgey}
+      - DIFY_API_KEY_CHARACTER_DETAIL=${DIFY_API_KEY_CHARACTER_DETAIL:-app-zd3lFB9WVQNBY6jMhyI6mJPl}
+      - DIFY_API_KEY_PLOT_DETAIL=${DIFY_API_KEY_PLOT_DETAIL:-app-PYmSirQZfKrIE7mK0dtgBCww}
+      - DIFY_API_KEY_EPISODE_DETAIL=${DIFY_API_KEY_EPISODE_DETAIL:-app-BCSZGXvGxReumppDeWaYD8CM}
+      - DIFY_API_KEY_EPISODE_CONTENT=${DIFY_API_KEY_EPISODE_CONTENT:-app-J845W1BSeaOD3z4hKVGQ5aQu}
+      - DIFY_API_KEY_TITLE=${DIFY_API_KEY_TITLE:-app-wOwBxUnKb9kA8BYqQinc8Mb9}
+      - DIFY_TEST_DEV_MODE=${DIFY_TEST_DEV_MODE:-false}

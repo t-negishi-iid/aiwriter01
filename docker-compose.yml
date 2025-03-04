@@ -1,0 +1,120 @@
+services:
+  # コミュニティサイト用データベース
+  community_db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.env
+    ports:
+      - "5432:5432"
+    networks:
+      - community_network
+
+  # コミュニティサイト用Redisサーバー
+  community_redis:
+    image: redis:6
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - community_network
+
+  # メール送信テスト用サーバー
+  community_mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025" # SMTPサーバー
+      - "8025:8025" # Web UI
+    networks:
+      - community_network
+
+  # バックエンドサーバー（コミュニティ）
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - community_db
+      - community_redis
+      - community_mailhog
+    command: >
+      sh -c "chmod +x ./entrypoint.sh &&
+            ./entrypoint.sh &&
+            python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - ./backend/.env
+    networks:
+      - community_network
+
+  # AI小説執筆支援システム用データベース
+  ai_novel_db:
+    image: postgres:14
+    volumes:
+      - ai_novel_postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./ai_novel/backend/.env
+    ports:
+      - "5433:5432" # コミュニティDBと重複しないようにポート変更
+    networks:
+      - ai_novel_network
+
+  # AI小説執筆支援システム用Redisサーバー
+  ai_novel_redis:
+    image: redis:6
+    volumes:
+      - ai_novel_redis_data:/data
+    ports:
+      - "6380:6379" # コミュニティRedisと重複しないようにポート変更
+    networks:
+      - ai_novel_network
+
+  # AI小説執筆支援システム：バックエンド
+  ai_novel_backend:
+    build: ./ai_novel/backend
+    volumes:
+      - ./ai_novel/backend:/app
+    ports:
+      - "8001:8000" # コミュニティバックエンドと重複しないようにポート変更
+    depends_on:
+      - ai_novel_db
+      - ai_novel_redis
+    command: >
+      sh -c "chmod +x ./entrypoint.sh &&
+            ./entrypoint.sh &&
+            python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - ./ai_novel/backend/.env
+    networks:
+      - ai_novel_network
+
+  # AI小説執筆支援システム：フロントエンド
+  ai_novel_frontend:
+    build: ./ai_novel/frontend
+    volumes:
+      - ./ai_novel/frontend:/app
+      # Next.jsの node_modules をコンテナ内に保持
+      - /app/node_modules
+    ports:
+      - "3001:3000" # Next.jsのデフォルトポート
+    depends_on:
+      - ai_novel_backend
+    environment:
+      - NODE_ENV=development
+    networks:
+      - ai_novel_network
+
+networks:
+  community_network:
+    driver: bridge
+  ai_novel_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  ai_novel_postgres_data:
+  ai_novel_redis_data:

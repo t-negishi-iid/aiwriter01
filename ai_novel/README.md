@@ -99,9 +99,9 @@ Dify APIを利用したAI小説執筆支援システムのプロトタイプで�
    ```
 
 5. アクセス
-   - バックエンドAPI: http://localhost:8000/api/
+   - バックエンドAPI: http://localhost:8001/api/
    - フロントエンド: http://localhost:3000/
-   - 管理画面: http://localhost:8000/admin/
+   - 管理画面: http://localhost:8001/admin/
 
 ## APIエンドポイント
 

@@ -2,11 +2,30 @@
 AI小説執筆支援システムのURLルーティング
 """
 from django.urls import path
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from . import views
 
 app_name = 'novel_gen'
 
+@api_view(['GET'])
+def api_root(request, format=None):
+    """
+    API ルートエンドポイント
+    利用可能なエンドポイントの一覧を返します。
+    """
+    return Response({
+        'user-profile': reverse('novel_gen:user-profile', request=request, format=format),
+        'credit-history': reverse('novel_gen:credit-history', request=request, format=format),
+        'stories': reverse('novel_gen:story-list', request=request, format=format),
+        'options': reverse('novel_gen:options', request=request, format=format),
+    })
+
 urlpatterns = [
+    # API ルート
+    path('', api_root, name='api-root'),
+
     # ユーザー関連
     path('user/profile/', views.UserProfileView.as_view(), name='user-profile'),
     path('user/credit-history/', views.CreditHistoryListView.as_view(), name='credit-history'),
@@ -53,6 +72,8 @@ urlpatterns = [
          views.EpisodeDetailView.as_view(), name='episode-detail'),
     path('stories/<int:story_id>/create-episode-details/',
          views.CreateEpisodeDetailsView.as_view(), name='create-episode-details'),
+    path('stories/<int:story_id>/episodes/',
+         views.StoryEpisodesListView.as_view(), name='story-episodes-list'),
 
     # エピソード本文関連
     path('episodes/<int:episode_id>/content/',

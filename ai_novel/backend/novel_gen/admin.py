@@ -34,8 +34,8 @@ class CreditHistoryAdmin(admin.ModelAdmin):
 @admin.register(AIStory)
 class AIStoryAdmin(admin.ModelAdmin):
     """小説管理"""
-    list_display = ('id', 'title', 'user', 'is_completed', 'created_at', 'updated_at')
-    list_filter = ('is_completed', 'created_at', 'updated_at')
+    list_display = ('id', 'title', 'user', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'created_at', 'updated_at')
     search_fields = ('title', 'user__username')
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('user',)

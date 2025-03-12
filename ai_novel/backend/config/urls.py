@@ -12,7 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # API: AI小説執筆支援
-    path('api/novel-gen/', include('novel_gen.urls')),
+    path('api/', include('novel_gen.urls')),
 
     # API ドキュメント
     path('api/docs/', include_docs_urls(title='AI Novel Writing API')),

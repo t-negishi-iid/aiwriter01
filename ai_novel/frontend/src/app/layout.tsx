@@ -1,30 +1,48 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import '@/styles/globals.css'
-import { ThemeProvider } from '@/components/ui/theme-provider'
+import type { Metadata } from "next"
+import { Inter as FontSans } from "next/font/google"
+import "./globals.css"
+import { cn } from "@/lib/utils"
+import { ThemeProvider } from "@/components/ui/theme-provider"
+import { Navbar } from "@/components/layout/navbar"
 
-const inter = Inter({ subsets: ['latin'] })
+const fontSans = FontSans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+})
 
 export const metadata: Metadata = {
-  title: 'AI小説執筆支援',
-  description: 'AI技術を活用した小説執筆支援システム',
+  title: "AIノベルライター",
+  description: "AIを活用した小説執筆支援システム",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable
+        )}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1 container py-4">{children}</main>
+            <footer className="border-t py-4">
+              <div className="container text-center text-sm text-muted-foreground">
+                © {new Date().getFullYear()} AIノベルライター
+              </div>
+            </footer>
+          </div>
         </ThemeProvider>
       </body>
     </html>

@@ -19,6 +19,24 @@ from ..dify_api import DifyNovelAPI
 from ..utils import check_and_consume_credit
 
 
+class StoryEpisodesListView(generics.ListAPIView):
+    """
+    ストーリーのエピソード一覧ビュー
+
+    指定されたストーリーに関連するすべてのエピソードを取得します。
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EpisodeDetailSerializer
+
+    def get_queryset(self):
+        """指定されたストーリーのすべてのエピソードを取得"""
+        story_id = self.kwargs.get('story_id')
+        return EpisodeDetail.objects.filter(
+            act__ai_story_id=story_id,
+            act__ai_story__user=self.request.user
+        ).order_by('act__act_number', 'episode_number')
+
+
 class EpisodeDetailListView(generics.ListCreateAPIView):
     """
     エピソード詳細一覧・作成ビュー

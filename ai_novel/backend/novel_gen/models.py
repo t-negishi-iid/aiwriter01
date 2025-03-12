@@ -1,8 +1,12 @@
+"""
+AI小説執筆支援システムのデータモデル
+"""
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.contrib.postgres.fields import ArrayField
+import os
 
 
 class TimeStampedModel(models.Model):
@@ -18,6 +22,7 @@ class UserProfile(TimeStampedModel):
     """ユーザープロファイル（クレジット管理）"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     credit = models.IntegerField(_('クレジット'), default=100)
+    bio = models.TextField(_('自己紹介'), blank=True)
 
     class Meta:
         verbose_name = _('ユーザープロファイル')
@@ -86,9 +91,16 @@ class CreditHistory(TimeStampedModel):
 
 class AIStory(TimeStampedModel):
     """AI小説"""
+    STATUS_CHOICES = (
+        ('draft', _('下書き')),
+        ('in_progress', _('作成中')),
+        ('completed', _('完成')),
+        ('published', _('公開中')),
+    )
+
     title = models.CharField(_('タイトル'), max_length=255, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
-    is_completed = models.BooleanField(_('完成フラグ'), default=False)
+    status = models.CharField(_('ステータス'), max_length=20, choices=STATUS_CHOICES, default='draft')
 
     class Meta:
         verbose_name = _('AI小説')
@@ -106,14 +118,15 @@ class BasicSettingData(TimeStampedModel):
     time_and_place = models.CharField(_('時代と場所'), max_length=100)
     world_setting = models.CharField(_('作品世界と舞台設定'), max_length=100)
     plot_pattern = models.CharField(_('プロットパターン'), max_length=100)
-    love_expressions = ArrayField(models.CharField(max_length=100), blank=True)
-    emotional_expressions = ArrayField(models.CharField(max_length=100), blank=True)
-    atmosphere = ArrayField(models.CharField(max_length=100), blank=True)
-    sensual_expressions = ArrayField(models.CharField(max_length=100), blank=True)
-    mental_elements = ArrayField(models.CharField(max_length=100), blank=True)
-    social_elements = ArrayField(models.CharField(max_length=100), blank=True)
-    past_mysteries = ArrayField(models.CharField(max_length=100), blank=True)
-    json_content = models.JSONField(_('JSONコンテンツ'), blank=True, null=True)  # 元のデータをJSON形式で保存
+    love_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('愛情表現'))
+    emotional_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('感情表現'))
+    atmosphere = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('雰囲気演出'))
+    sensual_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('官能表現'))
+    mental_elements = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('精神的要素'))
+    social_elements = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('社会的要素'))
+    past_mysteries = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('過去の謎'))
+    raw_content = models.JSONField(_('生データ'), blank=True, null=True)
+    formatted_content = models.TextField(_('整形済みデータ'), blank=True)
 
     class Meta:
         verbose_name = _('基本設定作成用データ')
@@ -124,8 +137,10 @@ class BasicSettingData(TimeStampedModel):
 
     def get_formatted_content(self):
         """テンプレートに埋め込んだ結果を返す"""
+        if self.formatted_content:
+            return self.formatted_content
+
         from django.conf import settings
-        import os
 
         # テンプレートを読み込み
         template_path = os.path.join(
@@ -150,12 +165,15 @@ class BasicSettingData(TimeStampedModel):
             past_mysteries=', '.join(self.past_mysteries)
         )
 
+        self.formatted_content = filled_template
+        self.save(update_fields=['formatted_content'])
         return filled_template
 
 
 class BasicSetting(TimeStampedModel):
     """基本設定（作品設定、あらすじ、登場人物）"""
     ai_story = models.OneToOneField(AIStory, on_delete=models.CASCADE, related_name='basic_setting')
+    setting_data = models.ForeignKey(BasicSettingData, on_delete=models.SET_NULL, null=True, related_name='basic_settings')
     story_setting = models.TextField(_('作品設定'))
     characters = models.TextField(_('登場人物設定'))
     plot_overview = models.TextField(_('あらすじ概要'))
@@ -163,6 +181,7 @@ class BasicSetting(TimeStampedModel):
     act2_overview = models.TextField(_('第2幕概要'))
     act3_overview = models.TextField(_('第3幕概要'))
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
+    is_edited = models.BooleanField(_('編集済み'), default=False)
 
     class Meta:
         verbose_name = _('基本設定')
@@ -186,6 +205,7 @@ class CharacterDetail(TimeStampedModel):
     relationship = models.TextField(_('他キャラクターとの関係'), blank=True, null=True)
     development = models.TextField(_('キャラクター成長'), blank=True, null=True)
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
+    is_edited = models.BooleanField(_('編集済み'), default=False)
 
     class Meta:
         verbose_name = _('キャラクター詳細')
@@ -209,6 +229,7 @@ class ActDetail(TimeStampedModel):
     title = models.CharField(_('タイトル'), max_length=255)
     content = models.TextField(_('内容'))
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
+    is_edited = models.BooleanField(_('編集済み'), default=False)
 
     class Meta:
         verbose_name = _('幕の詳細')
@@ -227,6 +248,7 @@ class EpisodeDetail(TimeStampedModel):
     title = models.CharField(_('タイトル'), max_length=255)
     content = models.TextField(_('内容'))
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
+    is_edited = models.BooleanField(_('編集済み'), default=False)
 
     class Meta:
         verbose_name = _('エピソード詳細')
@@ -240,11 +262,12 @@ class EpisodeDetail(TimeStampedModel):
 
 class EpisodeContent(TimeStampedModel):
     """エピソード本文"""
-    episode = models.OneToOneField(EpisodeDetail, on_delete=models.CASCADE, related_name='content')
+    episode = models.OneToOneField(EpisodeDetail, on_delete=models.CASCADE, related_name='episode_content')
     title = models.CharField(_('タイトル'), max_length=255)
     content = models.TextField(_('本文'))
     word_count = models.IntegerField(_('文字数'))
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
+    is_edited = models.BooleanField(_('編集済み'), default=False)
 
     class Meta:
         verbose_name = _('エピソード本文')
@@ -252,6 +275,12 @@ class EpisodeContent(TimeStampedModel):
 
     def __str__(self):
         return f"{self.episode}の本文"
+
+    def save(self, *args, **kwargs):
+        # 文字数を自動計算
+        if not self.word_count:
+            self.word_count = len(self.content)
+        super().save(*args, **kwargs)
 
 
 class APIRequestLog(TimeStampedModel):
@@ -275,6 +304,7 @@ class APIRequestLog(TimeStampedModel):
     response = models.TextField(_('レスポンス'), blank=True, null=True)
     is_success = models.BooleanField(_('成功フラグ'), default=True)
     credit_cost = models.IntegerField(_('消費クレジット'), default=0)
+    error_message = models.TextField(_('エラーメッセージ'), blank=True, null=True)
 
     class Meta:
         verbose_name = _('APIリクエストログ')

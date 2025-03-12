@@ -77,3 +77,6 @@ ai_novel/backend/staticfiles/
 # Package lock files
 package-lock.json
 ai_novel/frontend/package-lock.json
+
+# .specstory directory
+.specstory/

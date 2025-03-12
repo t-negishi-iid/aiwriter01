@@ -69,3 +69,11 @@ docker-compose.override.yml
 
 # Log files
 logs/
+
+# Static files
+staticfiles/
+ai_novel/backend/staticfiles/
+
+# Package lock files
+package-lock.json
+ai_novel/frontend/package-lock.json

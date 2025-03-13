@@ -7,7 +7,8 @@ import logging
 import os
 from typing import Dict, Any, Optional, Union, Generator
 
-logger = logging.getLogger(__name__)
+# ロガーの設定
+logger = logging.getLogger('novel_gen')
 
 class DifyAPI:
     """Dify APIとの通信を行うクラス"""
@@ -194,6 +195,8 @@ class DifyNovelAPI:
             response_mode="blocking"
         )
 
+        # レスポンスのログ記録
+        logger.debug(f"API response: {json.dumps(response, ensure_ascii=False, indent=2)}")
         return response
 
     def create_basic_setting_data(self, inputs: Dict[str, Any], user_id: Optional[str] = None) -> Dict[str, Any]:

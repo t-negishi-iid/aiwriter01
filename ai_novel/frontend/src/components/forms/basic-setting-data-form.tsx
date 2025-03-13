@@ -8,7 +8,6 @@ import { Save, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BasicSettingData } from "@/lib/types"
@@ -19,7 +18,7 @@ const formSchema = z.object({
   theme: z.string().min(1, "テーマは必須項目です"),
   setting: z.string().min(1, "舞台設定は必須項目です"),
   era: z.string().min(1, "時代は必須項目です"),
-  emotions: z.string().min(1, "情緒的要素は必須項目です"),
+  emotions: z.array(z.string()).min(1, "情緒的要素は必須項目です"),
   plot_type: z.string().min(1, "プロットタイプは必須項目です"),
   mystery: z.string().min(1, "過去の謎は必須項目です"),
   additional_info: z.string().optional(),
@@ -39,18 +38,57 @@ const genreOptions = [
   { value: "thriller", label: "サスペンス" },
 ]
 
+// テーマ選択肢
+const themeOptions = [
+  { value: "self_growth", label: "自己成長・成長物語" },
+  { value: "love_and_bonds", label: "愛と絆" },
+  { value: "justice_and_ethics", label: "正義と倫理" },
+  { value: "revenge_and_redemption", label: "復讐と救済" },
+  { value: "technology_and_humanity", label: "技術と人間性" },
+  { value: "struggle_against_society", label: "社会の歪みとの闘い" },
+]
+
+// 舞台設定選択肢
+const settingOptions = [
+  { value: "digital_dystopia", label: "デジタルディストピア設定" },
+  { value: "post_apocalypse", label: "ポストアポカリプス設定" },
+  { value: "urban_fantasy", label: "アーバンファンタジー設定" },
+]
+
+// 時代と場所選択肢
+const eraOptions = [
+  { value: "modern_japan", label: "現代日本・都市部（2010年代〜現在）" },
+  { value: "modern_america", label: "現代アメリカ・大都市（2000年代〜現在）" },
+  { value: "fantasy_world", label: "ファンタジー世界（時代設定なし）" },
+  { value: "near_future_japan", label: "近未来日本（2030年代〜2050年代）" },
+  { value: "sengoku_japan", label: "戦国時代日本（1467年〜1615年）" },
+  { value: "meiji_taisho_japan", label: "明治・大正時代日本（1868年〜1926年）" },
+]
+
+// 情緒的要素選択肢
+const emotionsOptions = [
+  { value: "love_expression", label: "愛情表現（純愛、初恋、片思い等）" },
+  { value: "emotional_expression", label: "感情表現（純情さ、友情、憎しみ等）" },
+  { value: "atmosphere", label: "雰囲気演出（ホラー、ミステリアス、ファンタジー等）" },
+  { value: "sensual_expression", label: "官能的表現（エロティシズム、グロテスク等）" },
+  { value: "spiritual_elements", label: "精神的要素（思索性、宗教性、倫理性等）" },
+  { value: "social_elements", label: "社会的要素（リアリズム、社会性、政治性等）" },
+]
+
 // プロットタイプ選択肢
 const plotTypeOptions = [
   { value: "heroic_journey", label: "英雄の旅" },
-  { value: "overcoming_the_monster", label: "怪物との戦い" },
-  { value: "rags_to_riches", label: "成り上がり" },
-  { value: "quest", label: "探求" },
-  { value: "voyage_and_return", label: "旅と帰還" },
-  { value: "comedy", label: "喜劇" },
-  { value: "tragedy", label: "悲劇" },
-  { value: "rebirth", label: "再生" },
-  { value: "mystery", label: "謎解き" },
-  { value: "rebellion", label: "反抗" },
+  { value: "tragic_fall", label: "悲劇的転落" },
+  { value: "revenge_story", label: "復讐譚" },
+  { value: "love_story", label: "恋愛成就" },
+  { value: "self_discovery", label: "自己発見" },
+  { value: "salvation_story", label: "救済物語" },
+]
+
+// 過去の謎選択肢
+const mysteryOptions = [
+  { value: "trauma_mystery", label: "トラウマの謎" },
+  { value: "lost_memory", label: "失われた記憶" },
 ]
 
 interface BasicSettingDataFormProps {
@@ -70,7 +108,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
       theme: initialData?.theme || "",
       setting: initialData?.setting || "",
       era: initialData?.era || "",
-      emotions: initialData?.emotions || "",
+      emotions: initialData?.emotions || [],
       plot_type: initialData?.plot_type || "",
       mystery: initialData?.mystery || "",
       additional_info: initialData?.additional_info || "",
@@ -131,15 +169,26 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>テーマ</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="例: 成長、復讐、愛と喪失など"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="テーマを選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {themeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormDescription>
-                物語を通して探求したい中心的なテーマを入力してください。
+                物語を通して探求したい中心的なテーマを選択してください。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -153,16 +202,26 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>舞台設定</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="例: 近未来の東京、中世ヨーロッパの小さな村など"
-                  disabled={isSubmitting}
-                  rows={3}
-                  {...field}
-                />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="舞台設定を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {settingOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormDescription>
-                物語の舞台となる場所や環境について詳しく説明してください。
+                物語の舞台となる場所や環境を選択してください。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -176,15 +235,26 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>時代</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="例: 現代、江戸時代、2050年など"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="時代を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {eraOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormDescription>
-                物語が展開される時代を指定してください。
+                物語が展開される時代を選択してください。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -198,15 +268,28 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>情緒的要素</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="例: 希望、絶望、憧れ、郷愁など"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              </FormControl>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange([value]);
+                }}
+                value={field.value?.[0] || ""}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="情緒的要素を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {emotionsOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormDescription>
-                物語で強調したい感情や雰囲気を入力してください。
+                物語で強調したい感情や雰囲気を選択してください。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -253,16 +336,26 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
           render={({ field }) => (
             <FormItem>
               <FormLabel>過去の謎</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="例: 主人公の出生の秘密、村に伝わる伝説の真相など"
-                  disabled={isSubmitting}
-                  rows={3}
-                  {...field}
-                />
-              </FormControl>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isSubmitting}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="過去の謎を選択" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {mysteryOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormDescription>
-                物語の中で明らかになる謎や秘密について説明してください。
+                物語の中で明らかになる謎や秘密のタイプを選択してください。
               </FormDescription>
               <FormMessage />
             </FormItem>

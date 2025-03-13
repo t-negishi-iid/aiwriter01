@@ -52,13 +52,15 @@ export default function HomePage() {
         <p className="text-xl text-muted-foreground max-w-[700px] mx-auto">
           AIを活用した小説執筆支援システムで、あなたのアイデアを物語に変えましょう
         </p>
-        <div className="flex justify-center gap-4 pt-4">
-          <Button asChild size="lg">
-            <Link href="/stories/create">新しい小説を作成</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/stories">小説一覧を見る</Link>
-          </Button>
+        <div className="flex justify-center pt-6">
+          <div className="inline-flex items-center rounded-md border border-input bg-background p-1 text-muted-foreground shadow-sm">
+            <Link href="/stories/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+              【新しい小説を作成】
+            </Link>
+            <Link href="/stories" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
+              【小説一覧を見る】
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -124,9 +126,16 @@ export default function HomePage() {
           AIノベルライターを使って、あなたのアイデアを形にしましょう。
           最初の一歩は、新しい小説を作成することから始まります。
         </p>
-        <Button asChild size="lg">
-          <Link href="/stories/create">新しい小説を作成する</Link>
-        </Button>
+        <div className="flex justify-center">
+          <div className="inline-flex items-center rounded-md border border-input bg-background p-1 text-muted-foreground shadow-sm">
+            <Link href="/stories/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+              新しい小説を作成する
+            </Link>
+            <Link href="/stories" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground">
+              小説一覧を見る
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   )

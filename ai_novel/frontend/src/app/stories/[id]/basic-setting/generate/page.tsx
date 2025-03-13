@@ -2,160 +2,162 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
 
-import { BasicSettingDataForm } from "@/components/forms/basic-setting-data-form"
-import { BasicSettingData, ApiResponse, TaskStatus } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { taskApi } from "@/lib/api-client"
+import { TaskStatus } from "@/lib/types"
 
-export default function GenerateBasicSettingPage() {
+export default function BasicSettingGeneratePage() {
   const router = useRouter()
   const params = useParams()
   const storyId = params.id as string
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [taskId, setTaskId] = useState<string | null>(null)
   const [taskStatus, setTaskStatus] = useState<TaskStatus | null>(null)
   const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
-  // 基本設定データの送信処理
-  const handleFormSubmit = async (data: BasicSettingData) => {
-    setIsSubmitting(true)
-    setError(null)
-
-    try {
-      // APIにデータを送信
-      const response = await fetch(`/api/stories/${storyId}/basic-setting-data/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      const result: ApiResponse<{ task_id: string }> = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.message || "基本設定データの送信に失敗しました")
-      }
-
-      if (result.data?.task_id) {
-        setTaskId(result.data.task_id)
-      } else {
-        throw new Error("タスクIDが取得できませんでした")
-      }
-    } catch (err) {
-      console.error("基本設定データの送信エラー:", err)
-      setError(err instanceof Error ? err.message : "未知のエラーが発生しました")
-      setIsSubmitting(false)
-    }
-  }
-
-  // タスクの状態を監視
+  // タスクステータスの定期的な取得
   useEffect(() => {
-    if (!taskId) return
+    let intervalId: NodeJS.Timeout
 
-    const checkTaskStatus = async () => {
+    const fetchTaskStatus = async () => {
       try {
-        const response = await fetch(`/api/tasks/${taskId}`)
-        const result: ApiResponse<TaskStatus> = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.message || "タスクステータスの取得に失敗しました")
+        // ローカルストレージからタスクIDを取得
+        const taskId = localStorage.getItem(`basic_setting_task_${storyId}`)
+        if (!taskId) {
+          setError("タスクIDが見つかりません")
+          return
         }
 
-        if (result.data) {
-          setTaskStatus(result.data)
+        const response = await taskApi.getTaskStatus(taskId)
+        if (response.success && response.data) {
+          setTaskStatus(response.data)
 
-          // ステータスに応じた処理
-          switch (result.data.status) {
-            case "completed":
-              // 処理完了時
-              setProgress(100)
-              // 基本設定詳細ページに遷移
-              router.push(`/stories/${storyId}/basic-setting`)
-              break
-            case "failed":
-              // 処理失敗時
-              setError(result.data.error || "基本設定の生成に失敗しました")
-              setIsSubmitting(false)
-              break
-            case "processing":
-              // 処理中はプログレスバーを進める（進捗の目安として50%まで徐々に進める）
-              setProgress((prev) => Math.min(prev + 2, 50))
-              break
-            case "pending":
-              // 処理待ち
-              setProgress((prev) => Math.min(prev + 1, 20))
-              break
+          // 進捗状況の更新
+          if (response.data.status === "completed") {
+            setProgress(100)
+            // 完了したら詳細ページにリダイレクト
+            setTimeout(() => {
+              router.push(`/stories/${storyId}`)
+            }, 2000)
+          } else if (response.data.status === "failed") {
+            setProgress(0)
+            setError("基本設定の生成に失敗しました")
+            clearInterval(intervalId)
+          } else {
+            // 進行中の場合は進捗を更新
+            setProgress(response.data.progress || Math.min(progress + 5, 95))
           }
+        } else {
+          setError("タスクステータスの取得に失敗しました")
         }
       } catch (err) {
         console.error("タスクステータス取得エラー:", err)
-        // エラーが続く場合も定期的に再試行する（UIはブロックしない）
+        setError("タスクステータスの取得中にエラーが発生しました")
       }
     }
 
-    // タスクが完了するまで定期的に状態を確認
-    const intervalId = setInterval(checkTaskStatus, 2000)
+    // 初回実行
+    fetchTaskStatus()
+
+    // 5秒ごとに更新
+    intervalId = setInterval(fetchTaskStatus, 5000)
 
     return () => {
       clearInterval(intervalId)
     }
-  }, [taskId, router, storyId])
+  }, [storyId, router, progress])
 
   return (
-    <div className="container mx-auto py-10">
-      <Card className="max-w-4xl mx-auto">
+    <div className="container max-w-3xl py-10">
+      <div className="mb-8">
+        <Link
+          href={`/stories/${storyId}`}
+          className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          小説詳細に戻る
+        </Link>
+        <h1 className="text-3xl font-bold">基本設定の生成中</h1>
+        <p className="text-muted-foreground mt-2">
+          AIが小説の基本設定を生成しています。このプロセスには数分かかる場合があります。
+        </p>
+      </div>
+
+      <Card>
         <CardHeader>
-          <CardTitle>基本設定作成用データの入力</CardTitle>
+          <CardTitle>基本設定生成状況</CardTitle>
           <CardDescription>
-            物語の基本的な方向性を決めるためのデータを入力してください。
-            この情報をもとに、AIがストーリーの基本設定を生成します。
+            生成が完了すると自動的に次のステップに進みます
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertTitle>エラーが発生しました</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {isSubmitting && taskId ? (
-            <div className="space-y-4 py-8">
-              <h3 className="text-lg font-medium text-center">基本設定を生成中...</h3>
-              <Progress value={progress} className="w-full" />
-              <p className="text-center text-muted-foreground">
-                AIが物語の基本設定を作成しています。このプロセスには数分かかる場合があります。
-              </p>
-              <div className="flex justify-center mt-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm font-medium">進捗状況</span>
+              <span className="text-sm text-muted-foreground">{progress}%</span>
             </div>
-          ) : (
-            <BasicSettingDataForm
-              storyId={storyId}
-              onSubmit={handleFormSubmit}
-            />
+            <Progress value={progress} className="h-2" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center">
+              {progress >= 25 ? (
+                <CheckCircle className="h-5 w-5 text-primary mr-2" />
+              ) : (
+                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              )}
+              <span>基本情報の分析</span>
+            </div>
+            <div className="flex items-center">
+              {progress >= 50 ? (
+                <CheckCircle className="h-5 w-5 text-primary mr-2" />
+              ) : progress >= 25 ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              ) : (
+                <div className="h-5 w-5 rounded-full border-2 border-muted mr-2" />
+              )}
+              <span>世界観と設定の生成</span>
+            </div>
+            <div className="flex items-center">
+              {progress >= 75 ? (
+                <CheckCircle className="h-5 w-5 text-primary mr-2" />
+              ) : progress >= 50 ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              ) : (
+                <div className="h-5 w-5 rounded-full border-2 border-muted mr-2" />
+              )}
+              <span>キャラクター設定の生成</span>
+            </div>
+            <div className="flex items-center">
+              {progress >= 100 ? (
+                <CheckCircle className="h-5 w-5 text-primary mr-2" />
+              ) : progress >= 75 ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              ) : (
+                <div className="h-5 w-5 rounded-full border-2 border-muted mr-2" />
+              )}
+              <span>プロット概要の生成</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="p-4 bg-destructive/10 text-destructive rounded-md">
+              <p className="font-medium">エラーが発生しました</p>
+              <p className="text-sm">{error}</p>
+            </div>
           )}
         </CardContent>
-        {isSubmitting && taskId && (
-          <CardFooter className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/stories/${storyId}`)}
-              className="mt-4"
-            >
-              キャンセルしてストーリー一覧に戻る
-            </Button>
-          </CardFooter>
-        )}
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">
+            生成が完了すると自動的に小説詳細ページに移動します
+          </p>
+        </CardFooter>
       </Card>
     </div>
   )

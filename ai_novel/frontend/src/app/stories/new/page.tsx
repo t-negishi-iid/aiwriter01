@@ -29,12 +29,32 @@ export default function NewStoryPage() {
 
     try {
       setIsSubmitting(true)
-      const newStory = await storyApi.createStory({ title })
-      toast({
-        title: "小説を作成しました",
-        description: "続いて基本設定を作成しましょう",
-      })
-      router.push(`/stories/${newStory.id}/basic-data`)
+      const response = await storyApi.createStory({ title })
+      console.log("小説作成レスポンス:", response);
+
+      if (response.success && response.data) {
+        toast({
+          title: "小説を作成しました",
+          description: "続いて基本設定を作成しましょう",
+        })
+
+        // APIレスポンスの構造に合わせてIDを取得
+        const storyId = response.data.id;
+
+        if (storyId) {
+          router.push(`/stories/${storyId}/basic-setting-data`)
+        } else {
+          console.error("小説IDが取得できませんでした:", response);
+          toast({
+            title: "エラーが発生しました",
+            description: "小説IDの取得に失敗しました。小説一覧に戻ります。",
+            variant: "destructive",
+          })
+          router.push('/stories');
+        }
+      } else {
+        throw new Error(response.message || "小説の作成に失敗しました");
+      }
     } catch (error) {
       console.error("小説の作成に失敗しました:", error)
       toast({

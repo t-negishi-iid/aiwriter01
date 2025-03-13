@@ -1,74 +1,55 @@
-import { Metadata } from 'next';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { getStory } from '@/lib/api-client';
-import { ArrowLeft } from 'lucide-react';
-import CharacterCreateForm from './character-create-form';
+"use client"
 
-export const metadata: Metadata = {
-  title: 'キャラクター作成',
-  description: '新しいキャラクターを作成します',
+import { useState } from "react"
+import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+// CharacterCreateFormコンポーネントが存在しない場合は、仮のコンポーネントを作成
+const CharacterCreateForm = ({ storyId }: { storyId: number }) => {
+  return (
+    <div>
+      <p>キャラクター作成フォーム（開発中）</p>
+      <p>小説ID: {storyId}</p>
+    </div>
+  );
 };
 
-interface CreateCharacterPageProps {
-  params: {
-    id: string;
-  };
-}
+export default function CreateCharacterPage() {
+  const router = useRouter()
+  const params = useParams()
+  const storyId = parseInt(params.id as string);
 
-export default async function CreateCharacterPage({ params }: CreateCharacterPageProps) {
-  const storyId = parseInt(params.id);
-
-  if (isNaN(storyId)) {
-    notFound();
-  }
-
-  try {
-    const story = await getStory(storyId);
-
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center mb-6">
-          <Link href={`/stories/${storyId}/characters`}>
-            <Button variant="outline" size="sm" className="mr-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              戻る
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">キャラクター作成</h1>
-            <p className="text-muted-foreground">
-              「{story.title}」の新しいキャラクターを作成
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>キャラクター情報入力</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CharacterCreateForm storyId={storyId} />
-          </CardContent>
-        </Card>
+  return (
+    <div className="container max-w-4xl py-10">
+      <div className="mb-8">
+        <Link
+          href={`/stories/${storyId}`}
+          className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          小説詳細に戻る
+        </Link>
+        <h1 className="text-3xl font-bold">キャラクター作成</h1>
+        <p className="text-muted-foreground mt-2">
+          小説の登場人物を作成します。
+          キャラクターの基本情報を入力してください。
+        </p>
       </div>
-    );
-  } catch (error) {
-    console.error('小説情報の取得に失敗しました:', error);
-    return (
-      <div className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">キャラクター作成</h1>
-        <div className="bg-destructive/10 p-4 rounded-md">
-          <p className="text-destructive">
-            小説情報の取得中にエラーが発生しました。しばらくしてからもう一度お試しください。
-          </p>
-        </div>
-      </div>
-    );
-  }
+
+      <Card>
+        <CardHeader>
+          <CardTitle>キャラクター情報</CardTitle>
+          <CardDescription>
+            キャラクターの基本情報を入力してください
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CharacterCreateForm storyId={storyId} />
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

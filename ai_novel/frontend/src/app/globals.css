@@ -12,6 +12,7 @@
 
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
+    --popover-bg: #ffffff;
 
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
@@ -70,8 +71,10 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    background-color: #f8f9fa;
   }
 }
 
@@ -105,4 +108,142 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--foreground));
+}
+
+/* フォーム要素のカスタマイズ */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* セレクトボックスのカスタマイズ */
+[data-radix-select-trigger] {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-radix-select-content] {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* セレクトボックスの選択肢の背景色を修正 */
+[data-radix-select-item],
+.select-item {
+  background-color: white !important;
+}
+
+[data-radix-select-item]:hover,
+[data-radix-select-item]:focus,
+.select-item:hover,
+.select-item:focus {
+  background-color: hsl(var(--accent)) !important;
+}
+
+/* カードのカスタマイズ */
+.card {
+  background-color: white;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* フォームフィールドのカスタマイズ */
+.form-field {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background-color: white;
+}
+
+.form-description {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.25rem;
+}
+
+/* ボタンのカスタマイズ */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.button-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.button-primary:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+/* タブのカスタマイズ */
+[role="tablist"] {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 1px solid hsl(var(--border));
+}
+
+[role="tab"] {
+  font-weight: 500;
+}
+
+[role="tab"][data-state="active"] {
+  background-color: hsl(var(--primary));
+  color: white;
+}
+
+/* フォームコンテンツのカスタマイズ */
+[data-radix-select-trigger],
+[data-radix-select-content],
+textarea,
+input {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Selectコンポーネントの追加スタイル */
+.select-content {
+  background-color: white !important;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.select-item {
+  background-color: white !important;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.select-item:hover {
+  background-color: hsl(var(--accent)) !important;
 }

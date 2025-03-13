@@ -97,9 +97,9 @@ class BasicSettingDataCreateSerializer(serializers.ModelSerializer):
         fields = ('id', 'ai_story', 'theme', 'time_and_place', 'world_setting',
                  'plot_pattern', 'love_expressions', 'emotional_expressions',
                  'atmosphere', 'sensual_expressions', 'mental_elements',
-                 'social_elements', 'past_mysteries', 'json_content',
+                 'social_elements', 'past_mysteries', 'raw_content',
                  'created_at', 'updated_at')
-        read_only_fields = ('id', 'created_at', 'updated_at', 'json_content')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'raw_content')
 
 
 class BasicSettingDataSerializer(serializers.ModelSerializer):

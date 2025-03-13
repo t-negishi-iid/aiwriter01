@@ -6,6 +6,8 @@ import json
 import logging
 from django.conf import settings
 from typing import Dict, List, Any, Optional, Union, Tuple
+from django.contrib.auth.models import User
+from rest_framework.authentication import BaseAuthentication
 
 logger = logging.getLogger(__name__)
 
@@ -167,7 +169,6 @@ def check_and_consume_credit(user, api_type: str) -> Tuple[bool, str]:
         Tuple[bool, str]: (成功フラグ, メッセージ)
     """
     from .models import UserProfile, CreditHistory
-    from django.contrib.auth.models import User
 
     # ユーザーIDの場合はUserオブジェクトを取得
     if isinstance(user, int):
@@ -273,3 +274,20 @@ def format_basic_setting_data(data: Dict[str, Any]) -> str:
     )
 
     return filled_template
+
+
+class AlwaysAuthenticatedAuthentication(BaseAuthentication):
+    """
+    開発用の簡易認証クラス。
+    すべてのリクエストを認証済みとして扱い、デフォルトユーザーを返します。
+    """
+    def authenticate(self, request):
+        # デフォルトユーザーを取得または作成
+        user, created = User.objects.get_or_create(
+            username='default_user',
+            defaults={
+                'email': 'default@example.com',
+                'is_active': True
+            }
+        )
+        return (user, None)

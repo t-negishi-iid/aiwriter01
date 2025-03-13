@@ -1,75 +1,204 @@
 """
 基本設定作成用データ関連のビュー
 """
+import json
+import logging
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 
 from ..models import AIStory, BasicSettingData
 from ..serializers import (
-    BasicSettingDataCreateSerializer, BasicSettingDataSerializer,
-    BasicSettingDataRequestSerializer, BasicSettingDataPreviewSerializer,
-    OptionsResponseSerializer
+    BasicSettingDataSerializer, BasicSettingDataCreateSerializer,
+    BasicSettingDataRequestSerializer, DifyResponseSerializer
 )
-from ..utils import get_basic_setting_options, format_basic_setting_data
+from ..dify_api import DifyNovelAPI
+from ..utils import check_and_consume_credit
 
+# ロガーの設定
+logger = logging.getLogger('novel_gen')
 
 class OptionsView(views.APIView):
     """
-    基本設定作成用データの選択肢を取得するビュー
+    基本設定作成用データのオプション取得ビュー
+
+    基本設定作成用データの作成に必要なオプション（ジャンル、テーマなど）を取得します。
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """選択肢を取得"""
-        options = get_basic_setting_options()
-        serializer = OptionsResponseSerializer(data=options)
+        """オプションを取得"""
+        # 実際の実装ではデータベースやAPIから取得する
+        options = {
+            'genres': [
+                {'id': 'fantasy', 'name': 'ファンタジー'},
+                {'id': 'scifi', 'name': 'SF'},
+                {'id': 'mystery', 'name': 'ミステリー'},
+                {'id': 'romance', 'name': 'ロマンス'},
+                {'id': 'horror', 'name': 'ホラー'},
+                {'id': 'adventure', 'name': 'アドベンチャー'},
+                {'id': 'historical', 'name': '歴史'},
+                {'id': 'comedy', 'name': 'コメディ'},
+                {'id': 'drama', 'name': 'ドラマ'},
+                {'id': 'action', 'name': 'アクション'},
+            ],
+            'themes': [
+                {'id': 'love', 'name': '愛'},
+                {'id': 'friendship', 'name': '友情'},
+                {'id': 'growth', 'name': '成長'},
+                {'id': 'revenge', 'name': '復讐'},
+                {'id': 'justice', 'name': '正義'},
+                {'id': 'betrayal', 'name': '裏切り'},
+                {'id': 'survival', 'name': '生存'},
+                {'id': 'discovery', 'name': '発見'},
+                {'id': 'sacrifice', 'name': '犠牲'},
+                {'id': 'redemption', 'name': '贖罪'},
+            ],
+            'settings': [
+                {'id': 'urban', 'name': '都市'},
+                {'id': 'rural', 'name': '田舎'},
+                {'id': 'space', 'name': '宇宙'},
+                {'id': 'underwater', 'name': '海中'},
+                {'id': 'desert', 'name': '砂漠'},
+                {'id': 'forest', 'name': '森林'},
+                {'id': 'mountain', 'name': '山岳'},
+                {'id': 'island', 'name': '島'},
+                {'id': 'school', 'name': '学校'},
+                {'id': 'workplace', 'name': '職場'},
+            ],
+            'eras': [
+                {'id': 'ancient', 'name': '古代'},
+                {'id': 'medieval', 'name': '中世'},
+                {'id': 'renaissance', 'name': 'ルネサンス'},
+                {'id': 'industrial', 'name': '産業革命'},
+                {'id': 'modern', 'name': '現代'},
+                {'id': 'future', 'name': '未来'},
+                {'id': 'postapocalyptic', 'name': 'ポストアポカリプス'},
+                {'id': 'alternate', 'name': '異世界'},
+                {'id': 'prehistoric', 'name': '先史時代'},
+                {'id': 'victorian', 'name': 'ビクトリア朝'},
+            ],
+            'emotions': [
+                {'id': 'happy', 'name': '幸せ'},
+                {'id': 'sad', 'name': '悲しみ'},
+                {'id': 'angry', 'name': '怒り'},
+                {'id': 'fear', 'name': '恐怖'},
+                {'id': 'surprise', 'name': '驚き'},
+                {'id': 'disgust', 'name': '嫌悪'},
+                {'id': 'anticipation', 'name': '期待'},
+                {'id': 'trust', 'name': '信頼'},
+                {'id': 'joy', 'name': '喜び'},
+                {'id': 'sorrow', 'name': '悲哀'},
+            ],
+        }
+        return Response(options)
+
+
+class PreviewBasicSettingDataView(views.APIView):
+    """
+    基本設定作成用データのプレビュー生成ビュー
+
+    基本設定作成用データのプレビューを生成します。
+    クレジットは消費しません。
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """プレビューを生成"""
+        story_id = self.kwargs.get('story_id')
+        story = get_object_or_404(AIStory, id=story_id, user=request.user)
+
+        # リクエストの検証
+        serializer = BasicSettingDataRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data)
+
+        # プレビュー生成（実際の実装ではAPIを呼び出す）
+        # この例では単純化のため、入力をそのまま返しています
+        preview = {
+            'theme': serializer.validated_data.get('theme', ''),
+            'time_and_place': f"{serializer.validated_data.get('era', '')} {serializer.validated_data.get('setting', '')}",
+            'emotional_expressions': serializer.validated_data.get('emotions', []),
+            'raw_content': json.dumps(serializer.validated_data)
+        }
+
+        return Response(preview)
 
 
-class BasicSettingDataCreateView(generics.CreateAPIView):
+class BasicSettingDataCreateView(views.APIView):
     """
     基本設定作成用データ作成ビュー
 
-    指定された小説の基本設定作成用データを作成します。
+    基本設定作成用データを作成します。
+    クレジットは消費しません。
     """
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = BasicSettingDataCreateSerializer
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        """基本設定作成用データを作成"""
+        logger.debug("BasicSettingDataCreateView.post called")
+        logger.debug(f"Request data: {json.dumps(request.data, ensure_ascii=False, indent=2)}")
+        logger.debug(f"Request method: {request.method}")
+        logger.debug(f"Request headers: {dict(request.headers)}")
+
+        story_id = self.kwargs.get('story_id')
+        logger.debug(f"Story ID: {story_id}")
+
+        try:
+            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            logger.debug(f"Found story: {story.id} - {story.title}")
+
+            # リクエストの検証
+            logger.debug("Validating request data")
+            serializer = BasicSettingDataRequestSerializer(data=request.data)
+
+            if not serializer.is_valid():
+                logger.error(f"Request validation failed: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            logger.debug("Request validation successful")
+
+            # 基本設定作成用データの作成
+            logger.debug("Creating basic setting data")
+            json_content = serializer.validated_data
+            logger.debug(f"JSON content: {json.dumps(json_content, ensure_ascii=False, indent=2)}")
+
+            # 感情表現の処理
+            emotions = json_content.get('emotions', [])
+            logger.debug(f"Emotions: {emotions}")
+
+            # 基本設定作成用データの保存
+            basic_setting_data = BasicSettingData.objects.create(
+                ai_story=story,
+                theme=json_content.get('theme', ''),
+                time_and_place=f"{json_content.get('era', '')} {json_content.get('setting', '')}",
+                emotional_expressions=emotions,
+                raw_content=json_content
+            )
+            logger.debug(f"Basic setting data created: {basic_setting_data.id}")
+
+            # レスポンスを返す
+            result_serializer = BasicSettingDataSerializer(basic_setting_data)
+            logger.debug("Returning successful response")
+            return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.exception(f"Unhandled exception: {str(e)}")
+            return Response(
+                {'error': f'予期せぬエラーが発生しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def perform_create(self, serializer):
-        """基本設定作成用データ作成時に小説を設定"""
+        """基本設定作成用データを保存"""
         story_id = self.kwargs.get('story_id')
         story = get_object_or_404(AIStory, id=story_id, user=self.request.user)
-
-        # リクエストデータをJSONとして保存
-        original_data = self.request.data.copy()
-
-        # スネークケースからキャメルケースへの変換
-        field_mapping = {
-            'theme': 'theme',
-            'time_and_place': 'timeAndPlace',
-            'world_setting': 'worldSetting',
-            'plot_pattern': 'plotPattern',
-            'love_expressions': 'loveExpressions',
-            'emotional_expressions': 'emotionalExpressions',
-            'atmosphere': 'atmosphere',
-            'sensual_expressions': 'sensualExpressions',
-            'mental_elements': 'mentalElements',
-            'social_elements': 'socialElements',
-            'past_mysteries': 'pastMysteries'
-        }
-
-        # JSONコンテンツを作成
-        json_content = {}
-        for snake_case, camel_case in field_mapping.items():
-            if camel_case in original_data:
-                json_content[camel_case] = original_data[camel_case]
-
+        json_content = self.request.data
         serializer.save(
             ai_story=story,
-            json_content=json_content
+            raw_content=json_content
         )
 
 
@@ -90,27 +219,3 @@ class BasicSettingDataDetailView(generics.RetrieveUpdateDestroyAPIView):
             ai_story_id=story_id,
             ai_story__user=self.request.user
         )
-
-
-class PreviewBasicSettingDataView(views.APIView):
-    """
-    基本設定作成用データプレビュービュー
-
-    基本設定作成用データのプレビューを生成します。
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        """プレビューを生成"""
-        serializer = BasicSettingDataRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # データをフォーマット
-        formatted_text = format_basic_setting_data(serializer.validated_data)
-
-        # レスポンスを返す
-        response_serializer = BasicSettingDataPreviewSerializer(
-            data={'preview': formatted_text}
-        )
-        response_serializer.is_valid(raise_exception=True)
-        return Response(response_serializer.validated_data)

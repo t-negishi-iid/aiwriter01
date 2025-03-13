@@ -38,14 +38,34 @@ export default function StoriesPage() {
 
       try {
         const response = await storyApi.getStories()
+        console.log("API Response:", response); // レスポンスをログに出力
+
         if (response.success && response.data) {
-          setStories(response.data)
+          console.log("Response data type:", typeof response.data, Array.isArray(response.data));
+
+          // データの形式を確認して適切に処理
+          let storiesData: Story[] = [];
+
+          if (Array.isArray(response.data)) {
+            // response.dataが配列の場合
+            storiesData = response.data;
+          } else if (typeof response.data === 'object' && response.data !== null) {
+            // response.dataがオブジェクトの場合、resultsプロパティを確認
+            const dataObj = response.data as Record<string, any>;
+            if (Array.isArray(dataObj.results)) {
+              storiesData = dataObj.results;
+            }
+          }
+
+          setStories(storiesData);
         } else {
           throw new Error(response.message || "ストーリー一覧の取得に失敗しました")
         }
       } catch (err) {
         console.error("ストーリー一覧取得エラー:", err)
         setError(err instanceof Error ? err.message : "未知のエラーが発生しました")
+        // エラー時は空の配列をセット
+        setStories([])
       } finally {
         setIsLoading(false)
       }
@@ -92,10 +112,12 @@ export default function StoriesPage() {
     <div className="container mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">ストーリー一覧</h1>
-        <Button onClick={() => router.push('/stories/create')}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規ストーリー作成
-        </Button>
+        <div className="inline-flex items-center rounded-md border border-input bg-background p-1 text-muted-foreground shadow-sm">
+          <Link href="/stories/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            新規ストーリー作成
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -119,10 +141,12 @@ export default function StoriesPage() {
               <p className="text-muted-foreground mb-6">
                 「新規ストーリー作成」ボタンからストーリーを作成しましょう
               </p>
-              <Button onClick={() => router.push('/stories/create')}>
-                <Plus className="mr-2 h-4 w-4" />
-                新規ストーリー作成
-              </Button>
+              <div className="inline-flex items-center rounded-md border border-input bg-background p-1 text-muted-foreground shadow-sm">
+                <Link href="/stories/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Plus className="mr-2 h-4 w-4" />
+                  新規ストーリー作成
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

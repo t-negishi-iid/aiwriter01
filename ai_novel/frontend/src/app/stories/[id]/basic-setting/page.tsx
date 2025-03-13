@@ -1,21 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Edit, RefreshCw } from "lucide-react"
+import { use } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "@/components/ui/use-toast"
-import { basicSettingApi } from "@/lib/api-client"
+import { basicSettingApi } from "@/lib/api"
 import { BasicSetting } from "@/lib/types"
 
-export default function BasicSettingPage({ params }: { params: { id: string } }) {
+export default function BasicSettingPage() {
   const router = useRouter()
-  const storyId = params.id
+  const params = useParams();
+  const storyId = params.id as string;
 
   const [basicSetting, setBasicSetting] = useState<BasicSetting | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -43,8 +45,22 @@ export default function BasicSettingPage({ params }: { params: { id: string } })
     fetchBasicSetting()
   }, [storyId])
 
-  const handleGenerateBasicSetting = () => {
-    router.push(`/stories/${storyId}/basic-setting/generate`)
+  const handleGenerateBasicSetting = async () => {
+    try {
+      await basicSettingApi.generateBasicSetting(storyId)
+      toast({
+        title: "基本設定の生成を開始しました",
+        description: "生成が完了するまでしばらくお待ちください",
+      })
+      router.push(`/stories/${storyId}/basic-setting/generate`)
+    } catch (error) {
+      console.error("基本設定の生成開始に失敗しました:", error)
+      toast({
+        title: "エラーが発生しました",
+        description: "基本設定の生成開始に失敗しました。もう一度お試しください。",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleEditBasicSetting = () => {

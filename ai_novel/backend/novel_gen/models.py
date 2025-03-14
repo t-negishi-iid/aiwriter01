@@ -140,34 +140,91 @@ class BasicSettingData(TimeStampedModel):
         if self.formatted_content:
             return self.formatted_content
 
-        from django.conf import settings
+        try:
+            from django.conf import settings
 
-        # テンプレートを読み込み
-        template_path = os.path.join(
-            settings.BASE_DIR,
-            'novel_gen_system_data/04_templates/01_基本設定作成用データテンプレート.md'
-        )
-        with open(template_path, 'r', encoding='utf-8') as f:
-            template_content = f.read()
+            # テンプレートを読み込み
+            template_path = os.path.join(
+                settings.BASE_DIR,
+                'novel_gen_system_data/04_templates/01_基本設定作成用データテンプレート.md'
+            )
 
-        # テンプレートに選択内容を埋め込む
-        filled_template = template_content.format(
-            theme=self.theme,
-            time_and_place=self.time_and_place,
-            world_setting=self.world_setting,
-            plot_pattern=self.plot_pattern,
-            love_expressions=', '.join(self.love_expressions),
-            emotional_expressions=', '.join(self.emotional_expressions),
-            atmosphere=', '.join(self.atmosphere),
-            sensual_expressions=', '.join(self.sensual_expressions),
-            mental_elements=', '.join(self.mental_elements),
-            social_elements=', '.join(self.social_elements),
-            past_mysteries=', '.join(self.past_mysteries)
-        )
+            # テンプレートファイルが存在するか確認
+            if not os.path.exists(template_path):
+                # テンプレートが見つからない場合は、簡易テンプレートを使用
+                template_content = """# 基本設定作成用データ
 
-        self.formatted_content = filled_template
-        self.save(update_fields=['formatted_content'])
-        return filled_template
+## 主題
+{theme}
+
+## 時代と場所
+{time_and_place}
+
+## 作品世界と舞台設定
+{world_setting}
+
+## プロットパターン
+{plot_pattern}
+
+## 愛情表現
+{love_expressions}
+
+## 感情表現
+{emotional_expressions}
+
+## 雰囲気演出
+{atmosphere}
+
+## 官能表現
+{sensual_expressions}
+
+## 精神的要素
+{mental_elements}
+
+## 社会的要素
+{social_elements}
+
+## 過去の謎
+{past_mysteries}
+"""
+            else:
+                with open(template_path, 'r', encoding='utf-8') as f:
+                    template_content = f.read()
+
+            # テンプレートに選択内容を埋め込む
+            filled_template = template_content.format(
+                theme=self.theme,
+                time_and_place=self.time_and_place,
+                world_setting=self.world_setting,
+                plot_pattern=self.plot_pattern,
+                love_expressions=', '.join(self.love_expressions),
+                emotional_expressions=', '.join(self.emotional_expressions),
+                atmosphere=', '.join(self.atmosphere),
+                sensual_expressions=', '.join(self.sensual_expressions),
+                mental_elements=', '.join(self.mental_elements),
+                social_elements=', '.join(self.social_elements),
+                past_mysteries=', '.join(self.past_mysteries)
+            )
+
+            self.formatted_content = filled_template
+            self.save(update_fields=['formatted_content'])
+            return filled_template
+        except Exception as e:
+            # エラーが発生した場合はJSON形式で返す
+            import json
+            return json.dumps({
+                'theme': self.theme,
+                'time_and_place': self.time_and_place,
+                'world_setting': self.world_setting,
+                'plot_pattern': self.plot_pattern,
+                'love_expressions': self.love_expressions,
+                'emotional_expressions': self.emotional_expressions,
+                'atmosphere': self.atmosphere,
+                'sensual_expressions': self.sensual_expressions,
+                'mental_elements': self.mental_elements,
+                'social_elements': self.social_elements,
+                'past_mysteries': self.past_mysteries
+            }, ensure_ascii=False, indent=2)
 
 
 class BasicSetting(TimeStampedModel):

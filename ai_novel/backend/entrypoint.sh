@@ -4,17 +4,18 @@ if [ "$DATABASE" = "postgres" ]
 then
     echo "Waiting for postgres..."
 
-    while ! nc -z $POSTGRES_HOST $POSTGRES_PORT; do
-      sleep 0.1
+    while ! python -c "import sys, psycopg2; sys.exit(0 if psycopg2.connect(dbname='$POSTGRES_DB', user='$POSTGRES_USER', password='$POSTGRES_PASSWORD', host='$POSTGRES_HOST', port='$POSTGRES_PORT') else 1);" 2>/dev/null; do
+      echo "PostgreSQL is unavailable - sleeping"
+      sleep 1
     done
 
     echo "PostgreSQL started"
 fi
 
-# Djangoマイグレーションを実行
+echo "Running migrations"
 python manage.py migrate
 
-# 静的ファイルを収集
+echo "Collecting static files"
 python manage.py collectstatic --no-input
 
 exec "$@"

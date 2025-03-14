@@ -15,6 +15,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# URLの設定
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # インストール済みアプリケーション
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -98,11 +102,15 @@ USE_I18N = True
 USE_TZ = True
 
 # 静的ファイル設定
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+FORCE_SCRIPT_NAME = ''  # URLの先頭に/appが付かないようにする
 
 # デフォルトプライマリキーフィールド
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# URLの末尾スラッシュを強制する設定（Djangoのデフォルト）
+APPEND_SLASH = True
 
 # REST Framework設定
 REST_FRAMEWORK = {

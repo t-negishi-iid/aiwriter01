@@ -142,7 +142,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="genre-select">
                     <SelectValue placeholder="ジャンルを選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -175,7 +175,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="theme-select">
                     <SelectValue placeholder="テーマを選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -208,7 +208,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="setting-select">
                     <SelectValue placeholder="舞台設定を選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -241,7 +241,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="era-select">
                     <SelectValue placeholder="時代を選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -276,7 +276,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="emotions-select">
                     <SelectValue placeholder="情緒的要素を選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -309,7 +309,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="plot_type-select">
                     <SelectValue placeholder="プロットタイプを選択" />
                   </SelectTrigger>
                 </FormControl>
@@ -342,7 +342,7 @@ export function BasicSettingDataForm({ storyId, onSubmit, initialData }: BasicSe
                 disabled={isSubmitting}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger data-test="mystery-select">
                     <SelectValue placeholder="過去の謎を選択" />
                   </SelectTrigger>
                 </FormControl>

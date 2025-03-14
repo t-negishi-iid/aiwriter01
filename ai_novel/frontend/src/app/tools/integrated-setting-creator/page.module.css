@@ -1,0 +1,514 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh; /* 高さを100vhに固定 */
+  overflow: hidden; /* コンテナ全体のオーバーフローを隠す */
+}
+
+.tabsContainer {
+  display: flex;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e1e8ed;
+  overflow-x: auto;
+  padding: 0 1rem;
+}
+
+.tabButton {
+  padding: 1rem 1.5rem;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+  background-color: #e3f2fd;
+}
+
+.activeTab {
+  border-bottom-color: #3498db;
+  font-weight: bold;
+  color: #3498db;
+}
+
+.contentContainer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 60px); /* タブの高さを引いた残りの高さ */
+}
+
+.selectorPanel {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto; /* 縦方向のスクロールを有効化 */
+  border-right: 1px solid #e1e8ed;
+  height: 100%; /* 高さを100%に設定 */
+  box-sizing: border-box; /* パディングを含めた高さ計算 */
+}
+
+.previewPanel {
+  flex: 1;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* 高さを100%に設定 */
+  box-sizing: border-box; /* パディングを含めた高さ計算 */
+  overflow: hidden; /* プレビューパネル自体はオーバーフローを隠す */
+}
+
+.markdownPreview {
+  flex: 1;
+  background-color: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-y: auto; /* プレビュー内のスクロールを有効化 */
+  font-family: 'Courier New', Courier, monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word; /* 長い単語も折り返す */
+  line-height: 1.6;
+  color: #333;
+}
+
+.markdownPreview div {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word; /* 長い単語も折り返す */
+}
+
+.saveButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  background-color: #2980b9;
+}
+
+.saveButton:disabled {
+  background-color: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.resetButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #f5f5f5;
+  color: #7f8c8d;
+  border: none;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 0.75rem;
+}
+
+.resetButton:hover {
+  background-color: #e0e0e0;
+}
+
+.buttonContainer {
+  display: flex;
+  margin-top: 1rem;
+}
+
+.successMessage {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #d4edda;
+  color: #155724;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.errorMessage {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* オプションカードのスタイル */
+.optionCard {
+  border: 1px solid #e1e8ed;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.optionCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selectedOption {
+  border-color: #3498db;
+  background-color: #e3f2fd;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.optionTitle {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.optionDescription {
+  color: #7f8c8d;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.examplesList {
+  margin-top: 0.5rem;
+  padding-left: 1.5rem;
+}
+
+.exampleItem {
+  margin-bottom: 0.25rem;
+  color: #34495e;
+}
+
+.sectionTitle {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #e1e8ed;
+  padding-bottom: 0.5rem;
+}
+
+.sectionDescription {
+  color: #7f8c8d;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* カテゴリとテーマのグリッドレイアウト用のスタイル */
+.categoryContainer {
+  margin-bottom: 2rem;
+  border: 1px solid #e1e8ed;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.leftAlignedHeader {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #f0f7ff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.leftAlignedHeader:hover {
+  background-color: #e3f2fd;
+}
+
+.categoryTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.expandIcon {
+  font-size: 1rem;
+  color: #3498db;
+  transition: transform 0.2s ease;
+  margin-right: 0.5rem;
+}
+
+.themesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.subcategoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  padding-left: 1.5rem;
+  background-color: #e6f7ff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.leftAlignedSubHeader {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  padding-left: 1.5rem;
+  background-color: #e6f7ff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.leftAlignedSubHeader:hover {
+  background-color: #cce8ff;
+}
+
+.subcategoryHeader:hover {
+  background-color: #cce8ff;
+}
+
+.subcategoryTitle {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.featuresList {
+  margin-bottom: 0.75rem;
+}
+
+.examplesListContainer {
+  margin-bottom: 0.5rem;
+}
+
+.elementsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.elementItem {
+  border: 1px solid #e1e8ed;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.elementItem:hover {
+  background-color: #f8f9fa;
+}
+
+.selectedElement {
+  border-color: #3498db;
+  background-color: #e3f2fd;
+}
+
+.elementText {
+  font-weight: 500;
+  color: #34495e;
+}
+
+.elementDescription {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin-top: 0.25rem;
+}
+
+.selectedElementsList {
+  margin-top: 1rem;
+  background-color: #f0f7ff;
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+}
+
+.selectedElementsTitle {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.selectedElementItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.removeButton {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-right: 0.5rem;
+}
+
+.plotSection {
+  margin-bottom: 15px;
+}
+
+.characterItem {
+  margin: 10px 0;
+}
+
+.episodeStage {
+  margin: 10px 0;
+}
+
+.stageTitle {
+  margin: 5px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.episodeList {
+  padding-left: 20px;
+}
+
+/* モバイル用タブナビゲーション */
+.mobileTabsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e1e8ed;
+  padding: 0.75rem 1rem;
+}
+
+.mobileTabSelect {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #e1e8ed;
+  border-radius: 0.25rem;
+  background-color: white;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  margin-right: 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1em;
+}
+
+.previewToggleButton {
+  padding: 0.5rem 0.75rem;
+  background-color: #e3f2fd;
+  color: #3498db;
+  border: 1px solid #3498db;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.activePreviewButton {
+  background-color: #3498db;
+  color: white;
+}
+
+/* レスポンシブデザイン用のメディアクエリ */
+@media (max-width: 768px) {
+  .contentContainer {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .selectorPanel, .previewPanel {
+    flex: none;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    border-right: none;
+    padding: 1rem;
+  }
+
+  .selectorPanel {
+    border-bottom: 1px solid #e1e8ed;
+  }
+
+  .tabsContainer {
+    overflow-x: auto;
+    padding: 0 0.5rem;
+  }
+
+  .tabButton {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .markdownPreview {
+    max-height: 400px;
+  }
+
+  .buttonContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .saveButton, .resetButton {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .optionCard {
+    padding: 0.75rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.2rem;
+  }
+
+  .sectionDescription {
+    font-size: 0.9rem;
+  }
+}
+
+/* 小さいモバイル画面用 */
+@media (max-width: 480px) {
+  .tabButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.1rem;
+  }
+
+  .markdownPreview {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}

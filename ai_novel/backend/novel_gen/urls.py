@@ -6,6 +6,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from . import views
+from .views.connectivity import is_live
+from .views.is_live_views import StoryIsLiveView
 
 app_name = 'novel_gen'
 
@@ -20,10 +22,17 @@ def api_root(request, format=None):
         'credit-history': reverse('novel_gen:credit-history', request=request, format=format),
         'stories': reverse('novel_gen:story-list', request=request, format=format),
         'options': reverse('novel_gen:options', request=request, format=format),
+        'is_live': reverse('novel_gen:is-live', request=request, format=format),
     })
-
 urlpatterns = [
     # API ルート
+    path('', api_root, name='api-root'),
+# 疎通確認用エンドポイント
+path('is_live/', is_live, name='is-live'),
+path('', api_root, name='api-root'),
+
+# 小説ごとの疎通確認用エンドポイント
+path('stories/<int:story_id>/is_live/', StoryIsLiveView.as_view(), name='story-is-live'),
     path('', api_root, name='api-root'),
 
     # ユーザー関連

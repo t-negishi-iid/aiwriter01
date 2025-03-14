@@ -77,33 +77,39 @@ Dify APIを利用したAI小説執筆支援システムのプロトタイプで�
 ### 起動手順
 
 1. リポジトリをクローン
+
    ```bash
    git clone <repository-url>
    cd ai_novel
    ```
 
 2. 環境変数ファイルの作成
+
    ```bash
    cp .env.example .env
    # .envファイルを編集し、必要な環境変数を設定
    ```
 
 3. Dockerコンテナのビルドと起動
+
    ```bash
    docker-compose up -d
    ```
 
 4. マイグレーションの実行
+
    ```bash
    docker-compose exec backend python manage.py migrate
    ```
 
 5. アクセス
-   - バックエンドAPI: http://localhost:8001/api/
-   - フロントエンド: http://localhost:3000/
-   - 管理画面: http://localhost:8001/admin/
+   - バックエンドAPI: <http://localhost:8001/api/>
+   - フロントエンド: <http://localhost:3000/>
+   - 管理画面: <http://localhost:8001/admin/>
 
 ## APIエンドポイント
+
+> **開発者向け**: 詳細なAPI実装ガイドラインと設計指針については [API ドキュメンテーションインデックス](docs/api_documentation.md) を参照してください。このインデックスには、API設計パターン、テスト方法、ルーティング最適化などの情報が含まれています。
 
 ### 認証関連
 

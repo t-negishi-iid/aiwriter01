@@ -46,6 +46,105 @@ class BasicSettingCreateView(views.APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    def _parse_basic_setting_content(self, content: str) -> dict:
+        """
+        Dify APIから返された基本設定コンテンツをパースする
+
+        Args:
+            content: APIレスポンスのMarkdownコンテンツ
+
+        Returns:
+            dict: パースされた各セクションのデータ
+        """
+        try:
+            # 初期化
+            result = {
+                'story_setting': '',
+                'characters': '',
+                'plot_overview': '',
+                'act1_overview': '',
+                'act2_overview': '',
+                'act3_overview': '',
+            }
+
+            # 文字列を行に分割
+            lines = content.split('\n')
+
+            # セクションの開始と終了位置を特定
+            current_section = None
+            sections = {}
+            section_start = 0
+
+            for i, line in enumerate(lines):
+                # 主要セクションを検出
+                if line.startswith('## 作品世界と舞台設定') or line.startswith('## 時代と場所'):
+                    if current_section:
+                        sections[current_section] = (section_start, i)
+                    current_section = 'story_setting'
+                    section_start = i
+                elif line.startswith('## 主な登場人物'):
+                    if current_section:
+                        sections[current_section] = (section_start, i)
+                    current_section = 'characters'
+                    section_start = i
+                elif line.startswith('## あらすじ'):
+                    if current_section:
+                        sections[current_section] = (section_start, i)
+                    current_section = 'plot_overview'
+                    section_start = i
+                elif line.startswith('### 第1幕'):
+                    if current_section != 'act1_overview':
+                        if current_section:
+                            sections[current_section] = (section_start, i)
+                        current_section = 'act1_overview'
+                        section_start = i
+                elif line.startswith('### 第2幕'):
+                    if current_section != 'act2_overview':
+                        if current_section:
+                            sections[current_section] = (section_start, i)
+                        current_section = 'act2_overview'
+                        section_start = i
+                elif line.startswith('### 第3幕'):
+                    if current_section != 'act3_overview':
+                        if current_section:
+                            sections[current_section] = (section_start, i)
+                        current_section = 'act3_overview'
+                        section_start = i
+
+            # 最後のセクションを追加
+            if current_section:
+                sections[current_section] = (section_start, len(lines))
+
+            # 各セクションの内容を抽出
+            for section, (start, end) in sections.items():
+                if section in result:
+                    result[section] = '\n'.join(lines[start:end])
+
+            # あらすじ全体が見つからない場合は、各幕の情報を総合的にあらすじとして使用
+            if not result['plot_overview'] and (result['act1_overview'] or result['act2_overview'] or result['act3_overview']):
+                combined_acts = []
+                if result['act1_overview']:
+                    combined_acts.append(result['act1_overview'])
+                if result['act2_overview']:
+                    combined_acts.append(result['act2_overview'])
+                if result['act3_overview']:
+                    combined_acts.append(result['act3_overview'])
+                result['plot_overview'] = '\n\n'.join(combined_acts)
+
+            return result
+        except Exception as e:
+            logger.error(f"Error parsing basic setting content: {str(e)}")
+            write_to_debug_log(f"Error parsing basic setting content: {str(e)}")
+            # エラー時はコンテンツ全体を各フィールドに設定
+            return {
+                'story_setting': content,
+                'characters': content,
+                'plot_overview': content,
+                'act1_overview': content,
+                'act2_overview': content,
+                'act3_overview': content,
+            }
+
     def get(self, request, *args, **kwargs):
         """基本設定を取得"""
         print("=== BasicSettingCreateView.get called ===")
@@ -216,18 +315,23 @@ class BasicSettingCreateView(views.APIView):
                 logger.debug(f"API content received: {content[:100]}...")
                 write_to_debug_log(f"API content received: {content[:100]}...")
 
-                # パースして保存（実際の実装では内容を解析して分割する）
-                # この例では単純化のため、全文を各フィールドに入れています
+                # コンテンツをパースして各セクションに分割
+                logger.debug("Parsing basic setting content")
+                write_to_debug_log("Parsing basic setting content")
+                parsed_content = self._parse_basic_setting_content(content)
+
+                # パースした内容を保存
                 logger.debug("Creating basic setting")
                 write_to_debug_log("Creating basic setting")
                 basic_setting = BasicSetting.objects.create(
                     ai_story=story,
-                    story_setting=content,
-                    characters=content,
-                    plot_overview=content,
-                    act1_overview=content,
-                    act2_overview=content,
-                    act3_overview=content,
+                    setting_data=basic_setting_data,
+                    story_setting=parsed_content.get('story_setting', ''),
+                    characters=parsed_content.get('characters', ''),
+                    plot_overview=parsed_content.get('plot_overview', ''),
+                    act1_overview=parsed_content.get('act1_overview', ''),
+                    act2_overview=parsed_content.get('act2_overview', ''),
+                    act3_overview=parsed_content.get('act3_overview', ''),
                     raw_content=content
                 )
                 logger.debug(f"Basic setting created: {basic_setting.id}")

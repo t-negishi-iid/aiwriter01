@@ -93,6 +93,22 @@ class OptionsView(views.APIView):
                 {'id': 'sorrow', 'name': '悲哀'},
             ],
         }
+
+        # シリアライザの期待する形式に合わせてキーを変換
+        response_data = {
+            'themes': options['themes'],
+            'time_and_places': options['settings'],  # settingsをtime_and_placesに変換
+            'world_settings': options['settings'],  # settingsをworld_settingsにも使用
+            'plot_patterns': options['themes'],  # テーマをプロットパターンにも使用
+            'love_expressions': options['emotions'],  # 感情表現を愛情表現にも使用
+            'emotional_expressions': options['emotions'],
+            'atmosphere': options['emotions'],  # 感情表現を雰囲気演出にも使用
+            'sensual_expressions': options['emotions'],
+            'mental_elements': options['emotions'],
+            'social_elements': options['themes'],
+            'past_mysteries': options['themes'],
+        }
+        return Response(response_data)
         return Response(options)
 
 
@@ -118,8 +134,16 @@ class PreviewBasicSettingDataView(views.APIView):
         # この例では単純化のため、入力をそのまま返しています
         preview = {
             'theme': serializer.validated_data.get('theme', ''),
-            'time_and_place': f"{serializer.validated_data.get('era', '')} {serializer.validated_data.get('setting', '')}",
-            'emotional_expressions': serializer.validated_data.get('emotions', []),
+            'time_and_place': serializer.validated_data.get('time_and_place', ''),
+            'world_setting': serializer.validated_data.get('world_setting', ''),
+            'plot_pattern': serializer.validated_data.get('plot_pattern', ''),
+            'emotional_expressions': serializer.validated_data.get('emotional_expressions', []),
+            'love_expressions': serializer.validated_data.get('love_expressions', []),
+            'atmosphere': serializer.validated_data.get('atmosphere', []),
+            'sensual_expressions': serializer.validated_data.get('sensual_expressions', []),
+            'mental_elements': serializer.validated_data.get('mental_elements', []),
+            'social_elements': serializer.validated_data.get('social_elements', []),
+            'past_mysteries': serializer.validated_data.get('past_mysteries', []),
             'raw_content': json.dumps(serializer.validated_data)
         }
 
@@ -165,16 +189,20 @@ class BasicSettingDataCreateView(views.APIView):
             json_content = serializer.validated_data
             logger.debug(f"JSON content: {json.dumps(json_content, ensure_ascii=False, indent=2)}")
 
-            # 感情表現の処理
-            emotions = json_content.get('emotions', [])
-            logger.debug(f"Emotions: {emotions}")
-
-            # 基本設定作成用データの保存
+            # スネークケースのフィールド名を使用して直接マッピング
             basic_setting_data = BasicSettingData.objects.create(
                 ai_story=story,
                 theme=json_content.get('theme', ''),
-                time_and_place=f"{json_content.get('era', '')} {json_content.get('setting', '')}",
-                emotional_expressions=emotions,
+                time_and_place=json_content.get('time_and_place', ''),
+                world_setting=json_content.get('world_setting', ''),
+                plot_pattern=json_content.get('plot_pattern', ''),
+                emotional_expressions=json_content.get('emotional_expressions', []),
+                love_expressions=json_content.get('love_expressions', []),
+                atmosphere=json_content.get('atmosphere', []),
+                sensual_expressions=json_content.get('sensual_expressions', []),
+                mental_elements=json_content.get('mental_elements', []),
+                social_elements=json_content.get('social_elements', []),
+                past_mysteries=json_content.get('past_mysteries', []),
                 raw_content=json_content
             )
             logger.debug(f"Basic setting data created: {basic_setting_data.id}")

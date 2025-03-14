@@ -112,7 +112,7 @@ class BasicSettingDataSerializer(serializers.ModelSerializer):
         fields = ('id', 'ai_story', 'theme', 'time_and_place', 'world_setting',
                  'plot_pattern', 'love_expressions', 'emotional_expressions',
                  'atmosphere', 'sensual_expressions', 'mental_elements',
-                 'social_elements', 'past_mysteries', 'json_content',
+                 'social_elements', 'past_mysteries', 'raw_content',
                  'formatted_content', 'created_at', 'updated_at')
         read_only_fields = ('id', 'ai_story', 'created_at', 'updated_at')
 
@@ -242,14 +242,14 @@ class APIRequestLogSerializer(serializers.ModelSerializer):
 class BasicSettingDataRequestSerializer(serializers.Serializer):
     """基本設定作成用データリクエストシリアライザ"""
     theme = serializers.CharField(required=True)
-    timeAndPlace = serializers.CharField(required=True)
-    worldSetting = serializers.CharField(required=True)
-    plotPattern = serializers.CharField(required=True)
-    loveExpressions = serializers.ListField(
+    time_and_place = serializers.CharField(required=True)
+    world_setting = serializers.CharField(required=True)
+    plot_pattern = serializers.CharField(required=True)
+    love_expressions = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
-    emotionalExpressions = serializers.ListField(
+    emotional_expressions = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
@@ -257,22 +257,47 @@ class BasicSettingDataRequestSerializer(serializers.Serializer):
         child=serializers.CharField(),
         required=False
     )
-    sensualExpressions = serializers.ListField(
+    sensual_expressions = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
-    mentalElements = serializers.ListField(
+    mental_elements = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
-    socialElements = serializers.ListField(
+    social_elements = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
-    pastMysteries = serializers.ListField(
+    past_mysteries = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
+
+    # キャメルケース互換のためのフィールドエイリアス（後方互換性のため）
+    def to_internal_value(self, data):
+        # キャメルケースからスネークケースへの変換マッピング
+        camel_to_snake = {
+            'timeAndPlace': 'time_and_place',
+            'worldSetting': 'world_setting',
+            'plotPattern': 'plot_pattern',
+            'loveExpressions': 'love_expressions',
+            'emotionalExpressions': 'emotional_expressions',
+            'sensualExpressions': 'sensual_expressions',
+            'mentalElements': 'mental_elements',
+            'socialElements': 'social_elements',
+            'pastMysteries': 'past_mysteries'
+        }
+
+        # リクエストデータのコピーを作成
+        converted_data = data.copy()
+
+        # キャメルケースのキーが存在する場合、対応するスネークケースのキーに値をコピー
+        for camel_key, snake_key in camel_to_snake.items():
+            if camel_key in data and snake_key not in data:
+                converted_data[snake_key] = data[camel_key]
+
+        return super().to_internal_value(converted_data)
 
 
 class BasicSettingRequestSerializer(serializers.Serializer):
@@ -316,16 +341,16 @@ class TitleRequestSerializer(serializers.Serializer):
 class OptionsResponseSerializer(serializers.Serializer):
     """選択肢レスポンスシリアライザ"""
     themes = serializers.ListField(child=serializers.CharField())
-    timeAndPlaces = serializers.ListField(child=serializers.CharField())
-    worldSettings = serializers.ListField(child=serializers.CharField())
-    plotPatterns = serializers.ListField(child=serializers.CharField())
-    loveExpressions = serializers.ListField(child=serializers.CharField())
-    emotionalExpressions = serializers.ListField(child=serializers.CharField())
+    time_and_places = serializers.ListField(child=serializers.CharField())
+    world_settings = serializers.ListField(child=serializers.CharField())
+    plot_patterns = serializers.ListField(child=serializers.CharField())
+    love_expressions = serializers.ListField(child=serializers.CharField())
+    emotional_expressions = serializers.ListField(child=serializers.CharField())
     atmosphere = serializers.ListField(child=serializers.CharField())
-    sensualExpressions = serializers.ListField(child=serializers.CharField())
-    mentalElements = serializers.ListField(child=serializers.CharField())
-    socialElements = serializers.ListField(child=serializers.CharField())
-    pastMysteries = serializers.ListField(child=serializers.CharField())
+    sensual_expressions = serializers.ListField(child=serializers.CharField())
+    mental_elements = serializers.ListField(child=serializers.CharField())
+    social_elements = serializers.ListField(child=serializers.CharField())
+    past_mysteries = serializers.ListField(child=serializers.CharField())
 
 
 class BasicSettingDataPreviewSerializer(serializers.Serializer):

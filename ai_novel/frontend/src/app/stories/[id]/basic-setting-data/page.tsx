@@ -24,7 +24,7 @@ export default function BasicSettingDataPage() {
         title: "基本設定データを作成しました",
         description: "続いて基本設定を生成しましょう",
       })
-      router.push(`/stories/${storyId}/basic-setting`)
+      router.push(`/stories?id=${storyId}&tab=basic-setting`)
     } catch (error) {
       console.error("基本設定データの作成に失敗しました:", error)
       toast({
@@ -40,7 +40,7 @@ export default function BasicSettingDataPage() {
     <div className="container max-w-4xl py-10 form-container">
       <div className="mb-8">
         <Link
-          href={`/stories/${storyId}`}
+          href={`/stories?id=${storyId}`}
           className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />

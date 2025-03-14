@@ -14,8 +14,11 @@ urlpatterns = [
     # API: AI小説執筆支援
     path('api/', include('novel_gen.urls')),
 
+    # /app/api/ へのアクセスにも対応
+    path('app/api/', include('novel_gen.urls')),
+
     # API ドキュメント
-    path('api/docs/', include_docs_urls(title='AI Novel Writing API')),
+    # path('api/docs/', include_docs_urls(title='AI Novel Writing API')), # coreapi不足のためコメントアウト
 ]
 
 # デバッグモードの場合、静的ファイルの提供

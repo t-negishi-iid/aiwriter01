@@ -10,6 +10,12 @@ services:
       - "5432:5432"
     networks:
       - community_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # コミュニティサイト用Redisサーバー
   community_redis:
@@ -20,6 +26,12 @@ services:
       - "6379:6379"
     networks:
       - community_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # メール送信テスト用サーバー
   community_mailhog:
@@ -29,6 +41,7 @@ services:
       - "8025:8025" # Web UI
     networks:
       - community_network
+    restart: unless-stopped
 
   # バックエンドサーバー（コミュニティ）
   backend:
@@ -38,9 +51,12 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - community_db
-      - community_redis
-      - community_mailhog
+      community_db:
+        condition: service_healthy
+      community_redis:
+        condition: service_healthy
+      community_mailhog:
+        condition: service_started
     command: >
       sh -c "chmod +x ./entrypoint.sh &&
             ./entrypoint.sh &&
@@ -49,6 +65,13 @@ services:
       - ./backend/.env
     networks:
       - community_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health-check/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # AI小説執筆支援システム用データベース
   ai_novel_db:
@@ -61,6 +84,12 @@ services:
       - "5433:5432" # コミュニティDBと重複しないようにポート変更
     networks:
       - ai_novel_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # AI小説執筆支援システム用Redisサーバー
   ai_novel_redis:
@@ -71,6 +100,12 @@ services:
       - "6380:6379" # コミュニティRedisと重複しないようにポート変更
     networks:
       - ai_novel_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # AI小説執筆支援システム：バックエンド
   ai_novel_backend:
@@ -80,8 +115,10 @@ services:
     ports:
       - "8001:8000" # コミュニティバックエンドと重複しないようにポート変更
     depends_on:
-      - ai_novel_db
-      - ai_novel_redis
+      ai_novel_db:
+        condition: service_healthy
+      ai_novel_redis:
+        condition: service_healthy
     command: >
       sh -c "chmod +x ./entrypoint.sh &&
             ./entrypoint.sh &&
@@ -90,6 +127,13 @@ services:
       - ./ai_novel/backend/.env
     networks:
       - ai_novel_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/health-check/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # AI小説執筆支援システム：フロントエンド
   ai_novel_frontend:
@@ -101,11 +145,22 @@ services:
     ports:
       - "3001:3000" # Next.jsのデフォルトポート
     depends_on:
-      - ai_novel_backend
+      ai_novel_backend:
+        condition: service_healthy
     environment:
       - NODE_ENV=development
+      - BACKEND_HOST=ai_novel_backend
+      - BACKEND_PORT=8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8001
     networks:
       - ai_novel_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   community_network:

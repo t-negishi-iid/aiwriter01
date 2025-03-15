@@ -29,8 +29,8 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
   const [categories, setCategories] = useState<CategoryWithThemes[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
-  const [expandedSubcategories, setExpandedSubcategories] = useState<{[key: string]: boolean}>({});
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
+  const [expandedSubcategories, setExpandedSubcategories] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchThemes = async () => {
@@ -41,14 +41,14 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
         }
         const data = await response.json();
         setCategories(data);
-        
+
         // 初期状態では選択されているカテゴリのみを展開
-        const initialExpandedState: {[key: string]: boolean} = {};
-        const initialSubcategoriesState: {[key: string]: boolean} = {};
-        
+        const initialExpandedState: { [key: string]: boolean } = {};
+        const initialSubcategoriesState: { [key: string]: boolean } = {};
+
         data.forEach((category: CategoryWithThemes) => {
           initialExpandedState[category.title] = selectedData.theme?.category === category.title;
-          
+
           // サブカテゴリの初期状態を設定
           if (category.subcategories) {
             category.subcategories.forEach((subcategory: Subcategory) => {
@@ -57,10 +57,10 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
             });
           }
         });
-        
+
         setExpandedCategories(initialExpandedState);
         setExpandedSubcategories(initialSubcategoriesState);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('テーマデータ取得エラー:', error);
@@ -117,12 +117,12 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
       <p className={styles.sectionDescription}>
         物語のテーマを選択してください。テーマは物語の根底にある中心的なメッセージや概念です。
       </p>
-      
+
       <div>
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className={styles.categoryContainer}>
-            <div 
-              className={styles.leftAlignedHeader} 
+            <div
+              className={styles.leftAlignedHeader}
               onClick={() => toggleCategory(category.title)}
             >
               <span className={styles.expandIcon}>
@@ -130,7 +130,7 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
               </span>
               <h3 className={styles.categoryTitle}>{category.title}</h3>
             </div>
-            
+
             {expandedCategories[category.title] && (
               <div>
                 {/* サブカテゴリ表示 */}
@@ -138,7 +138,7 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                   <div>
                     {category.subcategories.map((subcategory, subcategoryIndex) => (
                       <div key={subcategoryIndex} className={styles.categoryContainer}>
-                        <div 
+                        <div
                           className={styles.leftAlignedSubHeader}
                           onClick={() => toggleSubcategory(category.title, subcategory.title)}
                         >
@@ -147,15 +147,14 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                           </span>
                           <h4 className={styles.subcategoryTitle}>{subcategory.title}</h4>
                         </div>
-                        
+
                         {isSubcategoryExpanded(category.title, subcategory.title) && (
                           <div className={styles.themesGrid}>
                             {subcategory.themes.map((theme, themeIndex) => (
                               <div
                                 key={themeIndex}
-                                className={`${styles.optionCard} ${
-                                  selectedData.theme?.title === theme.title ? styles.selectedOption : ''
-                                }`}
+                                className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
+                                  }`}
                                 onClick={() => handleSelectTheme(category.title, theme, subcategory.title)}
                               >
                                 <h3 className={styles.optionTitle}>{theme.title}</h3>
@@ -180,16 +179,15 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                     ))}
                   </div>
                 )}
-                
+
                 {/* 直接のテーマ表示 */}
                 {category.themes.length > 0 && (
                   <div className={styles.themesGrid}>
                     {category.themes.map((theme, themeIndex) => (
                       <div
                         key={themeIndex}
-                        className={`${styles.optionCard} ${
-                          selectedData.theme?.title === theme.title ? styles.selectedOption : ''
-                        }`}
+                        className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
+                          }`}
                         onClick={() => handleSelectTheme(category.title, theme)}
                       >
                         <h3 className={styles.optionTitle}>{theme.title}</h3>

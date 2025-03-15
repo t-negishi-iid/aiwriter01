@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import styles from './page.module.css';
 import ThemeSelector from './components/ThemeSelector';
 import WorldSettingSelector from './components/WorldSettingSelector';
@@ -24,6 +25,29 @@ const TABS = [
   { id: 'plot', label: 'プロットパターン' },
 ];
 
+// カスタムナビゲーションコンポーネント
+function CustomNavigation({ storyId }: { storyId: string | null }) {
+  return (
+    <header className="sticky top-0 z-40 w-full border-b bg-background">
+      <div className="container flex h-16 items-center py-4">
+        <nav className="flex items-center">
+          {storyId && (
+            <Link
+              href={`/stories?id=${storyId}`}
+              className="text-sm font-medium transition-colors hover:text-primary flex items-center"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              小説：基本設定に戻る
+            </Link>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
 export default function IntegratedSettingCreator() {
   const [activeTab, setActiveTab] = useState('theme');
   const [selectedData, setSelectedData] = useState<any>({});
@@ -41,7 +65,11 @@ export default function IntegratedSettingCreator() {
 
   // 選択データをローカルストレージから読み込む
   useEffect(() => {
-    const savedData = localStorage.getItem('integratedSettingData');
+    const storyId = searchParams.get('storyId');
+    if (!storyId) return;
+
+    const storageKey = `integratedSettingData_${storyId}`;
+    const savedData = localStorage.getItem(storageKey);
     if (savedData) {
       try {
         setSelectedData(JSON.parse(savedData));
@@ -60,12 +88,12 @@ export default function IntegratedSettingCreator() {
       try {
         setIsLoading(true);
         console.log(`[TRACE] 統合設定データ取得開始: storyId=${storyId} - ${new Date().toISOString()}`);
-        
+
         // 統合設定データを取得
         const response = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
         console.log(`[TRACE] 統合設定データ取得完了 - ${new Date().toISOString()}`);
         console.log(`[TRACE] レスポンスデータ:`, JSON.stringify(response).substring(0, 200) + '...');
-        
+
         if (response.success) {
           // データが存在する場合は設定
           if (response.data && response.data.basic_setting_data) {
@@ -111,45 +139,45 @@ export default function IntegratedSettingCreator() {
   const parseMarkdownData = (markdown: string) => {
     // 既存のデータ構造をコピー
     const parsedData = { ...selectedData };
-    
+
     try {
       console.log('Markdownデータを解析します:', markdown.substring(0, 100) + '...');
-      
+
       // 各セクションを抽出
       const sections = markdown.split('## ').filter(Boolean);
-      
+
       for (const section of sections) {
         const lines = section.split('\n').filter(Boolean);
         const sectionTitle = lines[0].trim();
-        
+
         // テーマセクション
         if (sectionTitle.includes('テーマ')) {
           if (!parsedData.theme) parsedData.theme = {};
           parsedData.theme.selectedTheme = lines.length > 1 ? lines[1].trim() : '';
         }
-        
+
         // 時代と場所
         else if (sectionTitle.includes('時代と場所')) {
           if (!parsedData.timePlace) parsedData.timePlace = {};
           parsedData.timePlace.selectedTimePlace = lines.length > 1 ? lines[1].trim() : '';
         }
-        
+
         // 世界観
         else if (sectionTitle.includes('世界観')) {
           if (!parsedData.worldSetting) parsedData.worldSetting = {};
           parsedData.worldSetting.selectedWorldSetting = lines.length > 1 ? lines[1].trim() : '';
         }
-        
+
         // プロットパターン
         else if (sectionTitle.includes('プロットパターン')) {
           if (!parsedData.plotPattern) parsedData.plotPattern = {};
           parsedData.plotPattern.title = lines.length > 1 ? lines[1].trim() : '';
         }
-        
+
         // 感情要素
         else if (sectionTitle.includes('感情要素')) {
           if (!parsedData.emotionalElements) parsedData.emotionalElements = { selectedElements: [] };
-          
+
           const elements = lines.slice(1).filter(line => line.startsWith('- '));
           parsedData.emotionalElements.selectedElements = elements.map(element => {
             const parts = element.replace('- ', '').split(': ');
@@ -160,18 +188,18 @@ export default function IntegratedSettingCreator() {
             };
           });
         }
-        
+
         // 過去の謎
         else if (sectionTitle.includes('過去の謎')) {
           if (!parsedData.pastMystery) parsedData.pastMystery = { events: [] };
-          
+
           const events = lines.slice(1).filter(line => /^\d+\./.test(line));
-          parsedData.pastMystery.events = events.map(event => 
+          parsedData.pastMystery.events = events.map(event =>
             event.replace(/^\d+\.\s*/, '').trim()
           );
         }
       }
-      
+
       console.log('解析完了:', Object.keys(parsedData));
       return parsedData;
     } catch (error) {
@@ -183,7 +211,11 @@ export default function IntegratedSettingCreator() {
   // 選択データが変更されたらローカルストレージに保存
   useEffect(() => {
     if (Object.keys(selectedData).length > 0) {
-      localStorage.setItem('integratedSettingData', JSON.stringify(selectedData));
+      const storyId = searchParams.get('storyId');
+      if (storyId) {
+        const storageKey = `integratedSettingData_${storyId}`;
+        localStorage.setItem(storageKey, JSON.stringify(selectedData));
+      }
       generateMarkdown();
     }
   }, [selectedData]);
@@ -243,7 +275,7 @@ export default function IntegratedSettingCreator() {
     if (selectedData.worldSetting) {
       markdown += '## 世界観\n';
       markdown += `${selectedData.worldSetting.title}\n\n`;
-      
+
       if (selectedData.worldSetting.worldView && selectedData.worldSetting.worldView.length > 0) {
         markdown += '### 基本的な世界観\n';
         selectedData.worldSetting.worldView.forEach((item: string) => {
@@ -273,7 +305,7 @@ export default function IntegratedSettingCreator() {
     if (selectedData.writingStyle) {
       markdown += '## 参考とする作風\n';
       markdown += `### ${selectedData.writingStyle.author}\n`;
-      
+
       if (selectedData.writingStyle.structure) {
         markdown += '#### 文体と構造的特徴\n';
         markdown += `${selectedData.writingStyle.structure}\n\n`;
@@ -319,7 +351,7 @@ export default function IntegratedSettingCreator() {
     // 過去の謎
     if (selectedData.pastMystery && selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
       markdown += '## 過去の謎\n';
-      
+
       selectedData.pastMystery.events.forEach((event: string, index: number) => {
         markdown += `${index + 1}. ${event}\n`;
       });
@@ -330,15 +362,15 @@ export default function IntegratedSettingCreator() {
     if (selectedData.plotPattern) {
       markdown += '## プロットパターン\n';
       markdown += `${selectedData.plotPattern.title}\n\n`;
-      
+
       if (selectedData.plotPattern.description) {
         markdown += `${selectedData.plotPattern.description}\n\n`;
       }
-      
+
       if (selectedData.plotPattern.sections && selectedData.plotPattern.sections.length > 0) {
         selectedData.plotPattern.sections.forEach((section: any) => {
           markdown += `### ${section.title}\n\n`;
-          
+
           // セクションの内容を追加
           if (section.content && section.content.length > 0) {
             section.content.forEach((contentLine: string) => {
@@ -346,12 +378,12 @@ export default function IntegratedSettingCreator() {
             });
             markdown += '\n';
           }
-          
+
           // サブセクションを追加
           if (section.subsections && section.subsections.length > 0) {
             section.subsections.forEach((subsection: any) => {
               markdown += `#### ${subsection.title}\n\n`;
-              
+
               if (subsection.content && subsection.content.length > 0) {
                 subsection.content.forEach((contentLine: string) => {
                   markdown += `${contentLine}\n`;
@@ -393,32 +425,34 @@ export default function IntegratedSettingCreator() {
       // 標準DRFページネーション形式に対応したレスポンス処理
       if (!response || response.success === false) {
         // エラーメッセージの取得方法を改善
-        const errorMessage = response?.message || 
-                            (response?.errors ? Object.values(response.errors).flat().join(', ') : '保存に失敗しました');
+        const errorMessage = response?.message ||
+          (response?.errors ? Object.values(response.errors).flat().join(', ') : '保存に失敗しました');
         throw new Error(errorMessage);
       }
 
       // データが results 配列に含まれている場合の処理
       const responseData = response.data || (response.results && response.results.length > 0 ? response.results[0] : null);
-      
+
       if (!responseData) {
         throw new Error('レスポンスデータが見つかりません');
       }
 
       setSaveSuccess(true);
       toast({
-        title: "基本設定データを保存しました",
-        description: "続いて基本設定を生成しましょう",
+        title: "基本設定を保存しました",
+        description: "小説画面に戻ります",
       });
 
-      // 保存成功後、基本設定ページに遷移
-      router.push(`/stories?id=${storyId}&tab=basic-setting`);
+      // 保存成功後に小説画面に戻る
+      setTimeout(() => {
+        router.push(`/stories?id=${storyId}`);
+      }, 1500); // トーストメッセージを表示するために少し遅延させる
     } catch (error) {
       console.error('保存エラー:', error);
       setSaveError(`保存中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
       toast({
         title: "エラーが発生しました",
-        description: "基本設定データの保存に失敗しました。もう一度お試しください。",
+        description: "基本設定の保存に失敗しました。もう一度お試しください。",
         variant: "destructive",
       });
     } finally {
@@ -429,18 +463,27 @@ export default function IntegratedSettingCreator() {
   // データのリセット
   const resetData = () => {
     if (window.confirm('すべての選択をリセットしてもよろしいですか？')) {
-      localStorage.removeItem('integratedSettingData');
+      const storyId = searchParams.get('storyId');
+      if (storyId) {
+        const storageKey = `integratedSettingData_${storyId}`;
+        localStorage.removeItem(storageKey);
+      }
       setSelectedData({});
       setSaveSuccess(false);
     }
   };
 
+  const storyId = searchParams.get('storyId');
+
   return (
     <div className={styles.container}>
+      {/* カスタムナビゲーションを追加 */}
+      <CustomNavigation storyId={storyId} />
+
       {/* タブナビゲーション */}
       {isMobileView ? (
         <div className={styles.mobileTabsContainer}>
-          <select 
+          <select
             className={styles.mobileTabSelect}
             value={activeTab}
             onChange={(e) => setActiveTab(e.target.value)}
@@ -453,8 +496,8 @@ export default function IntegratedSettingCreator() {
               </option>
             ))}
           </select>
-          
-          <button 
+
+          <button
             className={`${styles.previewToggleButton} ${showPreview ? styles.activePreviewButton : ''}`}
             onClick={() => setShowPreview(!showPreview)}
           >

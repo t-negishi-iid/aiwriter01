@@ -23,7 +23,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchTimePlaceSettings = async () => {
@@ -34,14 +34,14 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
         }
         const data = await response.json();
         setCategories(data.results);
-        
+
         // 初期状態では全てのカテゴリーを展開
-        const initialExpandedState: {[key: string]: boolean} = {};
+        const initialExpandedState: { [key: string]: boolean } = {};
         data.results.forEach((category: Category) => {
           initialExpandedState[category.title] = true;
         });
         setExpandedCategories(initialExpandedState);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('時代と場所データ取得エラー:', error);
@@ -64,7 +64,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
       }
     });
   };
-  
+
   const toggleCategory = (categoryTitle: string) => {
     setExpandedCategories(prev => ({
       ...prev,
@@ -86,10 +86,10 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
       <p className={styles.sectionDescription}>
         物語の舞台となる時代と場所を選択してください。これにより物語の雰囲気や制約が大きく変わります。
       </p>
-      
+
       {categories.map((category, categoryIndex) => (
         <div key={categoryIndex} className={styles.categoryContainer}>
-          <div 
+          <div
             className={styles.leftAlignedHeader}
             onClick={() => toggleCategory(category.title)}
           >
@@ -98,19 +98,18 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
             </span>
             <h3 className={styles.categoryTitle}>{category.title}</h3>
           </div>
-          
+
           {expandedCategories[category.title] && (
             <div className={styles.settingsContainer}>
               {category.settings.map((setting, settingIndex) => (
                 <div
                   key={settingIndex}
-                  className={`${styles.optionCard} ${
-                    selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
-                  }`}
+                  className={`${styles.optionCard} ${selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
+                    }`}
                   onClick={() => handleSelectTimePlaceSetting(category.title, setting)}
                 >
                   <h4 className={styles.optionTitle}>{setting.title}</h4>
-                  
+
                   {setting.examples && setting.examples.length > 0 && (
                     <div className={styles.examplesListContainer}>
                       <strong>代表的な作品例:</strong>
@@ -127,7 +126,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
           )}
         </div>
       ))}
-      
+
       {/* 選択された設定のプレビュー */}
       {selectedData.timePlace && (
         <div className={styles.previewContainer}>

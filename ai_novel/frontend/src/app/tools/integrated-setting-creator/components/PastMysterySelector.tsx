@@ -18,7 +18,7 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
   const [pastMysteries, setPastMysteries] = useState<PastMysteryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedMysteries, setExpandedMysteries] = useState<{[key: string]: boolean}>({});
+  const [expandedMysteries, setExpandedMysteries] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchPastMysteries = async () => {
@@ -29,14 +29,14 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
         }
         const data = await response.json();
         setPastMysteries(data.results);
-        
+
         // 初期状態では選択されている謎のみを展開
-        const initialExpandedState: {[key: string]: boolean} = {};
+        const initialExpandedState: { [key: string]: boolean } = {};
         data.results.forEach((mystery: PastMysteryData) => {
           initialExpandedState[mystery.title] = selectedData.pastMystery?.title === mystery.title;
         });
         setExpandedMysteries(initialExpandedState);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('過去の謎データ取得エラー:', error);
@@ -53,14 +53,14 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
       ...selectedData,
       pastMystery
     });
-    
+
     // 選択した謎を展開
     setExpandedMysteries(prev => ({
       ...prev,
       [pastMystery.title]: true
     }));
   };
-  
+
   const toggleMystery = (title: string) => {
     setExpandedMysteries(prev => ({
       ...prev,
@@ -82,11 +82,11 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
       <p className={styles.sectionDescription}>
         物語の背景となる過去の謎を選択してください。これにより物語に深みと謎解き要素が加わります。
       </p>
-      
+
       <div>
         {pastMysteries.map((mystery, index) => (
           <div key={index} className={styles.categoryContainer}>
-            <div 
+            <div
               className={styles.leftAlignedHeader}
               onClick={() => toggleMystery(mystery.title)}
             >
@@ -95,14 +95,14 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
               </span>
               <h3 className={styles.categoryTitle}>「{mystery.title}」</h3>
             </div>
-            
+
             {expandedMysteries[mystery.title] && (
               <div
                 className={`${styles.optionCard} ${selectedData.pastMystery?.title === mystery.title ? styles.selectedOption : ''}`}
                 onClick={() => handleSelectPastMystery(mystery)}
               >
                 <p className={styles.optionDescription}>{mystery.description}</p>
-                
+
                 <div>
                   <strong>過去の出来事:</strong>
                   <ul className={styles.examplesList}>

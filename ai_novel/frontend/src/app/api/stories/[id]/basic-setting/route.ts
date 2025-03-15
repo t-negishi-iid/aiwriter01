@@ -17,7 +17,7 @@ export async function GET(
     
     // バックエンドAPIのURLを構築
     const apiUrl = process.env.BACKEND_API_URL || 'http://localhost:8001/api';
-    const endpoint = `/stories/${storyId}/basic-setting/`;
+    const endpoint = `/stories/${storyId}/latest-basic-setting/`;
     const url = `${apiUrl}${endpoint}`;
     
     console.log(`[TRACE] バックエンドAPIリクエスト: ${url} - ${new Date().toISOString()}`);
@@ -73,7 +73,7 @@ export async function POST(
     // バックエンドの対応するエンドポイントにリクエスト
     const backendHost = process.env.BACKEND_HOST || 'localhost';
     const backendPort = process.env.BACKEND_PORT || '8001';
-    const backendUrl = `http://${backendHost}:${backendPort}/api/stories/${storyId}/basic-setting/`;
+    const backendUrl = `http://${backendHost}:${backendPort}/api/stories/${storyId}/latest-basic-setting/`;
 
     console.log(`BasicSetting API: Forwarding POST request to ${backendUrl}`);
     console.log(`Request body:`, body);

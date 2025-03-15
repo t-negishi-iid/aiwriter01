@@ -38,7 +38,7 @@ export async function GET(
       console.log(`[TRACE] 405エラー、別のエンドポイントを試します - ${new Date().toISOString()}`);
       
       // 基本設定データのエンドポイントを試す
-      endpoint = `/stories/${id}/basic-setting/`;
+      endpoint = `/stories/${id}/latest-basic-setting/`;
       url = `${apiUrl}${endpoint}`;
       
       console.log(`[TRACE] 代替バックエンドAPIリクエスト: ${url} - ${new Date().toISOString()}`);

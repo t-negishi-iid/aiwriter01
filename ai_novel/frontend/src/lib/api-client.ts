@@ -156,6 +156,12 @@ export const characterApi = {
   getCharacter: (storyId: string | number, characterId: string | number) =>
     fetchApi(`/stories/${storyId}/characters/${characterId}/`),
 
+  createCharacter: (storyId: string | number, data: any) =>
+    fetchApi(`/stories/${storyId}/characters/`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   createCharacters: (storyId: string | number) =>
     fetchApi(`/stories/${storyId}/create-characters/`, {
       method: "POST",

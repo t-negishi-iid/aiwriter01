@@ -54,10 +54,24 @@ class BasicSettingDataSerializer(serializers.ModelSerializer):
     """基本設定作成用データシリアライザ"""
     ai_story = AIStorySerializer(read_only=True)
     basic_setting_data = serializers.CharField(required=False, allow_blank=True)
+    
+    # 統合設定クリエーターのデータフィールド
+    theme_data = serializers.JSONField(required=False, allow_null=True)
+    time_place_data = serializers.JSONField(required=False, allow_null=True)
+    world_setting_data = serializers.JSONField(required=False, allow_null=True)
+    style_data = serializers.JSONField(required=False, allow_null=True)
+    emotional_data = serializers.JSONField(required=False, allow_null=True)
+    mystery_data = serializers.JSONField(required=False, allow_null=True)
+    plot_data = serializers.JSONField(required=False, allow_null=True)
+    integrated_data = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = BasicSettingData
-        fields = ('id', 'ai_story', 'basic_setting_data', 'created_at', 'updated_at')
+        fields = ('id', 'ai_story', 'basic_setting_data', 
+                 'theme_data', 'time_place_data', 'world_setting_data', 
+                 'style_data', 'emotional_data', 'mystery_data', 
+                 'plot_data', 'integrated_data', 
+                 'created_at', 'updated_at')
         read_only_fields = ('id', 'ai_story', 'created_at', 'updated_at')
 
 
@@ -67,7 +81,7 @@ class BasicSettingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicSetting
-        fields = ('id', 'ai_story', 'content', 'raw_content', 'created_at', 'updated_at')
+        fields = ('id', 'ai_story', 'story_setting', 'characters', 'plot_overview', 'act1_overview', 'act2_overview', 'act3_overview', 'raw_content', 'is_edited', 'created_at', 'updated_at')
         read_only_fields = ('id', 'ai_story', 'created_at', 'updated_at')
 
 

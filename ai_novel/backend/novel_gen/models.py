@@ -115,6 +115,16 @@ class BasicSettingData(TimeStampedModel):
     """基本設定作成用データ"""
     ai_story = models.ForeignKey(AIStory, on_delete=models.CASCADE, related_name='basic_setting_data')
     basic_setting_data = models.TextField(_('基本設定データ'), blank=True)
+    
+    # 統合設定クリエーターのデータ
+    theme_data = models.JSONField(_('テーマデータ'), blank=True, null=True)
+    time_place_data = models.JSONField(_('時代と場所データ'), blank=True, null=True)
+    world_setting_data = models.JSONField(_('世界観データ'), blank=True, null=True)
+    style_data = models.JSONField(_('文体データ'), blank=True, null=True)
+    emotional_data = models.JSONField(_('情緒的要素データ'), blank=True, null=True)
+    mystery_data = models.JSONField(_('謎データ'), blank=True, null=True)
+    plot_data = models.JSONField(_('プロットデータ'), blank=True, null=True)
+    integrated_data = models.JSONField(_('統合データ'), blank=True, null=True)
 
     class Meta:
         verbose_name = _('基本設定作成用データ')
@@ -122,6 +132,10 @@ class BasicSettingData(TimeStampedModel):
 
     def __str__(self):
         return f"{self.ai_story.title or 'タイトルなし'}の基本設定データ"
+
+    def get_formatted_content(self):
+        """基本設定データをフォーマットして返す"""
+        return self.basic_setting_data
 
 
 class BasicSetting(TimeStampedModel):

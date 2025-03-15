@@ -24,7 +24,7 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<{[key: string]: boolean}>({});
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchWorldSettings = async () => {
@@ -35,16 +35,16 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
         }
         const data = await response.json();
         setCategories(data);
-        
+
         // 初期状態では選択されているカテゴリのみを展開
-        const initialExpandedState: {[key: string]: boolean} = {};
-        
+        const initialExpandedState: { [key: string]: boolean } = {};
+
         data.forEach((category: Category) => {
           initialExpandedState[category.title] = selectedData.worldSetting?.category === category.title;
         });
-        
+
         setExpandedCategories(initialExpandedState);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('作品世界と舞台設定データ取得エラー:', error);
@@ -87,12 +87,12 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
       <p className={styles.sectionDescription}>
         物語の舞台となる世界観と設定を選択してください。これにより物語の世界観や雰囲気が決まります。
       </p>
-      
+
       <div>
         {categories.map((category, categoryIndex) => (
           <div key={categoryIndex} className={styles.categoryContainer}>
-            <div 
-              className={styles.leftAlignedHeader} 
+            <div
+              className={styles.leftAlignedHeader}
               onClick={() => toggleCategory(category.title)}
             >
               <span className={styles.expandIcon}>
@@ -100,15 +100,14 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
               </span>
               <h3 className={styles.categoryTitle}>{category.title}</h3>
             </div>
-            
+
             {expandedCategories[category.title] && (
               <div className={styles.settingsGrid}>
                 {category.settings.map((setting, settingIndex) => (
                   <div
                     key={settingIndex}
-                    className={`${styles.optionCard} ${
-                      selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
-                    }`}
+                    className={`${styles.optionCard} ${selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
+                      }`}
                     onClick={() => handleSelectWorldSetting(category.title, setting)}
                   >
                     <h3 className={styles.optionTitle}>{setting.title}</h3>

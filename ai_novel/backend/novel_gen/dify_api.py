@@ -16,7 +16,8 @@ class DifyNovelAPI:
     Dify APIとの通信を行うクラス
     """
     # API設定（実際には設定ファイルから読み込む）
-    API_BASE_URL = "https://api.dify.ai/v1/chat-messages"
+    #API_BASE_URL = "https://api.dify.ai/v1/completion-messages"
+    API_BASE_URL = "https://api.dify.ai/v1/workflows/run"
 
     # APIごとの設定
     API_CONFIG = {
@@ -102,6 +103,12 @@ class DifyNovelAPI:
             Dict[str, Any]: レスポンス
         """
         headers = self._get_headers(api_type)
+        api_config = self.API_CONFIG.get(api_type)
+
+        if not api_config:
+            error_message = f"Unsupported API type: {api_type}"
+            logger.error(error_message)
+            return {"error": error_message}
 
         # リクエストデータの準備
         request_data = {
@@ -119,7 +126,7 @@ class DifyNovelAPI:
                     self.API_BASE_URL,
                     headers=headers,
                     json=request_data,
-                    timeout=self.timeout
+                    timeout=self.timeout  # タイムアウト値をインスタンス変数に変更
                 )
 
                 # エラーチェック
@@ -129,7 +136,7 @@ class DifyNovelAPI:
                     return {"error": error_message}
 
                 # レスポンス処理
-                return response.json()
+                return self._process_response(response.json())
 
             except requests.RequestException as e:
                 logger.warning(f"API request attempt {retries + 1} failed: {str(e)}")
@@ -142,6 +149,29 @@ class DifyNovelAPI:
         logger.error(f"All API request attempts failed: {last_error}")
         return {"error": f"API request failed after {self.max_retries} attempts: {last_error}"}
 
+    def _process_response(self, response_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        レスポンスの処理
+
+        Args:
+            response_data: レスポンスデータ
+
+        Returns:
+            Dict[str, Any]: 処理済みレスポンス
+        """
+        try:
+            # ワークフローAPIのレスポンス形式に対応
+            if "data" in response_data and "outputs" in response_data["data"]:
+                result = response_data["data"]["outputs"].get("result", "")
+                return {"result": result}
+
+
+            # その他の形式
+            return response_data
+        except Exception as e:
+            logger.error(f"Failed to process response: {str(e)}")
+            return {"error": f"Failed to process response: {str(e)}"}
+
     def create_basic_setting(
         self,
         basic_setting_data: str,
@@ -152,13 +182,14 @@ class DifyNovelAPI:
         基本設定を生成
 
         Args:
-            basic_setting_data: 基本設定作成用データ
+            basic_setting_data: 基本設定データ
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
 
         Returns:
-            Dict[str, Any]: レスポンス
+            Dict[str, Any]: 生成結果
         """
+        # 入力データの準備
         inputs = {
             "basic_setting_data": basic_setting_data
         }

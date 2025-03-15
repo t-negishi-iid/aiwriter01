@@ -30,7 +30,7 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
   const [plotPatterns, setPlotPatterns] = useState<PlotPattern[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedPatterns, setExpandedPatterns] = useState<{[key: string]: boolean}>({});
+  const [expandedPatterns, setExpandedPatterns] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchPlotPatterns = async () => {
@@ -41,14 +41,14 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
         }
         const data = await response.json();
         setPlotPatterns(data.results);
-        
+
         // 初期状態では選択されているパターンのみを展開
-        const initialExpandedState: {[key: string]: boolean} = {};
+        const initialExpandedState: { [key: string]: boolean } = {};
         data.results.forEach((pattern: PlotPattern) => {
           initialExpandedState[pattern.title] = selectedData.plotPattern?.title === pattern.title;
         });
         setExpandedPatterns(initialExpandedState);
-        
+
         setLoading(false);
       } catch (error) {
         console.error('プロットパターンデータ取得エラー:', error);
@@ -65,14 +65,14 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
       ...selectedData,
       plotPattern
     });
-    
+
     // 選択したパターンを展開
     setExpandedPatterns(prev => ({
       ...prev,
       [plotPattern.title]: true
     }));
   };
-  
+
   const togglePattern = (patternTitle: string) => {
     setExpandedPatterns(prev => ({
       ...prev,
@@ -94,11 +94,11 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
       <p className={styles.sectionDescription}>
         物語の基本的な展開パターンを選択してください。これにより物語の構造と展開が決まります。
       </p>
-      
+
       <div>
         {plotPatterns.map((pattern, index) => (
           <div key={index} className={styles.categoryContainer}>
-            <div 
+            <div
               className={styles.leftAlignedHeader}
               onClick={() => togglePattern(pattern.title)}
             >
@@ -107,7 +107,7 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
               </span>
               <h3 className={styles.categoryTitle}>「{pattern.title}」</h3>
             </div>
-            
+
             {expandedPatterns[pattern.title] && (
               <div
                 className={`${styles.optionCard} ${selectedData.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
@@ -117,11 +117,11 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
                   <strong>概要:</strong>
                   <p>{pattern.overview}</p>
                 </div>
-                
+
                 {pattern.sections.map((section, sectionIndex) => (
                   <div key={sectionIndex} className={styles.plotSection}>
                     <strong>{section.title}:</strong>
-                    
+
                     {section.content.length > 0 && (
                       <div className={styles.sectionContent}>
                         {section.content.map((line, lineIndex) => (
@@ -129,7 +129,7 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
                         ))}
                       </div>
                     )}
-                    
+
                     {section.subsections.length > 0 && (
                       <div className={styles.subsections}>
                         {section.subsections.map((subsection, subsectionIndex) => (

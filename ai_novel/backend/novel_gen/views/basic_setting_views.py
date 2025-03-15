@@ -261,6 +261,19 @@ class BasicSettingCreateView(views.APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            # 既存の基本設定を確認し、存在する場合は削除
+            # 1つの小説には1つの基本設定のみ許可する
+            try:
+                existing_settings = BasicSetting.objects.filter(ai_story=story)
+                if existing_settings.exists():
+                    logger.debug(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
+                    write_to_debug_log(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
+                    existing_settings.delete()
+            except Exception as e:
+                logger.error(f"Error deleting existing basic settings: {str(e)}")
+                write_to_debug_log(f"Error deleting existing basic settings: {str(e)}")
+                # エラーは無視して続行
+
             # クレジットの確認と消費
             success, message = check_and_consume_credit(request.user, 'basic_setting')
             if not success:
@@ -312,7 +325,7 @@ class BasicSettingCreateView(views.APIView):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
 
-                content = response['answer']
+                content = response['result']
                 logger.debug(f"API content received: {content[:100]}...")
                 write_to_debug_log(f"API content received: {content[:100]}...")
 
@@ -400,7 +413,7 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         """
         オブジェクトを取得するメソッド
-        
+
         データが存在しない場合は204 No Contentを返します。
         """
         try:
@@ -425,23 +438,23 @@ class LatestBasicSettingView(views.APIView):
         """最新の基本設定を取得"""
         story_id = self.kwargs.get('story_id')
         logger.debug(f"LatestBasicSettingView.get called for story_id: {story_id}")
-        
+
         try:
             # ストーリーの存在確認
             story = get_object_or_404(AIStory, id=story_id, user=request.user)
-            
+
             # 最新の基本設定を取得
             basic_setting = BasicSetting.objects.filter(
                 ai_story_id=story_id
             ).order_by('-created_at').first()
-            
+
             if not basic_setting:
                 logger.debug(f"No basic setting found for story_id: {story_id}")
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
             serializer = BasicSettingSerializer(basic_setting)
             return Response(serializer.data)
-            
+
         except Exception as e:
             logger.error(f"Error retrieving latest basic setting: {str(e)}")
             return Response(

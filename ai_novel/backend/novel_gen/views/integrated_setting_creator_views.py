@@ -27,41 +27,32 @@ class IntegratedSettingCreatorView(views.APIView):
         """基本設定データを保存"""
         story_id = kwargs.get('story_id')
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
-        
+
         # リクエストデータの処理
         try:
             # リクエストボディをログに記録（デバッグ用）
             logger.debug(f"リクエストボディ: {request.body}")
-            
+
             # JSONデータの取得
             data = request.data
             logger.debug(f"パース後のデータ: {data}")
-            
+
             # basic_setting_dataフィールドの確認
             if 'basic_setting_data' not in data:
                 return Response({
                     'success': False,
-                    'message': '基本設定データが見つかりません',
+                    'message': '基本設定が見つかりません',
                     'errors': {'basic_setting_data': ['このフィールドは必須です']}
                 }, status=status.HTTP_400_BAD_REQUEST)
-            
+
             # 既存のデータを取得または新規作成
             try:
-                # 最新のデータを取得
-                basic_setting_data = BasicSettingData.objects.filter(
-                    ai_story=story
-                ).latest('created_at')
-                
-                # 既存データを更新するためのシリアライザ
-                serializer = IntegratedSettingCreatorSerializer(
-                    basic_setting_data,
-                    data={
-                        'user': request.user.id,
-                        'story': story.id,
-                        'basic_setting_data': data.get('basic_setting_data', '')
-                    }
-                )
-            except BasicSettingData.DoesNotExist:
+                # 既存のデータを全て削除（1つの小説に1つの基本設定データのみを許可）
+                existing_data = BasicSettingData.objects.filter(ai_story=story)
+                if existing_data.exists():
+                    logger.debug(f"既存の基本設定データを削除します: {existing_data.count()}件")
+                    existing_data.delete()
+
                 # 新規作成のためのシリアライザ
                 serializer = IntegratedSettingCreatorSerializer(
                     data={
@@ -70,25 +61,31 @@ class IntegratedSettingCreatorView(views.APIView):
                         'basic_setting_data': data.get('basic_setting_data', '')
                     }
                 )
-            
+            except Exception as e:
+                logger.error(f"既存データの削除中にエラーが発生しました: {str(e)}")
+                return Response({
+                    'success': False,
+                    'message': f'既存データの削除中にエラーが発生しました: {str(e)}',
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             if serializer.is_valid():
                 # データを保存
                 basic_setting_data = serializer.save(user=request.user, story=story)
-                
+
                 # 成功レスポンスを返す
                 return Response({
                     'success': True,
-                    'message': '基本設定データが保存されました',
+                    'message': '基本設定が保存されました',
                     'data': IntegratedSettingCreatorSerializer(basic_setting_data).data
                 }, status=status.HTTP_201_CREATED)
             else:
                 # バリデーションエラーレスポンスを返す
                 return Response({
                     'success': False,
-                    'message': '基本設定データの保存に失敗しました',
+                    'message': '基本設定の保存に失敗しました',
                     'errors': serializer.errors
                 }, status=status.HTTP_400_BAD_REQUEST)
-                
+
         except json.JSONDecodeError:
             # JSONパースエラー
             return Response({
@@ -117,17 +114,19 @@ class IntegratedSettingCreatorDetailView(views.APIView):
         """基本設定データを取得"""
         story_id = kwargs.get('story_id')
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
-        
+
         # 最新の基本設定データを取得
         try:
             basic_setting_data = BasicSettingData.objects.filter(
                 ai_story=story
             ).latest('created_at')
-            
-            # 成功レスポンスを返す
+
+            # 成功レスポンスを返す - シリアライザデータを直接返す
+            # 成功レスポンスを返す - シンプルな形式
+            serialized_data = IntegratedSettingCreatorSerializer(basic_setting_data).data
             return Response({
-                'success': True,
-                'data': IntegratedSettingCreatorSerializer(basic_setting_data).data
+                "results": serialized_data,
+                "status": "success"
             })
         except BasicSettingData.DoesNotExist:
             # データが存在しない場合は204 No Contentを返す

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { storyApi, basicSettingApi, characterApi, plotApi, episodeApi } from "@/lib/api";
+import { storyApi, basicSettingApi, characterApi, plotApi, episodeApi, integratedSettingCreatorApi } from "@/lib/api";
 import { Story, BasicSetting, Character, PlotDetail, Episode, EpisodeContent } from "@/lib/types";
 
 interface StoryContentProps {
@@ -26,6 +26,7 @@ export function StoryContent({ storyId }: StoryContentProps) {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   const [episodeContent, setEpisodeContent] = useState<EpisodeContent | null>(null);
+  const [basicSettingData, setBasicSettingData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,82 +39,109 @@ export function StoryContent({ storyId }: StoryContentProps) {
       // 小説情報の取得
       try {
         const storyData = await storyApi.getStory(storyId);
-        if (storyData.success && storyData.data) {
-          setStory(storyData.data);
+        console.log("小説情報の取得結果:", storyData);
+        if (storyData) {
+          // APIレスポンスの形式に合わせて処理
+          setStory(storyData);
         } else {
-          console.warn("小説情報の取得に失敗:", storyData.message);
+          console.warn("小説情報の取得に失敗:", "データがありません");
         }
       } catch (err) {
         console.error("小説情報取得エラー:", err);
       }
 
-      // 基本設定の取得
+      // 統合設定クリエイターデータ（基本設定）の取得
+      try {
+        const integratedData = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
+        console.log("統合設定クリエイターデータの取得結果:", JSON.stringify(integratedData, null, 2));
+        if (integratedData) {
+          // データ構造を確認して適切に設定
+          if (integratedData && integratedData.results && integratedData.results.basic_setting_data) {
+            setBasicSettingData(integratedData.results.basic_setting_data);
+          }
+        }
+      } catch (err) {
+        console.error("統合設定クリエイターデータ取得エラー:", err);
+        setIntegratedSettingData(null);
+        setBasicSetting(null);
+      }
+
+      // 基本設定の取得は統合設定から行うため、個別のAPIコールは不要
+      /*
       try {
         const basicSettingData = await basicSettingApi.getBasicSetting(storyId);
-        if (basicSettingData.success) {
-          if (basicSettingData.data) {
-            setBasicSetting(basicSettingData.data);
-          } else {
-            // 基本設定が存在しない場合は、nullをセットする
-            console.log("基本設定が存在しません。新規作成が必要です。");
-            setBasicSetting(null);
-          }
+        console.log("基本設定の取得結果:", basicSettingData);
+        if (basicSettingData) {
+          // APIレスポンスの形式に合わせて処理
+          setBasicSetting(basicSettingData);
         } else {
-          console.warn("基本設定の取得に失敗:", basicSettingData.message);
+          console.warn("基本設定の取得に失敗:", "データがありません");
+          setBasicSetting(null);
         }
       } catch (err) {
         console.error("基本設定取得エラー:", err);
+        setBasicSetting(null);
       }
+      */
 
       // キャラクター一覧の取得
       try {
         const charactersData = await characterApi.getCharacters(storyId);
-        if (charactersData.success && charactersData.data) {
-          setCharacters(charactersData.data);
+        console.log("キャラクター一覧の取得結果:", charactersData);
+        if (charactersData) {
+          // APIレスポンスの形式に合わせて処理
+          setCharacters(charactersData);
         } else {
-          console.warn("キャラクター一覧の取得に失敗:", charactersData.message);
+          console.warn("キャラクター一覧の取得に失敗:", "データがありません");
+          setCharacters([]);
         }
       } catch (err) {
         console.error("キャラクター一覧取得エラー:", err);
+        setCharacters([]);
       }
 
       // あらすじの取得
       try {
         const plotData = await plotApi.getPlot(storyId);
-        if (plotData.success && plotData.data) {
+        console.log("あらすじの取得結果:", plotData);
+        if (plotData) {
           // データが配列の場合は最初の要素を取得、そうでなければそのまま使用
-          const plotDetailData = Array.isArray(plotData.data)
-            ? plotData.data[0]
-            : plotData.data;
+          const plotDetailData = Array.isArray(plotData) ? plotData[0] : plotData;
           setPlotDetail(plotDetailData);
         } else {
-          console.warn("あらすじの取得に失敗:", plotData.message);
+          console.warn("あらすじの取得に失敗:", "データがありません");
+          setPlotDetail(null);
         }
       } catch (err) {
         console.error("あらすじ取得エラー:", err);
+        setPlotDetail(null);
       }
 
       // エピソード一覧の取得
       try {
         const episodesData = await episodeApi.getEpisodes(storyId);
-        if (episodesData.success && episodesData.data) {
-          setEpisodes(episodesData.data);
+        console.log("エピソード一覧の取得結果:", episodesData);
+        if (episodesData) {
+          // APIレスポンスの形式に合わせて処理
+          setEpisodes(episodesData);
 
           // 最初のエピソードを選択
-          if (episodesData.data.length > 0) {
-            setCurrentEpisode(episodesData.data[0]);
+          if (episodesData.length > 0) {
+            setCurrentEpisode(episodesData[0]);
             // 最初のエピソードの内容を取得
             try {
-              await fetchEpisodeContent(storyId, episodesData.data[0].id);
+              await fetchEpisodeContent(storyId, episodesData[0].id);
             } catch (err) {
               console.error("エピソード内容取得エラー:", err);
             }
           }
         } else {
-          console.warn("エピソード一覧の取得に失敗:", episodesData.message);
+          console.warn("エピソード一覧の取得に失敗:", "データがありません");
+          setEpisodes([]);
         }
       } catch (err) {
         console.error("エピソード一覧取得エラー:", err);
+        setEpisodes([]);
       }
 
       setIsLoading(false);
@@ -129,8 +157,10 @@ export function StoryContent({ storyId }: StoryContentProps) {
     try {
       // クエリパラメータ形式に合わせて引数を一つだけ渡す
       const response = await episodeApi.getEpisodeContent(episodeId.toString());
-      if (response.success && response.data) {
-        setEpisodeContent(response.data);
+      console.log("エピソード内容の取得結果:", response);
+      if (response) {
+        // APIレスポンスの形式に合わせて処理
+        setEpisodeContent(response);
       } else {
         setEpisodeContent(null);
       }
@@ -187,18 +217,77 @@ export function StoryContent({ storyId }: StoryContentProps) {
       )}
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">概要</TabsTrigger>
+          <TabsTrigger value="basic-data">基本設定</TabsTrigger>
+          <TabsTrigger value="basic-setting">作品設定</TabsTrigger>
           <TabsTrigger value="characters">登場人物</TabsTrigger>
-          <TabsTrigger value="plot">あらすじ</TabsTrigger>
-          <TabsTrigger value="episodes">エピソード</TabsTrigger>
+          <TabsTrigger value="plot">あらすじ詳細</TabsTrigger>
+          <TabsTrigger value="episodes">エピソード詳細</TabsTrigger>
+          <TabsTrigger value="content">小説執筆</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <Card>
             <CardHeader>
-              <CardTitle>小説の概要</CardTitle>
-              <CardDescription>基本設定と小説の概要情報</CardDescription>
+              <CardTitle>概要</CardTitle>
+              <CardDescription>小説の概要情報</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* 概要の内容はここに追加予定 */}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="basic-data">
+          <Card>
+            <CardHeader>
+              <CardTitle>基本設定</CardTitle>
+              <CardDescription>小説の基本的な設定情報</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {basicSettingData ? (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">基本設定データ</h3>
+                    <div className="flex justify-center mt-4">
+                      <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+                        統合クリエイターで編集する
+                      </Button>
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 overflow-y-auto max-h-[500px]">
+                      <div className="whitespace-pre-wrap break-words w-full">
+                        <textarea className="w-full h-auto border-none bg-transparent resize-none outline-none px-5" value={basicSettingData} readOnly style={{ minWidth: '100%', minHeight: '300px', marginTop: '20px', marginBottom: '20px', marginLeft: '20px', marginRight: '20px', padding: '20px' }}></textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-center mt-4">
+                    <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+                      統合クリエイターで編集する
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Book className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">基本設定がまだ作成されていません</h3>
+                  <p className="text-muted-foreground mb-6">
+                    基本設定を作成して、小説の世界観や登場人物を定義しましょう
+                  </p>
+                  <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+                    統合クリエイターで作成する
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="basic-setting">
+          <Card>
+            <CardHeader>
+              <CardTitle>作品設定</CardTitle>
+              <CardDescription>小説の作品設定情報</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {basicSetting ? (
@@ -310,7 +399,7 @@ export function StoryContent({ storyId }: StoryContentProps) {
         <TabsContent value="plot">
           <Card>
             <CardHeader>
-              <CardTitle>あらすじ</CardTitle>
+              <CardTitle>あらすじ詳細</CardTitle>
               <CardDescription>物語の詳細なあらすじ</CardDescription>
             </CardHeader>
             <CardContent>
@@ -363,7 +452,7 @@ export function StoryContent({ storyId }: StoryContentProps) {
         <TabsContent value="episodes">
           <Card>
             <CardHeader>
-              <CardTitle>エピソード</CardTitle>
+              <CardTitle>エピソード詳細</CardTitle>
               <CardDescription>小説のエピソード一覧と内容</CardDescription>
             </CardHeader>
             <CardContent>
@@ -429,6 +518,55 @@ export function StoryContent({ storyId }: StoryContentProps) {
                 <Button variant="outline" asChild className="ml-auto">
                   <Link href={`/stories?id=${storyId}&episodeId=${currentEpisode?.id}&action=edit-episode`}>
                     エピソードを編集する
+                  </Link>
+                </Button>
+              </CardFooter>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="content">
+          <Card>
+            <CardHeader>
+              <CardTitle>小説執筆</CardTitle>
+              <CardDescription>小説本文の執筆と編集</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {episodeContent ? (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">本文</h3>
+                    <div className="whitespace-pre-wrap bg-muted p-4 rounded-md min-h-[300px]">
+                      {episodeContent.content}
+                    </div>
+                  </div>
+                </div>
+              ) : currentEpisode ? (
+                <div className="text-center py-8">
+                  <PenTool className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">本文がまだ作成されていません</h3>
+                  <p className="text-muted-foreground mb-6">
+                    このエピソードの本文を執筆しましょう
+                  </p>
+                  <Button onClick={() => router.push(`/stories/${storyId}/episodes/${currentEpisode.id}/edit`)}>
+                    本文を執筆する
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <PenTool className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">エピソードが選択されていません</h3>
+                  <p className="text-muted-foreground mb-6">
+                    エピソードを選択するか、新しいエピソードを作成してください
+                  </p>
+                </div>
+              )}
+            </CardContent>
+            {episodeContent && (
+              <CardFooter>
+                <Button variant="outline" asChild className="ml-auto">
+                  <Link href={`/stories/${storyId}/episodes/${currentEpisode?.id}/edit`}>
+                    本文を編集する
                   </Link>
                 </Button>
               </CardFooter>

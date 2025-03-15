@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "AI Novel Writing System Tests",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:stories": "ts-node test_stories_new.ts",
     "test:basic-setting": "ts-node test_basic_setting.ts",
     "test:basic-setting:v2": "ts-node test_basic_setting_v2.ts",
-    "test:basic-setting-data": "ts-node test_basic_setting_data.ts"
+    "test:basic-setting-data": "ts-node test_basic_setting_data.ts",
+    "test:integrated-setting": "node --experimental-modules test_integrated_setting_creator.ts"
   },
   "dependencies": {
     "node-fetch": "^2.6.7"

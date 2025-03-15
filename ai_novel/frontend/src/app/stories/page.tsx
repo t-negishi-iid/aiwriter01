@@ -25,43 +25,58 @@ interface Story {
 }
 
 export default function StoriesPage() {
+  // すべてのHooksを最初に宣言
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
-
-  // IDがある場合はストーリー詳細を表示
-  if (id) {
-    return <StoryContent storyId={id} />;
-  }
-
-  // 以下は小説一覧表示のコード
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 小説一覧の取得
   useEffect(() => {
+    // IDがある場合は一覧を取得しない
+    if (id) return;
+
     const fetchStories = async () => {
       setLoading(true);
       setError(null);
 
       try {
         const response = await storyApi.getStories();
-
-        if (response.success && response.data) {
-          setStories(response.data as Story[]);
+        console.log('API Response:', response); // レスポンスの形式を確認
+        
+        // レスポンスの形式に応じて処理
+        if (Array.isArray(response)) {
+          // レスポンスが直接配列の場合
+          setStories(response);
+        } else if (response && typeof response === 'object') {
+          // DRFの標準ページネーション形式の場合
+          if (Array.isArray(response.results)) {
+            setStories(response.results);
+          } else if (response.data && Array.isArray(response.data)) {
+            // 以前の形式（{success: true, data: [...]）の場合
+            setStories(response.data);
+          } else {
+            // その他の形式の場合は空配列を設定
+            console.error('Unexpected response format:', response);
+            setStories([]);
+          }
         } else {
-          setError(response.message || '小説一覧の取得に失敗しました');
+          // レスポンスが無効な場合
+          console.error('Invalid response:', response);
+          setStories([]);
         }
       } catch (err) {
         setError('小説一覧の取得中にエラーが発生しました');
         console.error('Error fetching stories:', err);
+        setStories([]); // エラー時は空配列を設定
       } finally {
         setLoading(false);
       }
     };
 
     fetchStories();
-  }, []);
+  }, [id]); // idが変更されたときにも再実行
 
   // 日付のフォーマット
   const formatDate = (dateString: string) => {
@@ -73,16 +88,21 @@ export default function StoriesPage() {
     });
   };
 
+  // IDがある場合はストーリー詳細を表示
+  if (id) {
+    return <StoryContent storyId={id} />;
+  }
+
+  // 以下は小説一覧表示のコード
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">小説一覧</h1>
         <Link href="/stories/new">
-          <Button>新しい小説を作成</Button>
+          <Button>新規作成</Button>
         </Link>
       </div>
 
-      {/* エラーメッセージ */}
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>エラー</AlertTitle>
@@ -90,48 +110,39 @@ export default function StoriesPage() {
         </Alert>
       )}
 
-      {/* ローディング表示 */}
-      {loading && (
-        <div className="flex justify-center py-12" data-testid="loading-indicator">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">読み込み中...</span>
         </div>
-      )}
-
-      {/* 小説一覧 */}
-      {!loading && !error && (
-        <div data-testid="stories-list" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {stories.length > 0 ? (
-            stories.map((story) => (
-              <Card key={story.id} className="h-full flex flex-col">
+      ) : stories.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-lg text-gray-500">小説がまだありません。新しく作成してみましょう。</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stories.map((story) => (
+            <Link href={`/stories?id=${story.id}`} key={story.id}>
+              <Card className="h-full cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="line-clamp-2">{story.title}</CardTitle>
+                  <CardTitle>{story.title || '無題の小説'}</CardTitle>
                   <CardDescription>
-                    作成日: {formatDate(story.created_at)}
+                    ステータス: {story.status || '未設定'}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className={`px-2 py-1 rounded text-xs ${story.status === 'published'
-                      ? 'bg-green-200 text-green-800'
-                      : 'bg-yellow-200 text-yellow-800'
-                      }`}>
-                      {story.status === 'published' ? '公開中' : '下書き'}
-                    </span>
-                  </div>
+                <CardContent>
+                  <p className="text-sm text-gray-500">
+                    作成日: {formatDate(story.created_at)}
+                  </p>
+                  {story.updated_at && (
+                    <p className="text-sm text-gray-500">
+                      更新日: {formatDate(story.updated_at)}
+                    </p>
+                  )}
                 </CardContent>
-                <CardFooter>
-                  <Link href={`/stories?id=${story.id}`} className="w-full">
-                    <Button variant="outline" className="w-full">詳細を見る</Button>
-                  </Link>
-                </CardFooter>
               </Card>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-gray-500">まだ小説がありません。「新しい小説を作成」ボタンから作成してください。</p>
-            </div>
-          )}
+            </Link>
+          ))}
         </div>
       )}
     </div>

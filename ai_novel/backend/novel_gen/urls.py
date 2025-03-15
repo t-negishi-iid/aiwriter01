@@ -1,13 +1,17 @@
 """
 AI小説執筆支援システムのURLルーティング
 """
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+
 from . import views
 from .views.connectivity import is_live
 from .views.is_live_views import StoryIsLiveView
+from .views.integrated_setting_creator_views import IntegratedSettingCreatorView, IntegratedSettingCreatorDetailView
+from .views.basic_setting_views import LatestBasicSettingView
 
 app_name = 'novel_gen'
 
@@ -21,7 +25,6 @@ def api_root(request, format=None):
         'user-profile': reverse('novel_gen:user-profile', request=request, format=format),
         'credit-history': reverse('novel_gen:credit-history', request=request, format=format),
         'stories': reverse('novel_gen:story-list', request=request, format=format),
-        'options': reverse('novel_gen:options', request=request, format=format),
         'is_live': reverse('novel_gen:is-live', request=request, format=format),
     })
 urlpatterns = [
@@ -43,20 +46,19 @@ path('stories/<int:story_id>/is_live/', StoryIsLiveView.as_view(), name='story-i
     path('stories/', views.AIStoryListCreateView.as_view(), name='story-list'),
     path('stories/<int:pk>/', views.AIStoryDetailView.as_view(), name='story-detail'),
 
-    # 基本設定作成用データ関連
-    path('options/', views.OptionsView.as_view(), name='options'),
-    path('stories/<int:story_id>/basic-setting-data/',
-         views.BasicSettingDataCreateView.as_view(), name='basic-setting-data-create'),
-    path('stories/<int:story_id>/basic-setting-data/<int:pk>/',
-         views.BasicSettingDataDetailView.as_view(), name='basic-setting-data-detail'),
-    path('preview-basic-setting-data/',
-         views.PreviewBasicSettingDataView.as_view(), name='preview-basic-setting-data'),
+    # 基本設定作成用データ作成関連
+    path('stories/<int:story_id>/integrated-setting-creator/',
+         IntegratedSettingCreatorView.as_view(), name='integrated-setting-creator'),
+    path('stories/<int:story_id>/integrated-setting-creator/detail/',
+         IntegratedSettingCreatorDetailView.as_view(), name='integrated-setting-creator-detail'),
 
     # 基本設定関連
     path('stories/<int:story_id>/basic-setting/',
          views.BasicSettingCreateView.as_view(), name='basic-setting-create'),
     path('stories/<int:story_id>/basic-setting/<int:pk>/',
          views.BasicSettingDetailView.as_view(), name='basic-setting-detail'),
+    path('stories/<int:story_id>/latest-basic-setting/',
+         LatestBasicSettingView.as_view(), name='latest-basic-setting'),
 
     # キャラクター詳細関連
     path('stories/<int:story_id>/characters/',

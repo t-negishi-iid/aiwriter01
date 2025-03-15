@@ -10,6 +10,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from django.db import transaction
 
 from ..models import AIStory, BasicSettingData, BasicSetting, APIRequestLog
@@ -395,3 +396,55 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
             ai_story_id=story_id,
             ai_story__user=self.request.user
         )
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        オブジェクトを取得するメソッド
+        
+        データが存在しない場合は204 No Contentを返します。
+        """
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except Http404:
+            # データが存在しない場合は204 No Contentを返す
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class LatestBasicSettingView(views.APIView):
+    """
+    最新の基本設定取得ビュー
+
+    指定された小説の最新の基本設定を取得します。
+    基本設定が存在しない場合は204 No Contentを返します。
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        """最新の基本設定を取得"""
+        story_id = self.kwargs.get('story_id')
+        logger.debug(f"LatestBasicSettingView.get called for story_id: {story_id}")
+        
+        try:
+            # ストーリーの存在確認
+            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            
+            # 最新の基本設定を取得
+            basic_setting = BasicSetting.objects.filter(
+                ai_story_id=story_id
+            ).order_by('-created_at').first()
+            
+            if not basic_setting:
+                logger.debug(f"No basic setting found for story_id: {story_id}")
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            
+            serializer = BasicSettingSerializer(basic_setting)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Error retrieving latest basic setting: {str(e)}")
+            return Response(
+                {'error': f'基本設定の取得中にエラーが発生しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

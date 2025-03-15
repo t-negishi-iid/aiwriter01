@@ -58,6 +58,20 @@ class CharacterDetailView(generics.RetrieveUpdateDestroyAPIView):
             ai_story__user=self.request.user
         )
 
+    def retrieve(self, request, *args, **kwargs):
+        """
+        オブジェクトを取得するメソッド
+        
+        データが存在しない場合は204 No Contentを返します。
+        """
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except Http404:
+            # データが存在しない場合は204 No Contentを返す
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class CreateCharacterDetailView(views.APIView):
     """

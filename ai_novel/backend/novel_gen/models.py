@@ -114,117 +114,14 @@ class AIStory(TimeStampedModel):
 class BasicSettingData(TimeStampedModel):
     """基本設定作成用データ"""
     ai_story = models.ForeignKey(AIStory, on_delete=models.CASCADE, related_name='basic_setting_data')
-    theme = models.CharField(_('主題'), max_length=100)
-    time_and_place = models.CharField(_('時代と場所'), max_length=100)
-    world_setting = models.CharField(_('作品世界と舞台設定'), max_length=100)
-    plot_pattern = models.CharField(_('プロットパターン'), max_length=100)
-    love_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('愛情表現'))
-    emotional_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('感情表現'))
-    atmosphere = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('雰囲気演出'))
-    sensual_expressions = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('官能表現'))
-    mental_elements = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('精神的要素'))
-    social_elements = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('社会的要素'))
-    past_mysteries = ArrayField(models.CharField(max_length=100), blank=True, verbose_name=_('過去の謎'))
-    raw_content = models.JSONField(_('生データ'), blank=True, null=True)
-    formatted_content = models.TextField(_('整形済みデータ'), blank=True)
+    basic_setting_data = models.TextField(_('基本設定データ'), blank=True)
 
     class Meta:
         verbose_name = _('基本設定作成用データ')
         verbose_name_plural = _('基本設定作成用データ')
 
     def __str__(self):
-        return f"{self.ai_story}の基本設定作成用データ"
-
-    def get_formatted_content(self):
-        """テンプレートに埋め込んだ結果を返す"""
-        if self.formatted_content:
-            return self.formatted_content
-
-        try:
-            from django.conf import settings
-
-            # テンプレートを読み込み
-            template_path = os.path.join(
-                settings.BASE_DIR,
-                'novel_gen_system_data/04_templates/01_基本設定作成用データテンプレート.md'
-            )
-
-            # テンプレートファイルが存在するか確認
-            if not os.path.exists(template_path):
-                # テンプレートが見つからない場合は、簡易テンプレートを使用
-                template_content = """# 基本設定作成用データ
-
-## 主題
-{theme}
-
-## 時代と場所
-{time_and_place}
-
-## 作品世界と舞台設定
-{world_setting}
-
-## プロットパターン
-{plot_pattern}
-
-## 愛情表現
-{love_expressions}
-
-## 感情表現
-{emotional_expressions}
-
-## 雰囲気演出
-{atmosphere}
-
-## 官能表現
-{sensual_expressions}
-
-## 精神的要素
-{mental_elements}
-
-## 社会的要素
-{social_elements}
-
-## 過去の謎
-{past_mysteries}
-"""
-            else:
-                with open(template_path, 'r', encoding='utf-8') as f:
-                    template_content = f.read()
-
-            # テンプレートに選択内容を埋め込む
-            filled_template = template_content.format(
-                theme=self.theme,
-                time_and_place=self.time_and_place,
-                world_setting=self.world_setting,
-                plot_pattern=self.plot_pattern,
-                love_expressions=', '.join(self.love_expressions),
-                emotional_expressions=', '.join(self.emotional_expressions),
-                atmosphere=', '.join(self.atmosphere),
-                sensual_expressions=', '.join(self.sensual_expressions),
-                mental_elements=', '.join(self.mental_elements),
-                social_elements=', '.join(self.social_elements),
-                past_mysteries=', '.join(self.past_mysteries)
-            )
-
-            self.formatted_content = filled_template
-            self.save(update_fields=['formatted_content'])
-            return filled_template
-        except Exception as e:
-            # エラーが発生した場合はJSON形式で返す
-            import json
-            return json.dumps({
-                'theme': self.theme,
-                'time_and_place': self.time_and_place,
-                'world_setting': self.world_setting,
-                'plot_pattern': self.plot_pattern,
-                'love_expressions': self.love_expressions,
-                'emotional_expressions': self.emotional_expressions,
-                'atmosphere': self.atmosphere,
-                'sensual_expressions': self.sensual_expressions,
-                'mental_elements': self.mental_elements,
-                'social_elements': self.social_elements,
-                'past_mysteries': self.past_mysteries
-            }, ensure_ascii=False, indent=2)
+        return f"{self.ai_story.title or 'タイトルなし'}の基本設定データ"
 
 
 class BasicSetting(TimeStampedModel):

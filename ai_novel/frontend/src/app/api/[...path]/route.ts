@@ -34,6 +34,7 @@ async function handleApiRequest(
       try {
         const body = await request.json().catch(() => ({}));
         options.body = JSON.stringify(body);
+        console.log(`API Proxy: Request body: ${JSON.stringify(body).substring(0, 200)}...`);
       } catch (error) {
         console.error('Request body parsing error:', error);
         // ボディのパースに失敗しても処理を継続
@@ -47,18 +48,37 @@ async function handleApiRequest(
     options.signal = controller.signal;
 
     // バックエンドAPIへリクエスト
+    console.log(`API Proxy: Sending ${method} request to: ${backendUrl} with options:`, JSON.stringify(options));
     const response = await fetch(backendUrl, options);
+    console.log(`API Proxy: Received response with status: ${response.status} ${response.statusText}`);
 
     // タイムアウトをクリア
     clearTimeout(timeoutId);
 
     // レスポンスの処理
     const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
+    console.log(`API Proxy: Response text (first 200 chars): ${text.substring(0, 200)}...`);
+    
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error(`API Proxy: JSON parse error:`, parseError);
+      console.error(`API Proxy: Raw response text: ${text.substring(0, 500)}...`);
+      return NextResponse.json(
+        { error: `レスポンスのJSONパースに失敗しました`, details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error(`API ${method} Error:`, error);
+    console.error(`API Proxy: Error details:`, error instanceof Error ? {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    } : String(error));
 
     // エラーの種類に応じたレスポンスを返す
     if (error instanceof TypeError && error.message.includes('abort')) {

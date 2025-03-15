@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import ThemeSelector from './components/ThemeSelector';
 import WorldSettingSelector from './components/WorldSettingSelector';
@@ -9,6 +10,8 @@ import WritingStyleSelector from './components/WritingStyleSelector';
 import EmotionalElementsSelector from './components/EmotionalElementsSelector';
 import PastMysterySelector from './components/PastMysterySelector';
 import PlotPatternSelector from './components/PlotPatternSelector';
+import { integratedSettingCreatorApi } from '@/lib/api';
+import { toast } from '@/components/ui/use-toast';
 
 // 各セレクタのタブ
 const TABS = [
@@ -30,6 +33,11 @@ export default function IntegratedSettingCreator() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [integratedSettingData, setIntegratedSettingData] = useState<any>({});
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 選択データをローカルストレージから読み込む
   useEffect(() => {
@@ -42,6 +50,135 @@ export default function IntegratedSettingCreator() {
       }
     }
   }, []);
+
+  // URLからストーリーIDを取得し、既存のデータがあれば読み込む
+  useEffect(() => {
+    const storyId = searchParams.get('storyId');
+    if (!storyId) return;
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        console.log(`[TRACE] 統合設定データ取得開始: storyId=${storyId} - ${new Date().toISOString()}`);
+        
+        // 統合設定データを取得
+        const response = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
+        console.log(`[TRACE] 統合設定データ取得完了 - ${new Date().toISOString()}`);
+        console.log(`[TRACE] レスポンスデータ:`, JSON.stringify(response).substring(0, 200) + '...');
+        
+        if (response.success) {
+          // データが存在する場合は設定
+          if (response.data && response.data.basic_setting_data) {
+            setIntegratedSettingData(response.data);
+            setSelectedData(parseMarkdownData(response.data.basic_setting_data));
+            console.log(`[TRACE] データをステートに設定 - ${new Date().toISOString()}`);
+            toast({
+              title: "データを読み込みました",
+              description: "既存の設定データを読み込みました。",
+            });
+          } else {
+            console.log(`[TRACE] 基本設定データが空です - ${new Date().toISOString()}`);
+            toast({
+              title: "新規作成モード",
+              description: "データが見つからないため、新規作成モードで開始します。",
+            });
+          }
+        } else {
+          console.log(`[TRACE] データ取得失敗: ${response.message} - ${new Date().toISOString()}`);
+          toast({
+            title: "エラーが発生しました",
+            description: response.message || "データの取得に失敗しました。",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error(`[TRACE] データ取得エラー: ${error} - ${new Date().toISOString()}`);
+        setError('データの取得に失敗しました');
+        toast({
+          title: "エラーが発生しました",
+          description: "データの取得に失敗しました。ローカルデータを使用します。",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [searchParams, toast]);
+
+  // Markdownデータを解析して構造化データに変換する関数
+  const parseMarkdownData = (markdown: string) => {
+    // 既存のデータ構造をコピー
+    const parsedData = { ...selectedData };
+    
+    try {
+      console.log('Markdownデータを解析します:', markdown.substring(0, 100) + '...');
+      
+      // 各セクションを抽出
+      const sections = markdown.split('## ').filter(Boolean);
+      
+      for (const section of sections) {
+        const lines = section.split('\n').filter(Boolean);
+        const sectionTitle = lines[0].trim();
+        
+        // テーマセクション
+        if (sectionTitle.includes('テーマ')) {
+          if (!parsedData.theme) parsedData.theme = {};
+          parsedData.theme.selectedTheme = lines.length > 1 ? lines[1].trim() : '';
+        }
+        
+        // 時代と場所
+        else if (sectionTitle.includes('時代と場所')) {
+          if (!parsedData.timePlace) parsedData.timePlace = {};
+          parsedData.timePlace.selectedTimePlace = lines.length > 1 ? lines[1].trim() : '';
+        }
+        
+        // 世界観
+        else if (sectionTitle.includes('世界観')) {
+          if (!parsedData.worldSetting) parsedData.worldSetting = {};
+          parsedData.worldSetting.selectedWorldSetting = lines.length > 1 ? lines[1].trim() : '';
+        }
+        
+        // プロットパターン
+        else if (sectionTitle.includes('プロットパターン')) {
+          if (!parsedData.plotPattern) parsedData.plotPattern = {};
+          parsedData.plotPattern.title = lines.length > 1 ? lines[1].trim() : '';
+        }
+        
+        // 感情要素
+        else if (sectionTitle.includes('感情要素')) {
+          if (!parsedData.emotionalElements) parsedData.emotionalElements = { selectedElements: [] };
+          
+          const elements = lines.slice(1).filter(line => line.startsWith('- '));
+          parsedData.emotionalElements.selectedElements = elements.map(element => {
+            const parts = element.replace('- ', '').split(': ');
+            return {
+              category: parts[0],
+              element: parts.length > 1 ? parts[1] : '',
+              description: parts.length > 2 ? parts[2] : ''
+            };
+          });
+        }
+        
+        // 過去の謎
+        else if (sectionTitle.includes('過去の謎')) {
+          if (!parsedData.pastMystery) parsedData.pastMystery = { events: [] };
+          
+          const events = lines.slice(1).filter(line => /^\d+\./.test(line));
+          parsedData.pastMystery.events = events.map(event => 
+            event.replace(/^\d+\.\s*/, '').trim()
+          );
+        }
+      }
+      
+      console.log('解析完了:', Object.keys(parsedData));
+      return parsedData;
+    } catch (error) {
+      console.error('Markdownデータの解析エラー:', error);
+      return parsedData;
+    }
+  };
 
   // 選択データが変更されたらローカルストレージに保存
   useEffect(() => {
@@ -71,13 +208,15 @@ export default function IntegratedSettingCreator() {
 
   // Markdownの生成
   const generateMarkdown = () => {
-    let markdown = '';
+    let markdown = '# 統合設定データ\n\n';
 
     // テーマ
     if (selectedData.theme) {
-      markdown += '# テーマ（主題）\n\n';
-      markdown += `## ${selectedData.theme.title}\n`;
-      markdown += `${selectedData.theme.description}\n\n`;
+      markdown += '## テーマ\n';
+      markdown += `${selectedData.theme.title}\n\n`;
+      if (selectedData.theme.description) {
+        markdown += `${selectedData.theme.description}\n\n`;
+      }
       if (selectedData.theme.examples && selectedData.theme.examples.length > 0) {
         markdown += '### 代表作品\n';
         selectedData.theme.examples.forEach((example: string) => {
@@ -89,8 +228,8 @@ export default function IntegratedSettingCreator() {
 
     // 時代と場所
     if (selectedData.timePlace) {
-      markdown += '# 時代と場所\n\n';
-      markdown += `## ${selectedData.timePlace.title}\n\n`;
+      markdown += '## 時代と場所\n';
+      markdown += `${selectedData.timePlace.title}\n\n`;
       if (selectedData.timePlace.examples && selectedData.timePlace.examples.length > 0) {
         markdown += '### 代表作品\n';
         selectedData.timePlace.examples.forEach((example: string) => {
@@ -102,26 +241,27 @@ export default function IntegratedSettingCreator() {
 
     // 作品世界と舞台設定
     if (selectedData.worldSetting) {
-      markdown += '# 作品世界と舞台設定\n\n';
-      markdown += `## ${selectedData.worldSetting.title}\n`;
-      markdown += `### 基本的な世界観\n`;
+      markdown += '## 世界観\n';
+      markdown += `${selectedData.worldSetting.title}\n\n`;
+      
       if (selectedData.worldSetting.worldView && selectedData.worldSetting.worldView.length > 0) {
+        markdown += '### 基本的な世界観\n';
         selectedData.worldSetting.worldView.forEach((item: string) => {
           markdown += `- ${item}\n`;
         });
         markdown += '\n';
       }
 
-      markdown += `### 特徴的な要素\n`;
       if (selectedData.worldSetting.features && selectedData.worldSetting.features.length > 0) {
+        markdown += '### 特徴的な要素\n';
         selectedData.worldSetting.features.forEach((item: string) => {
           markdown += `- ${item}\n`;
         });
         markdown += '\n';
       }
 
-      markdown += `### 代表的な作品例\n`;
       if (selectedData.worldSetting.examples && selectedData.worldSetting.examples.length > 0) {
+        markdown += '### 代表作品\n';
         selectedData.worldSetting.examples.forEach((example: string) => {
           markdown += `- ${example}\n`;
         });
@@ -131,26 +271,31 @@ export default function IntegratedSettingCreator() {
 
     // 参考とする作風
     if (selectedData.writingStyle) {
-      markdown += '# 参考とする作風\n';
-      markdown += `## ${selectedData.writingStyle.author}\n`;
-      markdown += `### 文体と構造的特徴\n`;
-      markdown += `${selectedData.writingStyle.structure || '未定義'}\n\n`;
+      markdown += '## 参考とする作風\n';
+      markdown += `### ${selectedData.writingStyle.author}\n`;
+      
+      if (selectedData.writingStyle.structure) {
+        markdown += '#### 文体と構造的特徴\n';
+        markdown += `${selectedData.writingStyle.structure}\n\n`;
+      }
 
-      markdown += `### 表現技法\n`;
       if (selectedData.writingStyle.techniques && selectedData.writingStyle.techniques.length > 0) {
+        markdown += '#### 表現技法\n';
         selectedData.writingStyle.techniques.forEach((technique: string) => {
           markdown += `- ${technique}\n`;
         });
         markdown += '\n';
       }
 
-      markdown += `### テーマと主題\n`;
-      markdown += `${selectedData.writingStyle.themes || '未定義'}\n\n`;
+      if (selectedData.writingStyle.themes) {
+        markdown += '#### テーマと主題\n';
+        markdown += `${selectedData.writingStyle.themes}\n\n`;
+      }
     }
 
     // 情緒的・感覚的要素
     if (selectedData.emotionalElements && selectedData.emotionalElements.selectedElements) {
-      markdown += '# 情緒的・感覚的要素\n\n';
+      markdown += '## 感情要素\n';
 
       // カテゴリごとにグループ化
       const groupedElements: { [key: string]: any[] } = {};
@@ -163,62 +308,36 @@ export default function IntegratedSettingCreator() {
 
       // カテゴリごとに出力
       Object.keys(groupedElements).forEach(category => {
-        markdown += `## ${category}\n`;
-        markdown += `### 主な要素\n`;
-
         groupedElements[category].forEach((element: any) => {
-          const description = element.description ? `（${element.description}）` : '';
-          markdown += `- ${element.element}${description}\n`;
+          const description = element.description ? `: ${element.description}` : '';
+          markdown += `- ${category}: ${element.element}${description}\n`;
         });
-        markdown += '\n';
-        
-        // カテゴリの詳細情報を取得
-        const categoryData = selectedData.emotionalElements.categories.find((cat: any) => cat.title === category);
-        
-        if (categoryData) {
-          // 代表的な活用法
-          if (categoryData.usage) {
-            markdown += `### 代表的な活用法\n`;
-            markdown += `${categoryData.usage}\n\n`;
-          }
-          
-          // 効果的な使用場面
-          if (categoryData.effectiveScenes && categoryData.effectiveScenes.length > 0) {
-            markdown += `### 効果的な使用場面\n`;
-            categoryData.effectiveScenes.forEach((scene: string) => {
-              markdown += `- ${scene}\n`;
-            });
-            markdown += '\n';
-          }
-        }
       });
+      markdown += '\n';
     }
 
-    // 物語の背景となる過去の謎
-    if (selectedData.pastMystery) {
-      markdown += '# 物語の背景となる過去の謎\n\n';
-      markdown += `## 「${selectedData.pastMystery.title}」\n`;
-      markdown += `### 過去の出来事\n`;
-      if (selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
-        selectedData.pastMystery.events.forEach((event: string) => {
-          markdown += `- ${event}\n`;
-        });
-        markdown += '\n';
-      }
+    // 過去の謎
+    if (selectedData.pastMystery && selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
+      markdown += '## 過去の謎\n';
+      
+      selectedData.pastMystery.events.forEach((event: string, index: number) => {
+        markdown += `${index + 1}. ${event}\n`;
+      });
+      markdown += '\n';
     }
 
     // プロットパターン
     if (selectedData.plotPattern) {
-      markdown += '# プロットパターン\n';
-      markdown += `「${selectedData.plotPattern.title}」\n\n`;
-
-      markdown += `## 概要\n\n`;
-      markdown += `${selectedData.plotPattern.overview}\n\n`;
-
-      // すべてのセクションを処理
+      markdown += '## プロットパターン\n';
+      markdown += `${selectedData.plotPattern.title}\n\n`;
+      
+      if (selectedData.plotPattern.description) {
+        markdown += `${selectedData.plotPattern.description}\n\n`;
+      }
+      
       if (selectedData.plotPattern.sections && selectedData.plotPattern.sections.length > 0) {
         selectedData.plotPattern.sections.forEach((section: any) => {
-          markdown += `## ${section.title}\n\n`;
+          markdown += `### ${section.title}\n\n`;
           
           // セクションの内容を追加
           if (section.content && section.content.length > 0) {
@@ -231,7 +350,7 @@ export default function IntegratedSettingCreator() {
           // サブセクションを追加
           if (section.subsections && section.subsections.length > 0) {
             section.subsections.forEach((subsection: any) => {
-              markdown += `### ${subsection.title}\n\n`;
+              markdown += `#### ${subsection.title}\n\n`;
               
               if (subsection.content && subsection.content.length > 0) {
                 subsection.content.forEach((contentLine: string) => {
@@ -248,33 +367,60 @@ export default function IntegratedSettingCreator() {
     setMarkdownOutput(markdown);
   };
 
-  // データの保存
+  // 設定データを保存する関数
   const saveSettings = async () => {
     setIsSaving(true);
+    setSaveError('');
     setSaveSuccess(false);
-    setSaveError(null);
+
+    const storyId = searchParams.get('storyId');
+    if (!storyId) {
+      setSaveError('ストーリーIDが見つかりません。URLパラメータを確認してください。');
+      setIsSaving(false);
+      return;
+    }
 
     try {
-      const response = await fetch('/api/basic-settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: '基本設定',
-          content: markdownOutput,
-          data: selectedData
-        }),
+      // バックエンドAPIを呼び出してデータを保存
+      console.log(`[TRACE] 統合設定データ保存開始: storyId=${storyId} - ${new Date().toISOString()}`);
+      console.log(`[TRACE] integratedSettingCreatorApi.saveIntegratedSettingData 呼び出し前 - ${new Date().toISOString()}`);
+      const response = await integratedSettingCreatorApi.saveIntegratedSettingData(storyId, {
+        basic_setting_data: markdownOutput
       });
+      console.log(`[TRACE] integratedSettingCreatorApi.saveIntegratedSettingData 呼び出し後 - ${new Date().toISOString()}`);
+      console.log('[TRACE] 保存レスポンス:', JSON.stringify(response).substring(0, 500)); // デバッグ用
 
-      if (!response.ok) {
-        throw new Error('保存に失敗しました');
+      // 標準DRFページネーション形式に対応したレスポンス処理
+      if (!response || response.success === false) {
+        // エラーメッセージの取得方法を改善
+        const errorMessage = response?.message || 
+                            (response?.errors ? Object.values(response.errors).flat().join(', ') : '保存に失敗しました');
+        throw new Error(errorMessage);
+      }
+
+      // データが results 配列に含まれている場合の処理
+      const responseData = response.data || (response.results && response.results.length > 0 ? response.results[0] : null);
+      
+      if (!responseData) {
+        throw new Error('レスポンスデータが見つかりません');
       }
 
       setSaveSuccess(true);
+      toast({
+        title: "基本設定データを保存しました",
+        description: "続いて基本設定を生成しましょう",
+      });
+
+      // 保存成功後、基本設定ページに遷移
+      router.push(`/stories?id=${storyId}&tab=basic-setting`);
     } catch (error) {
       console.error('保存エラー:', error);
-      setSaveError('保存中にエラーが発生しました。もう一度お試しください。');
+      setSaveError(`保存中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      toast({
+        title: "エラーが発生しました",
+        description: "基本設定データの保存に失敗しました。もう一度お試しください。",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }

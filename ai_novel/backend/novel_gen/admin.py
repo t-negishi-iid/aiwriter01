@@ -44,9 +44,9 @@ class AIStoryAdmin(admin.ModelAdmin):
 @admin.register(BasicSettingData)
 class BasicSettingDataAdmin(admin.ModelAdmin):
     """基本設定作成用データ管理"""
-    list_display = ('id', 'ai_story', 'theme', 'time_and_place', 'created_at')
+    list_display = ('id', 'ai_story', 'created_at')
     list_filter = ('created_at', 'updated_at')
-    search_fields = ('ai_story__title', 'theme', 'time_and_place')
+    search_fields = ('ai_story__title',)
     readonly_fields = ('created_at', 'updated_at')
     raw_id_fields = ('ai_story',)
 

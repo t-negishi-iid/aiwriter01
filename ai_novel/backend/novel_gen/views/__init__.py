@@ -3,10 +3,6 @@ AI小説執筆支援システムのビュー
 """
 from .user_views import UserProfileView, CreditHistoryListView
 from .story_views import AIStoryListCreateView, AIStoryDetailView
-from .basic_setting_data_views import (
-    OptionsView, BasicSettingDataCreateView, BasicSettingDataDetailView,
-    PreviewBasicSettingDataView
-)
 from .basic_setting_views import BasicSettingCreateView, BasicSettingDetailView
 from .character_views import (
     CharacterDetailListCreateView, CharacterDetailView,

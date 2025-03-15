@@ -1,0 +1,29 @@
+{
+  "success": true,
+  "message": "統合設定クリエイターデータの取得に成功しました",
+  "data": {
+    "success": true,
+    "data": {
+      "success": true,
+      "data": {
+        "id": 10,
+        "story": {
+          "id": 1,
+          "title": "神秘の夢の伝説",
+          "user": {
+            "id": 1,
+            "username": "default_user",
+            "email": "default@example.com",
+            "first_name": "",
+            "last_name": ""
+          },
+          "status": "draft",
+          "created_at": "2025-03-14T09:46:36.425539+09:00",
+          "updated_at": "2025-03-14T09:46:36.425561+09:00"
+        },
+        "basic_setting_data": "# 統合設定データ\n\n## テーマ\nテスト用テーマ\n\n## 時代と場所\nテスト用時代と場所\n\n## 世界観\nテスト用世界観\n\n## プロットパターン\nテスト用プロットパターン\n\n## 感情要素\n- 愛情表現: 純愛\n- 感情表現: 喜び\n- 雰囲気: 明るい\n- 感覚表現: 視覚的\n- 精神的要素: 希望\n- 社会的要素: 友情\n\n## 過去の謎\n1. テスト用過去の謎1\n2. テスト用過去の謎2\n\n## 備考\nこのデータはテスト用に生成されたMarkdownデータです。",
+        "created_at": "2025-03-14T13:49:55.357336+09:00"
+      }
+    }
+  }
+}

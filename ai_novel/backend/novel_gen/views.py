@@ -56,80 +56,6 @@ class AIStoryViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
 
-class BasicSettingDataViewSet(viewsets.ModelViewSet):
-    """基本設定作成用データのViewSet"""
-    queryset = BasicSettingData.objects.all()
-    serializer_class = BasicSettingDataSerializer
-
-    def get_queryset(self):
-        """現在のユーザーの小説に関連するデータのみを返す"""
-        return BasicSettingData.objects.filter(ai_story__user=self.request.user)
-
-    @extend_schema(
-        description="基本設定作成用データをプレビューする",
-        request=BasicSettingDataSerializer,
-        responses={200: {"type": "object", "properties": {"preview": {"type": "string"}}}}
-    )
-    @action(detail=False, methods=['post'])
-    def preview(self, request):
-        """基本設定作成用データのプレビューを生成する"""
-        data = request.data
-
-        try:
-            # テンプレートに埋め込む (実際はテンプレートファイルを読み込む処理が必要)
-            template = """
-# 基本設定作成用データ
-
-## テーマ
-{theme}
-
-## 時代と場所
-{time_and_place}
-
-## 作品世界と舞台設定
-{world_setting}
-
-## プロットパターン
-{plot_pattern}
-
-## 表現と要素
-- 愛情表現: {love_expressions}
-- 感情表現: {emotional_expressions}
-- 雰囲気演出: {atmosphere}
-- 官能表現: {sensual_expressions}
-- 精神的要素: {mental_elements}
-- 社会的要素: {social_elements}
-- 過去の謎: {past_mysteries}
-"""
-
-            # 複数選択項目を処理
-            love_expressions = ', '.join(data.get('love_expressions', []))
-            emotional_expressions = ', '.join(data.get('emotional_expressions', []))
-            atmosphere = ', '.join(data.get('atmosphere', []))
-            sensual_expressions = ', '.join(data.get('sensual_expressions', []))
-            mental_elements = ', '.join(data.get('mental_elements', []))
-            social_elements = ', '.join(data.get('social_elements', []))
-            past_mysteries = ', '.join(data.get('past_mysteries', []))
-
-            filled_template = template.format(
-                theme=data.get('theme', ''),
-                time_and_place=data.get('time_and_place', ''),
-                world_setting=data.get('world_setting', ''),
-                plot_pattern=data.get('plot_pattern', ''),
-                love_expressions=love_expressions,
-                emotional_expressions=emotional_expressions,
-                atmosphere=atmosphere,
-                sensual_expressions=sensual_expressions,
-                mental_elements=mental_elements,
-                social_elements=social_elements,
-                past_mysteries=past_mysteries
-            )
-
-            return Response({'preview': filled_template})
-        except Exception as e:
-            logger.error(f"Failed to generate preview: {str(e)}")
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class BasicSettingViewSet(viewsets.ModelViewSet):
     """基本設定のViewSet"""
@@ -224,13 +150,11 @@ class BasicSettingViewSet(viewsets.ModelViewSet):
 
         except AIStory.DoesNotExist:
             return Response(
-                {'error': '指定された小説が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except BasicSettingData.DoesNotExist:
             return Response(
-                {'error': '指定された基本設定作成用データが見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate basic setting: {str(e)}")
@@ -338,8 +262,7 @@ class CharacterDetailViewSet(viewsets.ModelViewSet):
 
         except AIStory.DoesNotExist:
             return Response(
-                {'error': '指定された小説が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate character detail: {str(e)}")
@@ -486,8 +409,7 @@ class PlotDetailViewSet(viewsets.ModelViewSet):
 
         except AIStory.DoesNotExist:
             return Response(
-                {'error': '指定された小説が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate plot detail: {str(e)}")
@@ -662,13 +584,11 @@ class EpisodeDetailViewSet(viewsets.ModelViewSet):
 
         except AIStory.DoesNotExist:
             return Response(
-                {'error': '指定された小説が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except PlotDetail.DoesNotExist:
             return Response(
-                {'error': '指定されたあらすじ詳細が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate episode detail: {str(e)}")
@@ -780,8 +700,7 @@ class EpisodeContentViewSet(viewsets.ModelViewSet):
 
         except EpisodeDetail.DoesNotExist:
             return Response(
-                {'error': '指定されたエピソード詳細が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate episode content: {str(e)}")
@@ -901,8 +820,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
         except AIStory.DoesNotExist:
             return Response(
-                {'error': '指定された小説が見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to generate title: {str(e)}")
@@ -972,8 +890,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
         except Title.DoesNotExist:
             return Response(
-                {'error': '指定されたタイトルが見つかりません'},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_204_NO_CONTENT
             )
         except Exception as e:
             logger.error(f"Failed to select title: {str(e)}")

@@ -1,0 +1,81 @@
+{
+  "save": {
+    "timestamp": "2025-03-14T15:43:59.497Z",
+    "success": true,
+    "data": {
+      "success": true,
+      "message": "基本設定データが保存されました",
+      "data": {
+        "id": 13,
+        "story": {
+          "id": 13,
+          "title": "テスト小説031401",
+          "user": {
+            "id": 1,
+            "username": "default_user",
+            "email": "default@example.com",
+            "first_name": "",
+            "last_name": ""
+          },
+          "status": "draft",
+          "created_at": "2025-03-14T22:37:38.618623+09:00",
+          "updated_at": "2025-03-14T22:37:38.618634+09:00"
+        },
+        "created_at": "2025-03-14T22:58:02.254471+09:00",
+        "basic_setting_data": {
+          "theme": {
+            "title": "テスト用テーマ",
+            "description": "これはテスト用のテーマ説明です。"
+          },
+          "timePlace": {
+            "title": "テスト用時代と場所",
+            "description": "これはテスト用の時代と場所の説明です。"
+          },
+          "worldSetting": {
+            "title": "テスト用世界観",
+            "description": "これはテスト用の世界観と舞台設定の説明です。"
+          },
+          "plotPattern": {
+            "title": "テスト用プロットパターン",
+            "description": "これはテスト用のプロットパターンの説明です。"
+          },
+          "emotionalElements": {
+            "selectedElements": [
+              {
+                "category": "愛情表現",
+                "element": "純愛"
+              },
+              {
+                "category": "感情表現",
+                "element": "喜び"
+              },
+              {
+                "category": "雰囲気",
+                "element": "明るい"
+              },
+              {
+                "category": "感覚表現",
+                "element": "視覚的"
+              },
+              {
+                "category": "精神的要素",
+                "element": "希望"
+              },
+              {
+                "category": "社会的要素",
+                "element": "友情"
+              }
+            ]
+          },
+          "pastMystery": {
+            "events": [
+              "テスト用過去の謎1",
+              "テスト用過去の謎2"
+            ]
+          }
+        }
+      }
+    },
+    "error": null
+  }
+}

@@ -229,9 +229,14 @@ export function StoryContent({ storyId }: StoryContentProps) {
                   <p className="text-muted-foreground mb-6">
                     基本設定を作成して、小説の世界観や登場人物を定義しましょう
                   </p>
-                  <Button onClick={() => router.push(`/stories/${storyId}/basic-setting-data`)}>
-                    基本設定を作成する
-                  </Button>
+                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                    <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+                      統合設定クリエイターで作成
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push(`/stories/${storyId}/basic-setting-data`)}>
+                      従来の方法で作成
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

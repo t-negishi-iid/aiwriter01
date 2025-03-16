@@ -117,32 +117,32 @@ export default function CharactersPage() {
 
         {isMobile ? (
           // モバイル表示：タブで切り替え
-          <div className="mt-6">
+          <div className={styles.mobileContainer}>
             <Tabs defaultValue="character-list">
-              <TabsList className="w-full mb-4">
-                <TabsTrigger value="character-list" className="flex-1">キャラクター一覧</TabsTrigger>
-                <TabsTrigger value="character-edit" className="flex-1">キャラクター編集</TabsTrigger>
+              <TabsList className={styles.tabsList}>
+                <TabsTrigger value="character-list" className={styles.tabsTrigger}>キャラクター一覧</TabsTrigger>
+                <TabsTrigger value="character-edit" className={styles.tabsTrigger}>キャラクター編集</TabsTrigger>
               </TabsList>
 
               <TabsContent value="character-list">
                 {isLoading ? (
-                  <div className="flex justify-center items-center py-10">
+                  <div className={styles.loadingContainer}>
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                     <span className="ml-2 text-gray-500">読み込み中...</span>
                   </div>
                 ) : error ? (
-                  <div className="text-center py-10">
+                  <div className={styles.errorContainer}>
                     <p className="text-red-500">{error}</p>
                     <Button
                       variant="outline"
-                      className="mt-4"
+                      className={styles.refreshButton}
                       onClick={refreshCharacters}
                     >
                       再読み込み
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className={styles.characterListContainer}>
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (
                       <BasicSettingCharacterList
@@ -153,8 +153,8 @@ export default function CharactersPage() {
                     )}
 
                     {/* キャラクターリスト */}
-                    <div className="bg-white p-4 rounded-md border border-gray-200">
-                      <div className="flex justify-between items-center mb-4">
+                    <div className={styles.characterList}>
+                      <div className={styles.characterListHeader}>
                         <h2 className="text-xl font-semibold">キャラクター一覧</h2>
                         <Button onClick={handleAddNewCharacter}>
                           新規作成
@@ -162,7 +162,7 @@ export default function CharactersPage() {
                       </div>
 
                       {characters.length === 0 ? (
-                        <div className="text-center py-6">
+                        <div className={styles.noCharactersContainer}>
                           <User className="h-12 w-12 text-gray-300 mx-auto mb-2" />
                           <p className="text-gray-500">キャラクターがまだ登録されていません</p>
                         </div>
@@ -190,7 +190,7 @@ export default function CharactersPage() {
 
               <TabsContent value="character-edit">
                 {selectedCharacter ? (
-                  <div className="bg-white p-4 rounded-md border border-gray-200">
+                  <div className={styles.characterFormContainer}>
                     <h2 className="text-xl font-semibold mb-4">
                       {selectedCharacter.id ? 'キャラクター編集' : '新規キャラクター作成'}
                     </h2>
@@ -204,7 +204,7 @@ export default function CharactersPage() {
                     />
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-8 rounded-md border border-gray-200 flex flex-col items-center justify-center">
+                  <div className={styles.noCharacterSelectedContainer}>
                     <User className="h-12 w-12 text-gray-300 mb-4" />
                     <p className="text-gray-500 text-center mb-4">
                       キャラクター一覧タブからキャラクターを選択するか、新規作成ボタンをクリックしてください。
@@ -213,7 +213,7 @@ export default function CharactersPage() {
                       onClick={() => {
                         handleAddNewCharacter();
                       }}
-                      className="w-full md:w-auto"
+                      className={styles.createButton}
                     >
                       新規キャラクター作成
                     </Button>
@@ -224,37 +224,37 @@ export default function CharactersPage() {
           </div>
         ) : (
           // PC表示：左右に並べる
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px' }}>
-            <div className="flex space-x-4">
+          <div className={styles.pcContainer}>
+            <div className={styles.buttonContainer}>
               <Button
                 onClick={handleAddNewCharacter}
-                className="w-full md:w-auto"
+                className={styles.createButton}
               >
                 新規キャラクター作成
               </Button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '24px' }}>
+            <div className={styles.contentContainer}>
               {/* 左側: キャラクターリスト */}
-              <div style={{ width: '50%', position: 'relative' }}>
+              <div className={styles.characterListContainer}>
                 {isLoading ? (
-                  <div className="flex justify-center items-center py-10">
+                  <div className={styles.loadingContainer}>
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                     <span className="ml-2 text-gray-500">読み込み中...</span>
                   </div>
                 ) : error ? (
-                  <div className="text-center py-10">
+                  <div className={styles.errorContainer}>
                     <p className="text-red-500">{error}</p>
                     <Button
                       variant="outline"
-                      className="mt-4"
+                      className={styles.refreshButton}
                       onClick={refreshCharacters}
                     >
                       再読み込み
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className={styles.characterList}>
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (
                       <BasicSettingCharacterList
@@ -265,36 +265,34 @@ export default function CharactersPage() {
                     )}
 
                     {/* キャラクターリスト */}
-                    <div className="bg-white p-4 rounded-md border border-gray-200">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold">キャラクター一覧</h2>
-                        <Button onClick={handleAddNewCharacter}>
-                          新規作成
-                        </Button>
-                      </div>
-
-                      {characters.length === 0 ? (
-                        <div className="text-center py-6">
-                          <User className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                          <p className="text-gray-500">キャラクターがまだ登録されていません</p>
-                        </div>
-                      ) : (
-                        <CharacterList
-                          characters={characters}
-                          selectedCharacterId={selectedCharacter?.id}
-                          onSelect={setSelectedCharacter}
-                          isMobile={isMobile}
-                        />
-                      )}
+                    <div className={styles.characterListHeader}>
+                      <h2 className="text-xl font-semibold">キャラクター一覧</h2>
+                      <Button onClick={handleAddNewCharacter}>
+                        新規作成
+                      </Button>
                     </div>
+
+                    {characters.length === 0 ? (
+                      <div className={styles.noCharactersContainer}>
+                        <User className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">キャラクターがまだ登録されていません</p>
+                      </div>
+                    ) : (
+                      <CharacterList
+                        characters={characters}
+                        selectedCharacterId={selectedCharacter?.id}
+                        onSelect={setSelectedCharacter}
+                        isMobile={isMobile}
+                      />
+                    )}
                   </div>
                 )}
               </div>
 
               {/* 右側: キャラクター編集フォーム */}
-              <div style={{ width: '50%', position: 'relative' }}>
+              <div className={styles.characterFormContainer}>
                 {selectedCharacter ? (
-                  <div className="bg-white p-4 rounded-md border border-gray-200 h-full overflow-y-auto">
+                  <div className={styles.characterForm}>
                     <h2 className="text-xl font-semibold mb-4">
                       {selectedCharacter.id ? 'キャラクター編集' : '新規キャラクター作成'}
                     </h2>
@@ -308,14 +306,14 @@ export default function CharactersPage() {
                     />
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-8 rounded-md border border-gray-200 flex flex-col items-center justify-center h-full">
+                  <div className={styles.noCharacterSelectedContainer}>
                     <User className="h-12 w-12 text-gray-300 mb-4" />
                     <p className="text-gray-500 text-center mb-4">
                       左側のリストからキャラクターを選択するか、新規作成ボタンをクリックしてください。
                     </p>
                     <Button
                       onClick={handleAddNewCharacter}
-                      className="w-full md:w-auto"
+                      className={styles.createButton}
                     >
                       新規キャラクター作成
                     </Button>

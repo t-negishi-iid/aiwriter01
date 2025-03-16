@@ -1,0 +1,170 @@
+.expandIcon {
+  margin-right: 8px;
+  color: #3b82f6;
+  font-size: 12px;
+}
+
+.characterTitle {
+  font-size: 16px;
+}
+
+.characterHeader {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.characterHeaderExpanded {
+  border-bottom: 1px solid #ccc;
+}
+
+/* セクションヘッダー用のスタイルを追加 */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sectionHeader:hover {
+  background-color: #f3f4f6;
+}
+
+.sectionHeaderExpanded {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ページレイアウト用のスタイル */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.rowLayout {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.columnHalf {
+  width: 50%;
+  position: relative;
+}
+
+/* モバイル表示用のスタイル */
+.mobileContainer {
+  margin-top: 1.5rem;
+}
+
+.tabsList {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.tabsTrigger {
+  flex: 1;
+}
+
+/* 共通のコンテナスタイル */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 0;
+}
+
+.errorContainer {
+  text-align: center;
+  padding: 2.5rem 0;
+}
+
+.refreshButton {
+  margin-top: 1rem;
+}
+
+.characterListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.characterList {
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.characterListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.noCharactersContainer {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.characterFormContainer {
+  width: 50%;
+  position: relative;
+}
+
+.characterForm {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.noCharacterSelectedContainer {
+  background-color: #f9fafb;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.createButton {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .createButton {
+    width: auto;
+  }
+}
+
+/* PC表示用のスタイル */
+.pcContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 1rem;
+}
+
+.contentContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}

@@ -11,6 +11,7 @@ import { StoryTabs } from '@/components/story/StoryTabs';
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import styles from './characters.module.css';
+import { Textarea } from "@/components/ui/textarea";
 
 // インポートを追加
 import { CharacterData } from './lib/types';
@@ -24,11 +25,12 @@ export default function CharactersPage() {
   const storyId = searchParams.get('id');
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const [charactersMark, setCharactersMark] = useState<string>('');
 
   // カスタムフックを使用
   const {
     characters,
-    basicSettingData,
+    basicSetting,
     basicSettingCharacters,
     selectedCharacter,
     isLoading,
@@ -102,6 +104,26 @@ export default function CharactersPage() {
     }
   }, [isLoading, characters]);
 
+  // 作品設定から登場人物のMarkを抽出
+  useEffect(() => {
+    if (basicSetting && basicSetting.content) {
+      try {
+        // Markdownの「## 主な登場人物」セクションを正規表現で抽出
+        const characterSectionRegex = /## 登場人物\s*\n([\s\S]*?)(?:\n##|$)/;
+        const characterSection = characterSectionRegex.exec(basicSetting.content);
+
+        if (characterSection && characterSection[1]) {
+          setCharactersMark(characterSection[1].trim());
+        } else {
+          setCharactersMark('登場人物情報がありません');
+        }
+      } catch (error) {
+        console.error('登場人物情報抽出エラー:', error);
+        setCharactersMark('登場人物情報の抽出に失敗しました');
+      }
+    }
+  }, [basicSetting]);
+
   if (!storyId) {
     return (
       <div className="container mx-auto p-4">
@@ -149,11 +171,17 @@ export default function CharactersPage() {
                         <h2 className="text-xl font-semibold">作品設定</h2>
                       </div>
                       <div className={styles.settingBlockContent}>
-                        <p className="text-gray-600 mb-2">作品設定からキャラクターを作成できます。</p>
-                        <Button 
-                          variant="outline" 
+                        <p className="text-gray-600 mb-2">作品設定の登場人物情報</p>
+                        <Textarea
+                          className={styles.charactersMark}
+                          value={charactersMark}
+                          readOnly
+                          rows={6}
+                        />
+                        <Button
+                          variant="outline"
                           onClick={() => router.push(`/stories/${storyId}/settings`)}
-                          className="w-full"
+                          className="w-full mt-2"
                         >
                           作品設定を編集
                         </Button>
@@ -278,11 +306,17 @@ export default function CharactersPage() {
                         <h2 className="text-xl font-semibold">作品設定</h2>
                       </div>
                       <div className={styles.settingBlockContent}>
-                        <p className="text-gray-600 mb-2">作品設定からキャラクターを作成できます。</p>
-                        <Button 
-                          variant="outline" 
+                        <p className="text-gray-600 mb-2">作品設定の登場人物情報</p>
+                        <Textarea
+                          className={styles.charactersMark}
+                          value={charactersMark}
+                          readOnly
+                          rows={6}
+                        />
+                        <Button
+                          variant="outline"
                           onClick={() => router.push(`/stories/${storyId}/settings`)}
-                          className="w-full"
+                          className="w-full mt-2"
                         >
                           作品設定を編集
                         </Button>

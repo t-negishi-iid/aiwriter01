@@ -92,6 +92,16 @@ export default function CharactersPage() {
     }
   }, [storyId, router]);
 
+  // ページ読み込み時に、キャラクターが選択されていない場合は新規キャラクター作成フォームを表示
+  useEffect(() => {
+    if (!isLoading && !selectedCharacter && characters.length === 0) {
+      handleAddNewCharacter();
+    } else if (!isLoading && !selectedCharacter && characters.length > 0) {
+      // 既存のキャラクターがある場合は、最初のキャラクターを選択
+      setSelectedCharacter(characters[0]);
+    }
+  }, [isLoading, characters]);
+
   if (!storyId) {
     return (
       <div className="container mx-auto p-4">

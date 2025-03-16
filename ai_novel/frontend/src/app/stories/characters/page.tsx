@@ -143,6 +143,23 @@ export default function CharactersPage() {
                   </div>
                 ) : (
                   <div className={styles.characterListContainer}>
+                    {/* 作品設定ブロック */}
+                    <div className={styles.settingBlock}>
+                      <div className={styles.settingBlockHeader}>
+                        <h2 className="text-xl font-semibold">作品設定</h2>
+                      </div>
+                      <div className={styles.settingBlockContent}>
+                        <p className="text-gray-600 mb-2">作品設定からキャラクターを作成できます。</p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => router.push(`/stories/${storyId}/settings`)}
+                          className="w-full"
+                        >
+                          作品設定を編集
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (
                       <BasicSettingCharacterList
@@ -255,6 +272,23 @@ export default function CharactersPage() {
                   </div>
                 ) : (
                   <div className={styles.characterList}>
+                    {/* 作品設定ブロック */}
+                    <div className={styles.settingBlock}>
+                      <div className={styles.settingBlockHeader}>
+                        <h2 className="text-xl font-semibold">作品設定</h2>
+                      </div>
+                      <div className={styles.settingBlockContent}>
+                        <p className="text-gray-600 mb-2">作品設定からキャラクターを作成できます。</p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => router.push(`/stories/${storyId}/settings`)}
+                          className="w-full"
+                        >
+                          作品設定を編集
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (
                       <BasicSettingCharacterList

@@ -175,3 +175,22 @@
   gap: 24px;
   height: calc(100vh - 200px);
 }
+
+/* 作品設定ブロックのスタイル */
+.settingBlock {
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.settingBlockHeader {
+  background-color: #f9fafb;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.settingBlockContent {
+  padding: 1rem;
+}

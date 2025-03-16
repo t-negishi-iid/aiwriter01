@@ -60,8 +60,11 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
           plotApi.getPlot(storyId)
         ]);
 
+        console.log('======= デバッグ情報: StoryProvider データ取得結果 =======');
+
         // 小説情報の取得結果を処理
         if (storyData.status === 'fulfilled') {
+          console.log('小説情報:', storyData.value);
           setStory(storyData.value);
         } else {
           console.error("小説情報取得エラー:", storyData.reason);
@@ -69,6 +72,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
 
         // 統合設定クリエイターデータ（基本設定）の取得結果を処理
         if (integratedData.status === 'fulfilled') {
+          console.log('統合設定クリエイターデータ:', integratedData.value);
           const data = integratedData.value;
           if (data && data.results && data.results.basic_setting_data) {
             setBasicSettingData(data.results.basic_setting_data);
@@ -79,6 +83,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
 
         // 作品設定（BasicSetting）の取得結果を処理
         if (basicSettingData.status === 'fulfilled') {
+          console.log('作品設定(BasicSetting):', basicSettingData.value);
           setBasicSetting(basicSettingData.value || null);
         } else {
           console.error("作品設定取得エラー:", basicSettingData.reason);
@@ -86,6 +91,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
 
         // キャラクター情報の取得結果を処理
         if (charactersData.status === 'fulfilled') {
+          console.log('キャラクター情報:', charactersData.value);
           // APIレスポンスの形式に応じて処理
           const data = charactersData.value;
           if (Array.isArray(data)) {
@@ -102,10 +108,13 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
 
         // あらすじ情報の取得結果を処理
         if (plotData.status === 'fulfilled') {
+          console.log('あらすじ情報:', plotData.value);
           setPlot(plotData.value || null);
         } else {
           console.error("あらすじ情報取得エラー:", plotData.reason);
         }
+
+        console.log('======= デバッグ情報: 終了 =======');
       } catch (err) {
         console.error("データ取得中にエラーが発生しました:", err);
         setError('データの取得に失敗しました');

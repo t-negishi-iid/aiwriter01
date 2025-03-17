@@ -137,8 +137,14 @@ export const StorySettingBlock = ({
         }
       }
 
-      // キャラクター一覧を更新
-      await refreshCharacters();
+      // キャラクター一覧を更新 - 修正: 確実に更新されるようにする
+      console.log('キャラクター一覧を更新します...');
+
+      // 少し遅延を入れてから更新を実行（非同期処理の完了を待つため）
+      setTimeout(async () => {
+        await refreshCharacters();
+        console.log('キャラクター一覧の更新が完了しました');
+      }, 1000);
 
       toast({
         title: "キャラクターを一覧に反映しました",

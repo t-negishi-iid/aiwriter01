@@ -160,7 +160,6 @@ export default function CharactersPage() {
                     {/* 作品設定ブロック */}
                     <StorySettingBlock 
                       charactersMarkdown={charactersMark} 
-                      onEditClick={() => router.push(`/stories/${storyId}/settings`)}
                       basicSetting={basicSetting}
                     />
 
@@ -279,7 +278,6 @@ export default function CharactersPage() {
                     {/* 作品設定ブロック */}
                     <StorySettingBlock 
                       charactersMarkdown={charactersMark} 
-                      onEditClick={() => router.push(`/stories/${storyId}/settings`)}
                       basicSetting={basicSetting}
                     />
 

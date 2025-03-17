@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import styles from '../characters.module.css';
 
@@ -26,11 +25,10 @@ interface BasicSettingType {
 
 interface StorySettingBlockProps {
   charactersMarkdown: string;
-  onEditClick: () => void;
   basicSetting?: BasicSettingType;
 }
 
-export const StorySettingBlock = ({ charactersMarkdown, onEditClick, basicSetting }: StorySettingBlockProps) => {
+export const StorySettingBlock = ({ charactersMarkdown, basicSetting }: StorySettingBlockProps) => {
   return (
     <div className={styles.settingBlock}>
       <div className={styles.settingBlockHeader}>
@@ -44,14 +42,6 @@ export const StorySettingBlock = ({ charactersMarkdown, onEditClick, basicSettin
           readOnly
           rows={6}
         />
-
-        <Button
-          variant="outline"
-          onClick={onEditClick}
-          className="w-full mt-2"
-        >
-          作品設定を編集
-        </Button>
       </div>
     </div>
   );

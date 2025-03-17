@@ -1,0 +1,101 @@
+.container {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.leftPanel {
+  flex: 1;
+  min-width: 300px;
+}
+
+.rightPanel {
+  flex: 2;
+}
+
+.mobileContainer {
+  width: 100%;
+}
+
+.tabsList {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.tabsTrigger {
+  flex: 1;
+}
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.refreshButton {
+  margin-top: 1rem;
+}
+
+.plotListContainer {
+  margin-top: 1rem;
+}
+
+.plotList {
+  margin-top: 1rem;
+}
+
+.plotListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.noPlotContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.formContainer {
+  margin-top: 1rem;
+}
+
+.formButtons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.formButtonsLeft {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.formButtonsRight {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.detailFormContainer {
+  margin-top: 1.5rem;
+}
+
+.detailFormButtons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}

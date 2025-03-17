@@ -108,11 +108,10 @@ export function PlotForm({
               <Textarea
                 name="content"
                 value={formData.content}
-                style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
-
                 onChange={handleChange}
                 rows={5}
                 placeholder="基本あらすじを入力してください"
+                className={styles.textareaStyle}
               />
             </div>
 
@@ -142,10 +141,10 @@ export function PlotForm({
               <Textarea
                 name="detailedContent"
                 value={formData.detailedContent || ''}
-                style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
                 onChange={handleChange}
                 rows={10}
                 placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
+                className={styles.textareaStyle}
               />
               <div className={styles.detailFormButtons}>
                 <Button

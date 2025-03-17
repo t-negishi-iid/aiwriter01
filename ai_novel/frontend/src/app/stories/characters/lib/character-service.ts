@@ -149,19 +149,27 @@ export function extractCharactersFromBasicSetting(basicSetting: any): { characte
   
   let charactersMark = '';
   
-  // 作品設定のフォーマットに応じて登場人物設定を抽出
-  if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
-    console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
+  // BasicSettingのcharactersフィールドを使用
+  if (basicSetting.characters && typeof basicSetting.characters === 'string') {
+    console.log('登場人物設定:', basicSetting.characters.substring(0, 200) + '...');
+    charactersMark = basicSetting.characters.trim();
+  } else {
+    console.log('登場人物設定が見つかりませんでした。raw_contentから抽出を試みます。');
     
-    // 登場人物セクションを正規表現で抽出（「## 主な登場人物」から「## 主な固有名詞」までのブロック）
-    const characterSectionRegex = /## (?:主な)?登場人物[\s\S]*?(?=## (?:主な)?固有名詞|$)/;
-    const match = characterSectionRegex.exec(basicSetting.raw_content);
-    
-    if (match) {
-      charactersMark = match[0].trim();
-      console.log('抽出された登場人物ブロック:', charactersMark);
-    } else {
-      console.log('登場人物ブロックが見つかりませんでした');
+    // フォールバック: raw_contentから登場人物セクションを抽出
+    if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
+      console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
+      
+      // 登場人物セクションを正規表現で抽出（「## 主な登場人物」から「## 主な固有名詞」までのブロック）
+      const characterSectionRegex = /## (?:主な)?登場人物[\s\S]*?(?=## (?:主な)?固有名詞|$)/;
+      const match = characterSectionRegex.exec(basicSetting.raw_content);
+      
+      if (match) {
+        charactersMark = match[0].trim();
+        console.log('抽出された登場人物ブロック:', charactersMark);
+      } else {
+        console.log('登場人物ブロックが見つかりませんでした');
+      }
     }
   }
   

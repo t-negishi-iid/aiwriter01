@@ -50,7 +50,7 @@ class DifyNovelAPI:
         }
     }
 
-    def __init__(self, timeout: int = 60, max_retries: int = 3, retry_delay: int = 5):
+    def __init__(self, timeout: int = 300, max_retries: int = 3, retry_delay: int = 5):
         """
         コンストラクタ
 
@@ -198,7 +198,7 @@ class DifyNovelAPI:
     def create_character_detail(
         self,
         basic_setting: str,
-        character_data: Dict[str, str],
+        character_data: str,
         user_id: str,
         blocking: bool = True
     ) -> Dict[str, Any]:
@@ -207,7 +207,7 @@ class DifyNovelAPI:
 
         Args:
             basic_setting: 基本設定
-            character_data: キャラクターデータ（名前、役割）
+            character_data: キャラクターデータ（raw_content）
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
 
@@ -216,7 +216,7 @@ class DifyNovelAPI:
         """
         inputs = {
             "basic_setting": basic_setting,
-            "character": character_data.get("raw_content", ""),
+            "character": character_data,
         }
 
         return self._make_api_request("character_detail", inputs, user_id, blocking)

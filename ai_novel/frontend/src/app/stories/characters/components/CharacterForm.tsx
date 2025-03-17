@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CharacterData } from '../lib/types';
 import { Loader2 } from 'lucide-react';
-import styles from '../characters.module.css';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -105,9 +104,9 @@ export function CharacterForm({
 
     try {
       setIsGeneratingDetail(true);
-      
+
       // 詳細生成APIを呼び出す
-      const response = await fetchApi(`/stories/${storyId}/characters/detail/`, {
+      const response = await fetchApi(`/stories/${storyId}/create-character-detail/`, {
         method: 'POST',
         body: JSON.stringify({ character_id: character.id })
       });

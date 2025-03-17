@@ -112,7 +112,7 @@ class CreateCharacterDetailView(views.APIView):
 
         # 基本設定の取得
         try:
-            basic_setting = BasicSetting.objects.get(ai_story=story)
+            basic_setting = BasicSetting.objects.get(ai_story_id=story_id)
         except BasicSetting.DoesNotExist:
             return Response(
                 {'error': '基本設定が存在しません。先に基本設定を作成してください。'},
@@ -128,6 +128,7 @@ class CreateCharacterDetailView(views.APIView):
         api = DifyNovelAPI()
 
         # APIログの作成
+        story = get_object_or_404(AIStory, id=story_id, user=request.user)
         api_log = APIRequestLog.objects.create(
             user=request.user,
             request_type='character_detail',
@@ -143,7 +144,7 @@ class CreateCharacterDetailView(views.APIView):
             # 同期APIリクエスト
             response = api.create_character_detail(
                 basic_setting=basic_setting.raw_content,
-                character_data=character_data_str,
+                character_data=character.raw_content,
                 user_id=str(request.user.id),
                 blocking=True
             )
@@ -154,11 +155,11 @@ class CreateCharacterDetailView(views.APIView):
                 api_log.response = str(response)
                 api_log.save()
                 return Response(
-                    {'error': 'キャラクター詳細の生成に失敗しました', 'details': response},
+                    {'error': 'キャラクター詳細の生成レスポンスエラー', 'details': response},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-            content = response['answer']
+            content = response['result']
 
             # キャラクター詳細を更新
             character.appearance = content

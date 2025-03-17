@@ -40,6 +40,32 @@ export function DesktopView({
   handleCancelForm,
   refreshPlots
 }: DesktopViewProps) {
+  // 基本設定の幕を編集するための処理
+  const handleEditAct = (act: number) => {
+    // 該当する幕のプロットデータを探す
+    const actPlot = plots.find(plot => plot.act === act);
+    
+    if (actPlot) {
+      // 既存のプロットデータがある場合はそれを選択
+      setSelectedPlot(actPlot);
+    } else if (basicSetting) {
+      // 基本設定からプロットデータを作成
+      const newPlot = {
+        id: 0, // 新規プロットとして扱う
+        act: act,
+        act_number: act,
+        content: act === 1 
+          ? basicSetting.act1_overview || ''
+          : act === 2
+            ? basicSetting.act2_overview || ''
+            : basicSetting.act3_overview || '',
+        title: `第${act}幕`,
+        status: 'draft'
+      };
+      setSelectedPlot(newPlot);
+    }
+  };
+
   return (
     <div className={styles.container}>
       {/* 左パネル：あらすじ一覧 */}
@@ -65,6 +91,7 @@ export function DesktopView({
             {/* 作品設定ブロック */}
             <BasicSettingBlock 
               basicSetting={basicSetting}
+              onEditAct={handleEditAct}
             />
 
             {/* あらすじリスト */}

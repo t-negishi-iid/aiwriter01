@@ -88,6 +88,12 @@ class BasicSettingCreateView(views.APIView):
                         sections[current_section] = (section_start, i)
                     current_section = 'characters'
                     section_start = i
+                elif line.startswith('## 主な固有名詞') or line.startswith('## 固有名詞'):
+                    # 登場人物セクションを終了し、固有名詞セクションは別途処理
+                    if current_section and current_section == 'characters':
+                        sections[current_section] = (section_start, i)
+                    # 固有名詞セクションは現在は無視
+                    current_section = None
                 elif line.startswith('## あらすじ'):
                     if current_section:
                         sections[current_section] = (section_start, i)

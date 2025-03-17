@@ -1,15 +1,22 @@
 .container {
   display: flex;
   gap: 1.5rem;
+  height: calc(100vh - 120px);
 }
 
 .leftPanel {
   flex: 1;
   min-width: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  height: 100%;
 }
 
 .rightPanel {
   flex: 2;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  height: 100%;
 }
 
 .mobileContainer {

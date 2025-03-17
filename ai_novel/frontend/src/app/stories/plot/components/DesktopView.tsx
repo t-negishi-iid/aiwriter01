@@ -2,9 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { BookOpen } from 'lucide-react';
 import { PlotData, BasicSetting } from '../lib/types';
-import { PlotList } from './PlotList';
 import { PlotForm } from './PlotForm';
 import { BasicSettingBlock } from './BasicSettingBlock';
 import styles from '../plot-detail.module.css';
@@ -68,7 +66,7 @@ export function DesktopView({
 
   return (
     <div className={styles.container}>
-      {/* 左パネル：あらすじ一覧 */}
+      {/* 左パネル：基本設定 */}
       <div className={styles.leftPanel}>
         {isLoading ? (
           <div className={styles.loadingContainer}>
@@ -93,26 +91,6 @@ export function DesktopView({
               basicSetting={basicSetting}
               onEditAct={handleEditAct}
             />
-
-            {/* あらすじリスト */}
-            <div className={styles.plotList}>
-              <div className={styles.plotListHeader}>
-                <h2 className="text-xl font-semibold">あらすじ一覧</h2>
-              </div>
-
-              {plots.length === 0 ? (
-                <div className={styles.noPlotContainer}>
-                  <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">あらすじがまだ登録されていません</p>
-                </div>
-              ) : (
-                <PlotList
-                  plots={plots}
-                  selectedPlotId={selectedPlot?.id}
-                  onSelect={(plot) => setSelectedPlot(plot)}
-                />
-              )}
-            </div>
           </div>
         )}
       </div>

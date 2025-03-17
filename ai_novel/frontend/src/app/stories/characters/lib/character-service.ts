@@ -1,6 +1,16 @@
-import { characterApi, basicSettingApi, basicSettingDataApi, fetchApi } from '@/lib/api-client';
+import { characterApi, fetchApi } from '@/lib/api-client';
 import { CharacterData } from './types';
 import { toast } from '@/components/ui/use-toast';
+
+// BasicSettingの型定義
+export interface BasicSettingType {
+  id?: number;
+  story_setting?: string;
+  content?: string;
+  characters?: string;
+  raw_content?: string;
+  [key: string]: unknown;
+}
 
 // キャラクターデータの取得
 export async function fetchCharacters(storyId: string | null): Promise<CharacterData[]> {
@@ -48,7 +58,7 @@ export async function fetchBasicSettingData(storyId: string | null) {
 }
 
 // 作品設定（BasicSetting）の取得
-export async function fetchBasicSetting(storyId: string | null) {
+export async function fetchBasicSetting(storyId: string | null): Promise<BasicSettingType | null> {
   if (!storyId) return null;
 
   try {
@@ -121,7 +131,7 @@ export async function deleteCharacter(characterId: number): Promise<boolean> {
   }
 }
 
-export async function generateCharactersFromBasicSetting(storyId: string, basicSettingData: any): Promise<CharacterData[]> {
+export async function generateCharactersFromBasicSetting(storyId: string): Promise<CharacterData[]> {
   try {
     const response = await characterApi.createCharacters(storyId);
 
@@ -144,7 +154,7 @@ export async function generateCharactersFromBasicSetting(storyId: string, basicS
 }
 
 // 作品設定から登場人物設定を抽出する関数
-export function extractCharactersFromBasicSetting(basicSetting: any): { characters: any[], charactersMark: string } {
+export function extractCharactersFromBasicSetting(basicSetting: BasicSettingType): { characters: CharacterData[], charactersMark: string } {
   console.log('BasicSetting データ構造:', basicSetting);
   
   let charactersMark = '';
@@ -177,4 +187,56 @@ export function extractCharactersFromBasicSetting(basicSetting: any): { characte
     characters: [],  // 現時点ではキャラクターの個別分解は不要
     charactersMark
   };
+}
+
+// 登場人物設定をBasicSettingに保存する関数
+export async function saveCharactersToBasicSetting(storyId: string, characters: string): Promise<void> {
+  if (!storyId) {
+    throw new Error('ストーリーIDが指定されていません');
+  }
+
+  try {
+    // 最新の作品設定を取得
+    const basicSetting = await fetchBasicSetting(storyId);
+    if (!basicSetting) {
+      throw new Error('作品設定が見つかりませんでした');
+    }
+
+    // シリアライザで定義されているフィールドのみを含むオブジェクトを作成
+    // setting_dataフィールドは含めない
+    const updatedFields = {
+      characters: characters,
+      is_edited: true
+    };
+
+    console.log('登場人物設定を保存します:', { characters: characters.substring(0, 100) + '...' });
+
+    // 作品設定を部分更新するAPIを呼び出す（PATCHメソッド）
+    await fetchApi(`/stories/${storyId}/basic-setting/${basicSetting.id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedFields),
+    });
+
+  } catch (error) {
+    console.error('登場人物設定の保存エラー:', error);
+    throw error;
+  }
+}
+
+// raw_contentから登場人物を抽出する関数
+export function extractCharactersFromRawContent(rawContent: string): string {
+  if (!rawContent) return '';
+  
+  // 登場人物セクションを正規表現で抽出（「## 主な登場人物」から「## 主な固有名詞」までのブロック）
+  const characterSectionRegex = /## (?:主な)?登場人物[\s\S]*?(?=## (?:主な)?固有名詞|$)/;
+  const match = characterSectionRegex.exec(rawContent);
+  
+  if (match) {
+    return match[0].trim();
+  }
+  
+  return '';
 }

@@ -243,15 +243,6 @@ export default function CharactersPage() {
         ) : (
           // PC表示：左右に並べる
           <div className={styles.pcContainer}>
-            <div className={styles.buttonContainer}>
-              <Button
-                onClick={handleAddNewCharacter}
-                className={styles.createButton}
-              >
-                新規キャラクター作成
-              </Button>
-            </div>
-
             <div className={styles.contentContainer}>
               {/* 左側: キャラクターリスト */}
               <div className={styles.characterListContainer}>

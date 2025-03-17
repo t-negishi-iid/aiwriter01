@@ -144,12 +144,18 @@ export const StorySettingBlock = ({
       setTimeout(async () => {
         await refreshCharacters();
         console.log('キャラクター一覧の更新が完了しました');
+        
+        // 保存完了後に画面をリロード
+        toast({
+          title: "キャラクターを一覧に反映しました",
+          description: `${successCount}人のキャラクターを保存しました。画面をリロードします。`,
+        });
+        
+        // 少し遅延を入れてからリロード（トーストメッセージを表示するため）
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }, 1000);
-
-      toast({
-        title: "キャラクターを一覧に反映しました",
-        description: `${successCount}人のキャラクターを保存しました`,
-      });
 
     } catch (error) {
       console.error('キャラクター分割エラー:', error);

@@ -159,8 +159,8 @@ export default function CharactersPage() {
                   <div className={styles.characterListContainer}>
                     {/* 作品設定ブロック */}
                     <StorySettingBlock 
-                      charactersMarkdown={charactersMark} 
-                      basicSetting={basicSetting}
+                      storyId={storyId}
+                      basicSetting={basicSetting || undefined}
                     />
 
                     {/* 作品設定の登場人物 */}
@@ -277,8 +277,8 @@ export default function CharactersPage() {
                   <div className={styles.characterList}>
                     {/* 作品設定ブロック */}
                     <StorySettingBlock 
-                      charactersMarkdown={charactersMark} 
-                      basicSetting={basicSetting}
+                      storyId={storyId}
+                      basicSetting={basicSetting || undefined}
                     />
 
                     {/* 作品設定の登場人物 */}

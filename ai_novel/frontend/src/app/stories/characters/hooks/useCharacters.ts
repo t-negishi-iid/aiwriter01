@@ -7,15 +7,27 @@ import {
   extractCharactersFromBasicSetting,
   saveCharacter,
   deleteCharacter,
-  generateCharactersFromBasicSetting
+  generateCharactersFromBasicSetting,
+  saveCharactersToBasicSetting,
+  extractCharactersFromRawContent
 } from '../lib/character-service';
 import { toast } from '@/components/ui/use-toast';
 
+export interface BasicSettingType {
+  id?: number;
+  story_setting?: string;
+  content?: string;
+  characters?: string;
+  raw_content?: string;
+  [key: string]: unknown;
+}
+
 export function useCharacters(storyId: string | null) {
   const [characters, setCharacters] = useState<CharacterData[]>([]);
-  const [basicSettingData, setBasicSettingData] = useState<any>(null);
-  const [basicSetting, setBasicSetting] = useState<any>(null);
+  const [basicSettingData, setBasicSettingData] = useState<Record<string, unknown>>({});
+  const [basicSetting, setBasicSetting] = useState<BasicSettingType | null>(null);
   const [basicSettingCharacters, setBasicSettingCharacters] = useState<CharacterData[]>([]);
+  const [charactersMark, setCharactersMark] = useState<string>('');
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingCharacters, setIsLoadingCharacters] = useState(false);
@@ -50,8 +62,10 @@ export function useCharacters(storyId: string | null) {
 
         // 作品設定から登場人物情報を抽出
         if (basicSetting) {
-          const extractedCharacters = extractCharactersFromBasicSetting(basicSetting);
-          setBasicSettingCharacters(extractedCharacters);
+          const { charactersMark } = extractCharactersFromBasicSetting(basicSetting);
+          setCharactersMark(charactersMark);
+          // 基本設定の登場人物は空の配列を設定（現時点では個別分解は不要）
+          setBasicSettingCharacters([]);
         }
       } catch (err) {
         console.error('データ取得エラー:', err);
@@ -138,38 +152,32 @@ export function useCharacters(storyId: string | null) {
     }
   };
 
-  // 基本設定からキャラクターを生成
+  // 作品設定からキャラクターを生成
   const handleGenerateFromBasicSetting = async () => {
-    if (!storyId || !basicSettingData) return;
+    if (!storyId) return;
 
     setIsGenerating(true);
+    setError(null);
+
     try {
-      const generatedCharacters = await generateCharactersFromBasicSetting(
-        storyId,
-        basicSettingData
-      );
-
-      // 生成されたキャラクターを追加
-      setCharacters(prev => {
-        // 既存のキャラクター名をマップ
-        const existingNames = new Set(prev.map(c => c.name));
-
-        // 重複しないキャラクターだけ追加
-        const newCharacters = generatedCharacters.filter(c => !existingNames.has(c.name));
-
-        return [...prev, ...newCharacters];
-      });
-
+      // 作品設定からキャラクターを生成するAPIを呼び出す
+      const generatedCharacters = await generateCharactersFromBasicSetting(storyId);
+      
+      // 生成されたキャラクターを既存のキャラクターリストに追加
+      setCharacters(prevCharacters => [...prevCharacters, ...generatedCharacters]);
+      
       toast({
-        title: "生成完了",
-        description: `${generatedCharacters.length}人のキャラクターを生成しました`,
+        title: 'キャラクターを生成しました',
+        description: `${generatedCharacters.length}人のキャラクターが生成されました。`,
       });
     } catch (err) {
       console.error('キャラクター生成エラー:', err);
+      setError('キャラクターの生成に失敗しました。');
+      
       toast({
-        variant: "destructive",
-        title: "エラー",
-        description: "キャラクターの生成に失敗しました",
+        title: 'キャラクター生成エラー',
+        description: 'キャラクターの生成に失敗しました。もう一度お試しください。',
+        variant: 'destructive',
       });
     } finally {
       setIsGenerating(false);
@@ -213,11 +221,59 @@ export function useCharacters(storyId: string | null) {
     }
   };
 
+  // 作品設定の登場人物を保存
+  const saveBasicSettingCharacters = async (characters: string) => {
+    if (!storyId || !basicSetting) return;
+
+    setIsSaving(true);
+    try {
+      await saveCharactersToBasicSetting(storyId, characters);
+      
+      // 保存後に基本設定を再取得
+      const updatedBasicSetting = await fetchBasicSetting(storyId);
+      setBasicSetting(updatedBasicSetting);
+      
+      // 抽出処理を更新
+      if (updatedBasicSetting) {
+        const { charactersMark } = extractCharactersFromBasicSetting(updatedBasicSetting);
+        setCharactersMark(charactersMark);
+        // 基本設定の登場人物は空の配列を設定（現時点では個別分解は不要）
+        setBasicSettingCharacters([]);
+      }
+
+      toast({
+        title: "保存完了",
+        description: "登場人物設定を保存しました",
+      });
+    } catch (err) {
+      console.error('登場人物設定保存エラー:', err);
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: "登場人物設定の保存に失敗しました",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // 作品設定の登場人物をリセット
+  const resetBasicSettingCharacters = (): string | undefined => {
+    if (!basicSetting || !basicSetting.raw_content) return undefined;
+    
+    // raw_contentから登場人物セクションを抽出
+    const resetCharacters = extractCharactersFromRawContent(basicSetting.raw_content);
+    
+    // 抽出結果を返す（実際の保存はしない）
+    return resetCharacters;
+  };
+
   return {
     characters,
     basicSettingData,
     basicSetting,
     basicSettingCharacters,
+    charactersMark,
     selectedCharacter,
     isLoading,
     isLoadingCharacters,
@@ -229,6 +285,8 @@ export function useCharacters(storyId: string | null) {
     handleDeleteCharacter,
     handleGenerateFromBasicSetting,
     createCharacterFromBasicSetting,
-    refreshCharacters
+    refreshCharacters,
+    saveBasicSettingCharacters,
+    resetBasicSettingCharacters
   };
 }

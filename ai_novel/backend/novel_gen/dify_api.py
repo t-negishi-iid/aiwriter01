@@ -16,7 +16,6 @@ class DifyNovelAPI:
     Dify APIとの通信を行うクラス
     """
     # API設定（実際には設定ファイルから読み込む）
-    #API_BASE_URL = "https://api.dify.ai/v1/completion-messages"
     API_BASE_URL = "https://api.dify.ai/v1/workflows/run"
 
     # APIごとの設定
@@ -217,8 +216,7 @@ class DifyNovelAPI:
         """
         inputs = {
             "basic_setting": basic_setting,
-            "character_name": character_data.get("name", ""),
-            "character_role": character_data.get("role", "")
+            "character": character_data.get("raw_content", ""),
         }
 
         return self._make_api_request("character_detail", inputs, user_id, blocking)
@@ -226,7 +224,7 @@ class DifyNovelAPI:
     def create_plot_detail(
         self,
         basic_setting: str,
-        character_details: List[Dict[str, Any]],
+        all_characters_list: List[Dict[str, Any]],
         user_id: str,
         blocking: bool = True
     ) -> Dict[str, Any]:
@@ -235,19 +233,19 @@ class DifyNovelAPI:
 
         Args:
             basic_setting: 基本設定
-            character_details: キャラクター詳細リスト
+            all_characters_list: 　全キャラクター詳細リスト
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
 
         Returns:
             Dict[str, Any]: レスポンス
         """
-        # キャラクター詳細を文字列にシリアライズ
-        character_details_str = json.dumps(character_details, ensure_ascii=False)
+        # 全キャラクター詳細を文字列にシリアライズ
+        all_characters = json.dumps(all_characters_list, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
-            "character_details": character_details_str
+            "all_characters": all_characters
         }
 
         return self._make_api_request("plot_detail", inputs, user_id, blocking)
@@ -255,7 +253,7 @@ class DifyNovelAPI:
     def create_episode_details(
         self,
         basic_setting: str,
-        character_details: List[Dict[str, Any]],
+        all_characters_list: List[Dict[str, Any]],
         plot_details: List[Dict[str, Any]],
         target_plot: Dict[str, Any],
         episode_count: int,
@@ -267,7 +265,7 @@ class DifyNovelAPI:
 
         Args:
             basic_setting: 基本設定
-            character_details: キャラクター詳細リスト
+            all_characters_list: キャラクター詳細リスト
             plot_details: あらすじ詳細リスト
             target_plot: ターゲットとなるあらすじ詳細
             episode_count: エピソード数
@@ -278,13 +276,13 @@ class DifyNovelAPI:
             Dict[str, Any]: レスポンス
         """
         # データをシリアライズ
-        character_details_str = json.dumps(character_details, ensure_ascii=False)
+        all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         plot_details_str = json.dumps(plot_details, ensure_ascii=False)
         target_plot_str = json.dumps(target_plot, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
-            "character_details": character_details_str,
+            "all_characters": all_characters_str,
             "plot_details": plot_details_str,
             "target_plot": target_plot_str,
             "episode_count": str(episode_count)
@@ -295,7 +293,7 @@ class DifyNovelAPI:
     def create_episode_content(
         self,
         basic_setting: str,
-        character_details: List[Dict[str, Any]],
+        all_characters_list: List[Dict[str, Any]],
         plot_details: List[Dict[str, Any]],
         episode_detail: str,
         word_count: int,
@@ -307,7 +305,7 @@ class DifyNovelAPI:
 
         Args:
             basic_setting: 基本設定
-            character_details: キャラクター詳細リスト
+            all_characters_list: キャラクター詳細リスト
             plot_details: あらすじ詳細リスト
             episode_detail: エピソード詳細
             word_count: 文字数
@@ -318,12 +316,12 @@ class DifyNovelAPI:
             Dict[str, Any]: レスポンス
         """
         # データをシリアライズ
-        character_details_str = json.dumps(character_details, ensure_ascii=False)
+        all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         plot_details_str = json.dumps(plot_details, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
-            "character_details": character_details_str,
+            "all_characters": all_characters_str,
             "plot_details": plot_details_str,
             "episode_detail": episode_detail,
             "word_count": str(word_count)
@@ -334,7 +332,7 @@ class DifyNovelAPI:
     def generate_title(
         self,
         basic_setting: str,
-        character_details: List[Dict[str, Any]],
+        all_characters_list: List[Dict[str, Any]],
         plot_details: List[Dict[str, Any]],
         target_content: str,
         target_type: str,
@@ -346,7 +344,7 @@ class DifyNovelAPI:
 
         Args:
             basic_setting: 基本設定
-            character_details: キャラクター詳細リスト
+            all_characters_list: キャラクター詳細リスト
             plot_details: あらすじ詳細リスト
             target_content: ターゲットコンテンツ
             target_type: ターゲットタイプ（episode, act, novel）
@@ -357,12 +355,12 @@ class DifyNovelAPI:
             Dict[str, Any]: レスポンス
         """
         # データをシリアライズ
-        character_details_str = json.dumps(character_details, ensure_ascii=False)
+        all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         plot_details_str = json.dumps(plot_details, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
-            "character_details": character_details_str,
+            "all_characters": all_characters_str,
             "plot_details": plot_details_str,
             "target_content": target_content,
             "target_type": target_type

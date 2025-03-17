@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useCharacters } from './hooks/useCharacters';
+import { extractCharactersFromBasicSetting } from './lib/character-service';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Book, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 
 // インポートを追加
 import { CharacterData } from './lib/types';
-import { useCharacters } from './hooks/useCharacters';
 import { CharacterList } from './components/CharacterList';
 import { CharacterForm } from './components/CharacterForm';
 import { BasicSettingCharacterList } from './components/BasicSettingCharacterList';
@@ -107,21 +109,10 @@ export default function CharactersPage() {
 
   // 作品設定から登場人物のMarkを抽出
   useEffect(() => {
-    if (basicSetting && basicSetting.content) {
-      try {
-        // Markdownの「## 主な登場人物」セクションを正規表現で抽出
-        const characterSectionRegex = /## 登場人物\s*\n([\s\S]*?)(?:\n##|$)/;
-        const characterSection = characterSectionRegex.exec(basicSetting.content);
-
-        if (characterSection && characterSection[1]) {
-          setCharactersMark(characterSection[1].trim());
-        } else {
-          setCharactersMark('登場人物情報がありません');
-        }
-      } catch (error) {
-        console.error('登場人物情報抽出エラー:', error);
-        setCharactersMark('登場人物情報の抽出に失敗しました');
-      }
+    if (basicSetting) {
+      console.log('BasicSetting取得:', basicSetting);
+      const { charactersMark } = extractCharactersFromBasicSetting(basicSetting);
+      setCharactersMark(charactersMark);
     }
   }, [basicSetting]);
 

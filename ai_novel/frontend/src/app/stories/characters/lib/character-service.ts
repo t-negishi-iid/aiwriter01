@@ -144,97 +144,29 @@ export async function generateCharactersFromBasicSetting(storyId: string, basicS
 }
 
 // 作品設定から登場人物設定を抽出する関数
-export function extractCharactersFromBasicSetting(basicSetting: any): any[] {
-  if (!basicSetting) return [];
-
-  try {
-    console.log('BasicSetting データ構造:', basicSetting);
-
-    // 作品設定のフォーマットに応じて登場人物設定を抽出
-    if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
-      console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
-
-      // 登場人物セクションを正規表現で抽出
-      const characterSectionRegex = /## (?:主な)?登場人物\s*(?:\n|---\n)([\s\S]*?)(?:\n##|$)/;
-      const characterSection = characterSectionRegex.exec(basicSetting.raw_content);
-
-      console.log('正規表現マッチ結果:', characterSection ? '成功' : '失敗');
-
-      if (characterSection && characterSection[1]) {
-        console.log('抽出された登場人物セクション:', characterSection[1]);
-
-        // 登場人物の情報を行ごとに分割
-        const characterLines = characterSection[1].trim().split('\n');
-        console.log('分割された行数:', characterLines.length);
-
-        // 各行から登場人物情報を抽出
-        const characters = [];
-        let currentCharacter = null;
-
-        for (let i = 0; i < characterLines.length; i++) {
-          const line = characterLines[i].trim();
-          console.log(`行 ${i}: ${line}`);
-
-          // 新しいキャラクター定義の開始（### で始まる行）
-          if (line.startsWith('### ')) {
-            if (currentCharacter) {
-              characters.push(currentCharacter);
-              console.log('キャラクター追加:', currentCharacter);
-            }
-
-            currentCharacter = {
-              id: characters.length,
-              name: line.replace('### ', '').trim(),
-              description: '',
-              role: '',
-              personality: '',
-              appearance: '',
-              background: '',
-              raw_content: ''
-            };
-            console.log('新しいキャラクター作成:', currentCharacter.name);
-          }
-          // 区切り線（---）は無視
-          else if (line === '---') {
-            console.log('区切り線をスキップ');
-            continue;
-          }
-          // 役割の定義（#### 役割 の次の行）
-          else if (line.startsWith('#### 役割') && currentCharacter && i + 1 < characterLines.length) {
-            currentCharacter.role = characterLines[i + 1].trim();
-            console.log(`役割設定: ${currentCharacter.role}`);
-            i++; // 次の行をスキップ
-          }
-          // 説明の定義（#### 説明 の次の行）
-          else if (line.startsWith('#### 説明') && currentCharacter && i + 1 < characterLines.length) {
-            currentCharacter.description = characterLines[i + 1].trim();
-            currentCharacter.raw_content = characterLines[i + 1].trim();
-            console.log(`説明設定: ${currentCharacter.description}`);
-            i++; // 次の行をスキップ
-          }
-        }
-
-        // 最後のキャラクターを追加
-        if (currentCharacter) {
-          characters.push(currentCharacter);
-          console.log('最後のキャラクター追加:', currentCharacter);
-        }
-
-        console.log('抽出されたキャラクター一覧:', characters);
-        return characters;
-      }
+export function extractCharactersFromBasicSetting(basicSetting: any): { characters: any[], charactersMark: string } {
+  console.log('BasicSetting データ構造:', basicSetting);
+  
+  let charactersMark = '';
+  
+  // 作品設定のフォーマットに応じて登場人物設定を抽出
+  if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
+    console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
+    
+    // 登場人物セクションを正規表現で抽出（「## 主な登場人物」から「## 主な固有名詞」までのブロック）
+    const characterSectionRegex = /## (?:主な)?登場人物[\s\S]*?(?=## (?:主な)?固有名詞|$)/;
+    const match = characterSectionRegex.exec(basicSetting.raw_content);
+    
+    if (match) {
+      charactersMark = match[0].trim();
+      console.log('抽出された登場人物ブロック:', charactersMark);
+    } else {
+      console.log('登場人物ブロックが見つかりませんでした');
     }
-
-    // 登場人物フィールドが直接存在する場合
-    if (basicSetting.characters && Array.isArray(basicSetting.characters)) {
-      console.log('直接charactersフィールドから取得:', basicSetting.characters);
-      return basicSetting.characters;
-    }
-
-    console.log('キャラクター情報が見つかりませんでした');
-    return [];
-  } catch (error) {
-    console.error('登場人物設定の抽出エラー:', error);
-    return [];
   }
+  
+  return {
+    characters: [],  // 現時点ではキャラクターの個別分解は不要
+    charactersMark
+  };
 }

@@ -23,8 +23,9 @@ export function BasicSettingBlock({ basicSetting }: BasicSettingBlockProps) {
         <div className="space-y-2">
           <div>
             <h3 className="text-sm font-medium" id="act1-label">第1幕</h3>
-            <textarea 
+            <textarea
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
               value={basicSetting.act1_overview || '未設定'}
               readOnly
               rows={3}
@@ -34,8 +35,9 @@ export function BasicSettingBlock({ basicSetting }: BasicSettingBlockProps) {
           </div>
           <div>
             <h3 className="text-sm font-medium" id="act2-label">第2幕</h3>
-            <textarea 
+            <textarea
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
               value={basicSetting.act2_overview || '未設定'}
               readOnly
               rows={3}
@@ -45,8 +47,9 @@ export function BasicSettingBlock({ basicSetting }: BasicSettingBlockProps) {
           </div>
           <div>
             <h3 className="text-sm font-medium" id="act3-label">第3幕</h3>
-            <textarea 
+            <textarea
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
               value={basicSetting.act3_overview || '未設定'}
               readOnly
               rows={3}

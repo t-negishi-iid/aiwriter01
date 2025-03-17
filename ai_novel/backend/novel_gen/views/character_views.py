@@ -24,6 +24,7 @@ class CharacterDetailListCreateView(generics.ListCreateAPIView):
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CharacterDetailSerializer
+    pagination_class = None
 
     def get_queryset(self):
         """指定された小説のキャラクター詳細一覧を取得"""
@@ -31,7 +32,7 @@ class CharacterDetailListCreateView(generics.ListCreateAPIView):
         return CharacterDetail.objects.filter(
             ai_story_id=story_id,
             ai_story__user=self.request.user
-        ).order_by('id')
+        ).order_by('id')[:50]
 
     def perform_create(self, serializer):
         """キャラクター詳細作成時に小説を設定"""

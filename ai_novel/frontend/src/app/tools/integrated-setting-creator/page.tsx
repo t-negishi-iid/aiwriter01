@@ -437,16 +437,15 @@ export default function IntegratedSettingCreator() {
         throw new Error('レスポンスデータが見つかりません');
       }
 
-      setSaveSuccess(true);
       toast({
         title: "基本設定を保存しました",
-        description: "小説画面に戻ります",
+        description: "変更が正常に保存されました",
       });
 
-      // 保存成功後に小説画面に戻る
-      setTimeout(() => {
-        router.push(`/stories?id=${storyId}`);
-      }, 1500); // トーストメッセージを表示するために少し遅延させる
+      // リダイレクトを削除し、保存完了のみを通知
+      setSaveSuccess(true);
+      setSaveError(null);
+      setIsSaving(false);
     } catch (error) {
       console.error('保存エラー:', error);
       setSaveError(`保存中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);

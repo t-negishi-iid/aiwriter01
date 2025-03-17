@@ -79,32 +79,32 @@ export function PlotForm({
   return (
     <form onSubmit={handleSubmit} className={styles.formContainer}>
       <Card>
+        {/* 詳細あらすじ生成ボタン - フォームの一番上に配置 */}
+        <div className="flex justify-end mb-4">
+          <Button
+            type="button"
+            onClick={handleGenerateDetail}
+            disabled={isGenerating || !formData.content}
+            className="w-full"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                詳細あらすじ生成中...
+              </>
+            ) : (
+              '詳細あらすじを生成'
+            )}
+          </Button>
+        </div>
         <CardHeader>
           <CardTitle>{formData.title || '新規あらすじ'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* 詳細あらすじ生成ボタン - フォームの一番上に配置 */}
-            <div className="flex justify-end mb-4">
-              <Button 
-                type="button" 
-                onClick={handleGenerateDetail} 
-                disabled={isGenerating || !formData.content}
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    詳細あらすじ生成中...
-                  </>
-                ) : (
-                  '詳細あらすじを生成'
-                )}
-              </Button>
-            </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">基本あらすじ</label>
+              <label className="block text-sm font-medium mb-3">基本あらすじ</label>
               <Textarea
                 name="content"
                 value={formData.content}
@@ -121,11 +121,7 @@ export function PlotForm({
                 <Button type="button" variant="outline" onClick={onCancel}>
                   キャンセル
                 </Button>
-                {formData.id && (
-                  <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSaving}>
-                    削除
-                  </Button>
-                )}
+
               </div>
               <div className={styles.formButtonsRight}>
                 <Button type="submit" disabled={isSaving}>
@@ -142,7 +138,7 @@ export function PlotForm({
             </div>
 
             <div className={styles.detailFormContainer}>
-              <label className="block text-sm font-medium mb-1">詳細あらすじ</label>
+              <label className="block text-sm font-medium mb-3">詳細あらすじ</label>
               <Textarea
                 name="detailedContent"
                 value={formData.detailedContent || ''}

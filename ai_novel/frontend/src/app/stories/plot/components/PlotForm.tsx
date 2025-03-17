@@ -47,7 +47,7 @@ export function PlotForm({
 
   const handleDelete = async () => {
     if (!formData.id) return;
-    
+
     if (window.confirm('このあらすじを削除してもよろしいですか？')) {
       const success = await onDelete(formData.id);
       if (success) {
@@ -85,6 +85,8 @@ export function PlotForm({
               <Textarea
                 name="content"
                 value={formData.content}
+                style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
+
                 onChange={handleChange}
                 rows={5}
                 placeholder="基本あらすじを入力してください"
@@ -103,16 +105,6 @@ export function PlotForm({
                 )}
               </div>
               <div className={styles.formButtonsRight}>
-                <Button type="button" onClick={handleGenerateDetail} disabled={isGenerating || !formData.content}>
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      生成中...
-                    </>
-                  ) : (
-                    '詳細を生成'
-                  )}
-                </Button>
                 <Button type="submit" disabled={isSaving}>
                   {isSaving ? (
                     <>
@@ -131,14 +123,15 @@ export function PlotForm({
               <Textarea
                 name="detailedContent"
                 value={formData.detailedContent || ''}
+                style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
                 onChange={handleChange}
                 rows={10}
                 placeholder="詳細あらすじはまだ生成されていません。「詳細を生成」ボタンをクリックして生成してください。"
               />
               <div className={styles.detailFormButtons}>
-                <Button 
-                  type="button" 
-                  onClick={handleSaveDetailOnly} 
+                <Button
+                  type="button"
+                  onClick={handleSaveDetailOnly}
                   disabled={isSavingDetail || !formData.detailedContent}
                 >
                   {isSavingDetail ? (
@@ -148,6 +141,16 @@ export function PlotForm({
                     </>
                   ) : (
                     '詳細を保存'
+                  )}
+                </Button>
+                <Button type="button" onClick={handleGenerateDetail} disabled={isGenerating || !formData.content}>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      生成中...
+                    </>
+                  ) : (
+                    '詳細を生成'
                   )}
                 </Button>
               </div>

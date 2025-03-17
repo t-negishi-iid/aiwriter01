@@ -97,6 +97,7 @@ export default function PlotPage() {
             handleGenerateDetailedPlot={handleGenerateDetailedPlot}
             handleCancelForm={handleCancelForm}
             refreshPlots={refreshPlots}
+            storyId={Number(storyId)}
           />
         ) : (
           <DesktopView
@@ -113,6 +114,7 @@ export default function PlotPage() {
             handleGenerateDetailedPlot={handleGenerateDetailedPlot}
             handleCancelForm={handleCancelForm}
             refreshPlots={refreshPlots}
+            storyId={Number(storyId)}
           />
         )}
       </div>

@@ -13,6 +13,12 @@ interface BasicSettingBlockProps {
 export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlockProps) {
   if (!basicSetting) return null;
 
+  const handleEditClick = async (act: number) => {
+    if (onEditAct) {
+      onEditAct(act);
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
@@ -31,7 +37,7 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                   variant="ghost" 
                   size="sm" 
                   className="h-7 px-2 absolute top-0 right-0"
-                  onClick={() => onEditAct(1)}
+                  onClick={() => handleEditClick(1)}
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   <span className="text-xs">編集</span>
@@ -56,7 +62,7 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                   variant="ghost" 
                   size="sm" 
                   className="h-7 px-2 absolute top-0 right-0"
-                  onClick={() => onEditAct(2)}
+                  onClick={() => handleEditClick(2)}
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   <span className="text-xs">編集</span>
@@ -81,7 +87,7 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                   variant="ghost" 
                   size="sm" 
                   className="h-7 px-2 absolute top-0 right-0"
-                  onClick={() => onEditAct(3)}
+                  onClick={() => handleEditClick(3)}
                 >
                   <Edit className="h-4 w-4 mr-1" />
                   <span className="text-xs">編集</span>

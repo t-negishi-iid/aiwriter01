@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { CharacterData } from '../lib/types';
 import { Loader2 } from 'lucide-react';
 import styles from '../characters.module.css';
+import { fetchApi } from '@/lib/api-client';
+import { toast } from '@/components/ui/use-toast';
 
 interface CharacterFormProps {
   character: CharacterData | null;
@@ -36,6 +38,7 @@ export function CharacterForm({
     development: '',
     raw_content: character?.raw_content,
   });
+  const [isGeneratingDetail, setIsGeneratingDetail] = useState(false);
 
   // キャラクターが変更されたら、フォームデータを更新
   useEffect(() => {
@@ -96,6 +99,49 @@ export function CharacterForm({
     }
   };
 
+  // 詳細生成処理
+  const handleGenerateDetail = async () => {
+    if (!character?.id || !storyId) return;
+
+    try {
+      setIsGeneratingDetail(true);
+      
+      // 詳細生成APIを呼び出す
+      const response = await fetchApi(`/stories/${storyId}/characters/detail/`, {
+        method: 'POST',
+        body: JSON.stringify({ character_id: character.id })
+      });
+
+      // 成功したら、フォームデータを更新
+      if (response) {
+        setFormData(prev => ({
+          ...prev,
+          appearance: response.appearance || prev.appearance,
+          personality: response.personality || prev.personality,
+          background: response.background || prev.background,
+          motivation: response.motivation || prev.motivation,
+          relationship: response.relationship || prev.relationship,
+          development: response.development || prev.development,
+          raw_content: response.raw_content || prev.raw_content
+        }));
+
+        toast({
+          title: "詳細生成完了",
+          description: "キャラクターの詳細情報を生成しました",
+        });
+      }
+    } catch (error) {
+      console.error('キャラクター詳細生成エラー:', error);
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: "キャラクター詳細の生成に失敗しました",
+      });
+    } finally {
+      setIsGeneratingDetail(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex justify-between space-x-4 pt-4">
@@ -130,6 +176,24 @@ export function CharacterForm({
               disabled={isSaving}
             >
               削除
+            </Button>
+          )}
+          {character?.id && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleGenerateDetail}
+              disabled={isGeneratingDetail || isSaving}
+              className="ml-2"
+            >
+              {isGeneratingDetail ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                '詳細を生成'
+              )}
             </Button>
           )}
         </div>

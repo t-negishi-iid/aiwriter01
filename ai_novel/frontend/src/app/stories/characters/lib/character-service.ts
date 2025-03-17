@@ -107,12 +107,10 @@ export async function saveCharacter(character: CharacterData): Promise<Character
   }
 }
 
-export async function deleteCharacter(characterId: number): Promise<boolean> {
+export async function deleteCharacter(storyId: string | number, characterId: number): Promise<boolean> {
   try {
-    // characterApi.deleteCharacterメソッドが存在しないため、
-    // 代わりにgetCharacterメソッドを使用してキャラクター情報を取得する例
-    // 実際の削除処理は適切なAPIメソッドに置き換える必要があります
-    await characterApi.getCharacter(characterId, characterId);
+    // 削除APIを呼び出す
+    await characterApi.deleteCharacter(storyId, characterId);
 
     toast({
       title: "削除完了",

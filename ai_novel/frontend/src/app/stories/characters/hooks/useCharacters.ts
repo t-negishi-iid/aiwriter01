@@ -123,9 +123,18 @@ export function useCharacters(storyId: string | null) {
 
   // キャラクター削除
   const handleDeleteCharacter = async (characterId: number) => {
+    if (!storyId) {
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: "ストーリーIDが指定されていません",
+      });
+      return;
+    }
+    
     setIsSaving(true);
     try {
-      const success = await deleteCharacter(characterId);
+      const success = await deleteCharacter(storyId, characterId);
       if (success) {
         // キャラクターリストから削除
         setCharacters(prev => prev.filter(c => c.id !== characterId));

@@ -156,6 +156,7 @@ export function MobileView({
           ) : selectedPlot ? (
             <PlotForm
               plot={selectedPlot}
+              basicSetting={basicSetting}
               isSaving={isSaving}
               isGenerating={isGenerating}
               onSave={handleSavePlot}

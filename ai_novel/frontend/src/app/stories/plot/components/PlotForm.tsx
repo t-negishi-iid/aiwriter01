@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlotData } from '../lib/types';
+import { PlotData, BasicSetting } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import styles from '../plot-detail.module.css';
 
 interface PlotFormProps {
   plot: PlotData;
+  basicSetting?: BasicSetting | null;
   isSaving: boolean;
   isGenerating: boolean;
   onSave: (plot: PlotData) => Promise<boolean>;
@@ -19,6 +20,7 @@ interface PlotFormProps {
 
 export function PlotForm({
   plot,
+  basicSetting,
   isSaving,
   isGenerating,
   onSave,
@@ -103,15 +105,47 @@ export function PlotForm({
           <div className="space-y-4">
 
             <div>
-              <label className="block text-sm font-medium mb-10">基本あらすじ</label>
-              <Textarea
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                rows={5}
-                placeholder="基本あらすじを入力してください"
-                className={styles.textareaStyle}
-              />
+              <label className="block text-sm font-medium mb-3">基本あらすじ</label>
+              {basicSetting ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">第1幕</label>
+                    <Textarea
+                      readOnly
+                      value={basicSetting.act1_overview || ''}
+                      rows={3}
+                      className={styles.textareaStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">第2幕</label>
+                    <Textarea
+                      readOnly
+                      value={basicSetting.act2_overview || ''}
+                      rows={3}
+                      className={styles.textareaStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">第3幕</label>
+                    <Textarea
+                      readOnly
+                      value={basicSetting.act3_overview || ''}
+                      rows={3}
+                      className={styles.textareaStyle}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <Textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  rows={5}
+                  placeholder="基本あらすじを入力してください"
+                  className={styles.textareaStyle}
+                />
+              )}
             </div>
 
             <div className={styles.formButtons}>

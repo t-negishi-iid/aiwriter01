@@ -39,14 +39,14 @@ export function usePlotDetail(storyId: string | null) {
           }
         }
 
-        // あらすじ一覧を取得（実際のAPIが実装されたら置き換える）
-        // 現時点ではモックデータを使用
-        const mockPlots: PlotData[] = [
-          { id: 1, storyId, act: 1, title: '第1幕', content: '', detailedContent: '' },
-          { id: 2, storyId, act: 2, title: '第2幕', content: '', detailedContent: '' },
-          { id: 3, storyId, act: 3, title: '第3幕', content: '', detailedContent: '' }
-        ];
-        setPlots(mockPlots);
+        // プロット一覧を取得
+        const plotsResponse = await fetch(`/api/plots/${storyId}`);
+        if (plotsResponse.ok) {
+          const plotsData = await plotsResponse.json();
+          setPlots(plotsData);
+        } else {
+          throw new Error('プロットデータの取得に失敗しました');
+        }
       } catch (err) {
         console.error('データ取得エラー:', err);
         setError('データの取得に失敗しました');
@@ -83,14 +83,14 @@ export function usePlotDetail(storyId: string | null) {
     setIsLoadingPlots(true);
     setError(null);
     try {
-      // 実際のAPIが実装されたら置き換える
-      // 現時点ではモックデータを使用
-      const mockPlots: PlotData[] = [
-        { id: 1, storyId, act: 1, title: '第1幕', content: basicSettingPlot?.act1 || '', detailedContent: '' },
-        { id: 2, storyId, act: 2, title: '第2幕', content: basicSettingPlot?.act2 || '', detailedContent: '' },
-        { id: 3, storyId, act: 3, title: '第3幕', content: basicSettingPlot?.act3 || '', detailedContent: '' }
-      ];
-      setPlots(mockPlots);
+      // プロット一覧を取得
+      const plotsResponse = await fetch(`/api/plots/${storyId}`);
+      if (plotsResponse.ok) {
+        const plotsData = await plotsResponse.json();
+        setPlots(plotsData);
+      } else {
+        throw new Error('プロットデータの取得に失敗しました');
+      }
     } catch (err) {
       console.error('あらすじ一覧取得エラー:', err);
       setError('あらすじ一覧の取得に失敗しました');
@@ -105,19 +105,33 @@ export function usePlotDetail(storyId: string | null) {
 
     setIsSaving(true);
     try {
-      // 実際のAPIが実装されたら置き換える
-      console.log('保存するあらすじ:', plot);
+      // APIを使用してプロットを保存
+      const method = plot.id ? 'PUT' : 'POST';
+      const url = plot.id ? `/api/plots/${storyId}/${plot.id}` : `/api/plots/${storyId}`;
       
-      // モックの保存処理
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(plot),
+      });
+      
+      if (!response.ok) {
+        throw new Error('プロットの保存に失敗しました');
+      }
+      
+      const savedPlot = await response.json();
+      
+      // 保存したプロットで状態を更新
       if (plot.id) {
-        // 既存のあらすじを更新
+        // 既存のプロットを更新
         setPlots(prevPlots => 
-          prevPlots.map(p => p.id === plot.id ? plot : p)
+          prevPlots.map(p => p.id === plot.id ? savedPlot : p)
         );
       } else {
-        // 新規あらすじを作成
-        const newPlot = { ...plot, id: Date.now() };
-        setPlots(prevPlots => [...prevPlots, newPlot]);
+        // 新規プロットを追加
+        setPlots(prevPlots => [...prevPlots, savedPlot]);
       }
       
       toast({
@@ -145,11 +159,22 @@ export function usePlotDetail(storyId: string | null) {
 
     setIsSaving(true);
     try {
-      // 実際のAPIが実装されたら置き換える
-      console.log('削除するあらすじID:', plotId);
+      // APIを使用してプロットを削除
+      const response = await fetch(`/api/plots/${storyId}/${plotId}`, {
+        method: 'DELETE',
+      });
       
-      // モックの削除処理
+      if (!response.ok) {
+        throw new Error('プロットの削除に失敗しました');
+      }
+      
+      // 削除したプロットを状態から除外
       setPlots(prevPlots => prevPlots.filter(p => p.id !== plotId));
+      
+      // 削除したプロットが選択中だった場合、選択を解除
+      if (selectedPlot?.id === plotId) {
+        setSelectedPlot(null);
+      }
       
       toast({
         title: "削除完了",
@@ -176,30 +201,32 @@ export function usePlotDetail(storyId: string | null) {
 
     setIsGenerating(true);
     try {
-      // 実際のAPIが実装されたら置き換える
-      console.log('詳細あらすじを生成:', plot);
+      // APIを使用して詳細あらすじを生成
+      const response = await fetch(`/api/plots/${storyId}/${plot.id}/generate-detail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ plot }),
+      });
       
-      // モックの生成処理
-      const generatedDetail = `${plot.content}\n\nここに生成された詳細なあらすじが表示されます。このテキストはモックデータです。実際のAPIが実装されたら、AIによって生成された詳細なあらすじが表示されます。`;
-      
-      const updatedPlot = { ...plot, detailedContent: generatedDetail };
-      
-      // 生成結果を反映
-      setPlots(prevPlots => 
-        prevPlots.map(p => p.id === plot.id ? updatedPlot : p)
-      );
-      
-      // 選択中のあらすじも更新
-      if (selectedPlot && selectedPlot.id === plot.id) {
-        setSelectedPlot(updatedPlot);
+      if (!response.ok) {
+        throw new Error('詳細あらすじの生成に失敗しました');
       }
+      
+      const generatedPlot = await response.json();
+      
+      // 生成された詳細あらすじで状態を更新
+      setPlots(prevPlots => 
+        prevPlots.map(p => p.id === plot.id ? generatedPlot : p)
+      );
       
       toast({
         title: "生成完了",
         description: "詳細あらすじが生成されました",
       });
       
-      return updatedPlot;
+      return generatedPlot;
     } catch (err) {
       console.error('詳細あらすじ生成エラー:', err);
       toast({

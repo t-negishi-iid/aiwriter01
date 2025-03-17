@@ -25,9 +25,14 @@ export function PlotList({ plots, selectedPlotId, onSelect }: PlotListProps) {
           <CardContent className="p-4">
             <div className="flex items-center">
               <BookOpen className="h-5 w-5 text-gray-400 mr-2" />
-              <div>
+              <div className="w-full">
                 <h3 className="font-medium">{plot.title}</h3>
-                <p className="text-sm text-gray-500 line-clamp-2">{plot.content}</p>
+                {/* プロットの内容を表示 */}
+                {plot.content && (
+                  <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                    {plot.content}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

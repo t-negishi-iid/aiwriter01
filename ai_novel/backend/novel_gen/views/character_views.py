@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+import json
 
 from ..models import AIStory, BasicSetting, CharacterDetail, APIRequestLog
 from ..serializers import (
@@ -62,7 +63,7 @@ class CharacterDetailView(generics.RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         """
         オブジェクトを取得するメソッド
-        
+
         データが存在しない場合は204 No Contentを返します。
         """
         try:
@@ -87,11 +88,27 @@ class CreateCharacterDetailView(views.APIView):
     def post(self, request, *args, **kwargs):
         """キャラクター詳細を生成"""
         story_id = self.kwargs.get('story_id')
-        story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
         # リクエストの検証
         serializer = CharacterDetailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        # キャラクターIDの取得
+        character_id = serializer.validated_data['character_id']
+
+        # キャラクターの取得とストーリー所属確認
+        try:
+            character = CharacterDetail.objects.get(id=character_id)
+            if character.ai_story.id != story_id:
+                return Response(
+                    {'error': 'このキャラクターは指定されたストーリーに属していません。'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except CharacterDetail.DoesNotExist:
+            return Response(
+                {'error': '指定されたキャラクターが存在しません。'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         # 基本設定の取得
         try:
@@ -102,10 +119,6 @@ class CreateCharacterDetailView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # キャラクター情報の取得
-        character_name = serializer.validated_data['character_name']
-        character_role = serializer.validated_data['character_role']
-
         # クレジットの確認と消費
         success, message = check_and_consume_credit(request.user, 'character_detail')
         if not success:
@@ -114,20 +127,14 @@ class CreateCharacterDetailView(views.APIView):
         # APIリクエスト
         api = DifyNovelAPI()
 
-        # キャラクターデータの作成
-        character_data = {
-            'name': character_name,
-            'role': character_role
-        }
-
         # APIログの作成
         api_log = APIRequestLog.objects.create(
             user=request.user,
             request_type='character_detail',
             ai_story=story,
             parameters={
-                'character_name': character_name,
-                'character_role': character_role
+                "basic_setting": basic_setting.raw_content,
+                "character": character.raw_content,
             },
             credit_cost=2
         )
@@ -136,7 +143,7 @@ class CreateCharacterDetailView(views.APIView):
             # 同期APIリクエスト
             response = api.create_character_detail(
                 basic_setting=basic_setting.raw_content,
-                character_data=character_data,
+                character_data=character_data_str,
                 user_id=str(request.user.id),
                 blocking=True
             )
@@ -153,20 +160,15 @@ class CreateCharacterDetailView(views.APIView):
 
             content = response['answer']
 
-            # パースして保存（実際の実装では内容を解析して分割する）
-            # この例では単純化のため、名前と役割以外は全文を各フィールドに入れています
-            character_detail = CharacterDetail.objects.create(
-                ai_story=story,
-                name=character_name,
-                role=character_role,
-                appearance=content,
-                personality=content,
-                background=content,
-                motivation=content,
-                relationship=content,
-                development=content,
-                raw_content=content
-            )
+            # キャラクター詳細を更新
+            character.appearance = content
+            character.personality = content
+            character.background = content
+            character.motivation = content
+            character.relationship = content
+            character.development = content
+            character.raw_content = content
+            character.save()
 
             # APIログの更新
             api_log.is_success = True
@@ -174,8 +176,8 @@ class CreateCharacterDetailView(views.APIView):
             api_log.save()
 
             # レスポンスを返す
-            result_serializer = CharacterDetailSerializer(character_detail)
-            return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+            result_serializer = CharacterDetailSerializer(character)
+            return Response(result_serializer.data, status=status.HTTP_200_OK)
 
         except Exception as e:
             # エラーログ

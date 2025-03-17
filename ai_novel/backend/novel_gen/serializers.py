@@ -54,7 +54,7 @@ class BasicSettingDataSerializer(serializers.ModelSerializer):
     """基本設定作成用データシリアライザ"""
     ai_story = AIStorySerializer(read_only=True)
     basic_setting_data = serializers.CharField(required=False, allow_blank=True)
-    
+
     # 統合設定クリエーターのデータフィールド
     theme_data = serializers.JSONField(required=False, allow_null=True)
     time_place_data = serializers.JSONField(required=False, allow_null=True)
@@ -67,10 +67,10 @@ class BasicSettingDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicSettingData
-        fields = ('id', 'ai_story', 'basic_setting_data', 
-                 'theme_data', 'time_place_data', 'world_setting_data', 
-                 'style_data', 'emotional_data', 'mystery_data', 
-                 'plot_data', 'integrated_data', 
+        fields = ('id', 'ai_story', 'basic_setting_data',
+                 'theme_data', 'time_place_data', 'world_setting_data',
+                 'style_data', 'emotional_data', 'mystery_data',
+                 'plot_data', 'integrated_data',
                  'created_at', 'updated_at')
         read_only_fields = ('id', 'ai_story', 'created_at', 'updated_at')
 
@@ -210,8 +210,7 @@ class BasicSettingRequestSerializer(serializers.Serializer):
 
 class CharacterDetailRequestSerializer(serializers.Serializer):
     """キャラクター詳細リクエストシリアライザ"""
-    character_name = serializers.CharField(required=True)
-    character_role = serializers.CharField(required=True)
+    character_id = serializers.IntegerField(required=True)
 
 
 class PlotDetailRequestSerializer(serializers.Serializer):

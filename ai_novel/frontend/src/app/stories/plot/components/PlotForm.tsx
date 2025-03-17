@@ -57,13 +57,17 @@ export function PlotForm({
   };
 
   const handleGenerateDetail = async () => {
-    const updatedPlot = await onGenerate(formData);
-    if (updatedPlot) {
-      setFormData(updatedPlot);
+    if (!formData.content) return;
+
+    const generatedPlot = await onGenerate(formData);
+    if (generatedPlot) {
+      setFormData(generatedPlot);
     }
   };
 
   const handleSaveDetailOnly = async () => {
+    if (!formData.detailedContent) return;
+
     setIsSavingDetail(true);
     try {
       await onSave(formData);
@@ -80,6 +84,25 @@ export function PlotForm({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* 詳細あらすじ生成ボタン - フォームの一番上に配置 */}
+            <div className="flex justify-end mb-4">
+              <Button 
+                type="button" 
+                onClick={handleGenerateDetail} 
+                disabled={isGenerating || !formData.content}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    詳細あらすじ生成中...
+                  </>
+                ) : (
+                  '詳細あらすじを生成'
+                )}
+              </Button>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-1">基本あらすじ</label>
               <Textarea
@@ -126,7 +149,7 @@ export function PlotForm({
                 style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
                 onChange={handleChange}
                 rows={10}
-                placeholder="詳細あらすじはまだ生成されていません。「詳細を生成」ボタンをクリックして生成してください。"
+                placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
               />
               <div className={styles.detailFormButtons}>
                 <Button
@@ -141,16 +164,6 @@ export function PlotForm({
                     </>
                   ) : (
                     '詳細を保存'
-                  )}
-                </Button>
-                <Button type="button" onClick={handleGenerateDetail} disabled={isGenerating || !formData.content}>
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      生成中...
-                    </>
-                  ) : (
-                    '詳細を生成'
                   )}
                 </Button>
               </div>

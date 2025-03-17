@@ -7,6 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import styles from '../plot-detail.module.css';
+import { basicSettingApi } from '@/lib/api-client';
+import { toast } from '@/components/ui/use-toast';
 
 interface PlotFormProps {
   plot: PlotData;
@@ -30,6 +32,7 @@ export function PlotForm({
   const [formData, setFormData] = useState<PlotData>(plot);
   const [isSavingDetail, setIsSavingDetail] = useState(false);
   const [currentAct, setCurrentAct] = useState<number>(plot.act_number || 1);
+  const storyId = plot.storyId; // storyIdを取得
 
   // plotが変更されたらフォームデータを更新し、currentActも更新
   useEffect(() => {
@@ -58,6 +61,33 @@ export function PlotForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 基本設定の特定の幕のあらすじも更新する
+    if (basicSetting && storyId && currentAct) {
+      try {
+        // 現在編集中の幕に応じた基本設定のあらすじを更新
+        await basicSettingApi.updateBasicSettingAct(
+          storyId,
+          currentAct,
+          formData.content
+        );
+        
+        console.log(`基本設定の第${currentAct}幕のあらすじを更新しました`);
+        toast({
+          title: "基本設定更新",
+          description: `基本設定の第${currentAct}幕のあらすじを更新しました`,
+        });
+      } catch (error) {
+        console.error('基本設定更新エラー:', error);
+        toast({
+          title: "エラー",
+          description: "基本設定の更新に失敗しました",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    // 通常のプロット保存処理
     await onSave(formData);
   };
 
@@ -99,19 +129,6 @@ export function PlotForm({
     }
 
     // 現在選択されている幕に応じた基本あらすじを表示
-    let actValue = '';
-    switch (currentAct) {
-      case 1:
-        actValue = basicSetting.act1_overview || '';
-        break;
-      case 2:
-        actValue = basicSetting.act2_overview || '';
-        break;
-      case 3:
-        actValue = basicSetting.act3_overview || '';
-        break;
-    }
-
     return (
       <div>
         <div className="flex items-center space-x-4 mb-2">
@@ -120,8 +137,9 @@ export function PlotForm({
           </div>
         </div>
         <Textarea
-          readOnly
-          value={actValue}
+          name="content"
+          value={formData.content}
+          onChange={handleChange}
           rows={3}
           className={styles.textareaStyle}
         />

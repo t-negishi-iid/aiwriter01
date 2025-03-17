@@ -10,27 +10,27 @@ interface BasicSettingCharacterListProps {
   onCreateCharacter: (character: CharacterData) => void;
 }
 
-export function BasicSettingCharacterList({ 
-  basicSettingCharacters, 
-  isLoading, 
-  onCreateCharacter 
+export function BasicSettingCharacterList({
+  basicSettingCharacters,
+  isLoading,
+  onCreateCharacter
 }: BasicSettingCharacterListProps) {
   const [showList, setShowList] = useState(true);
-  
+
   return (
     <div className="mb-6">
-      <div 
+      <div
         className={`${styles.sectionHeader} ${showList ? styles.sectionHeaderExpanded : ''}`}
         onClick={() => setShowList(!showList)}
         role="button"
-        aria-expanded={showList ? "true" : "false"}
+        aria-expanded={showList}
       >
         <span className={styles.expandIcon} aria-hidden="true">
           {showList ? '▼' : '▶'}
         </span>
         <h2 className="text-xl font-semibold">作品設定の登場人物</h2>
       </div>
-      
+
       {showList && (
         <div className="mt-4">
           {basicSettingCharacters.length > 0 ? (
@@ -38,7 +38,7 @@ export function BasicSettingCharacterList({
               <p className="mb-2 text-sm text-gray-600">
                 作品設定に以下の登場人物が含まれています。追加ボタンをクリックしてキャラクター情報を作成できます。
               </p>
-              
+
               <ul className="mb-4 space-y-2">
                 {basicSettingCharacters.map((character: CharacterData, index: number) => (
                   <li key={index} className="p-3 bg-gray-50 rounded-md flex justify-between items-center">

@@ -199,38 +199,24 @@ export function CharacterForm({
 
       </div>
 
-      {/* 名前と役割を縦に並べる（横幅いっぱいに表示） */}
+      {/* 名前と役割を縦に並べる（横幅いっぱいに表示） - 静的テキストとして表示 */}
       <div className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             名前
           </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ width: '100%', padding: '5px', margin: '0' }}
-            required
-          />
+          <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50">
+            {formData.name}
+          </div>
         </div>
 
         <div>
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             役割
           </label>
-          <input
-            type="text"
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ width: '100%', padding: '5px', margin: '0' }}
-            required
-          />
+          <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50">
+            {formData.role}
+          </div>
         </div>
 
         {/* 以下のフィールドは当面使用しないためコメントアウト */}

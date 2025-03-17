@@ -47,6 +47,25 @@ export function PlotForm({
     }
   }, [plot]);
 
+  // 幕が変更された時に、その幕の基本設定の内容をcontentに設定
+  useEffect(() => {
+    if (basicSetting && currentAct) {
+      let overview = '';
+      switch (currentAct) {
+        case 1:
+          overview = basicSetting.act1_overview || '';
+          break;
+        case 2:
+          overview = basicSetting.act2_overview || '';
+          break;
+        case 3:
+          overview = basicSetting.act3_overview || '';
+          break;
+      }
+      setFormData(prev => ({ ...prev, content: overview }));
+    }
+  }, [basicSetting, currentAct]);
+
   // コンポーネントマウント時にフォームデータの状態をログ出力
   useEffect(() => {
     console.log('PlotForm - マウント時のformData:', formData);
@@ -128,7 +147,6 @@ export function PlotForm({
       );
     }
 
-    // 現在選択されている幕に応じた基本あらすじを表示
     return (
       <div>
         <div className="flex items-center space-x-4 mb-2">

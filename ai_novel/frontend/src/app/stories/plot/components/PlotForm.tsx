@@ -80,12 +80,14 @@ export function PlotForm({
     <form onSubmit={handleSubmit} className={styles.formContainer}>
       <Card>
         {/* 詳細あらすじ生成ボタン - フォームの一番上に配置 */}
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-4">
+          <Button type="button" variant="outline" onClick={onCancel} className="mr-2">
+            キャンセル
+          </Button>
           <Button
             type="button"
             onClick={handleGenerateDetail}
             disabled={isGenerating || !formData.content}
-            className="w-full"
           >
             {isGenerating ? (
               <>
@@ -117,10 +119,6 @@ export function PlotForm({
 
             <div className={styles.formButtons}>
               <div className={styles.formButtonsLeft}>
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  キャンセル
-                </Button>
-
               </div>
               <div className={styles.formButtonsRight}>
                 <Button type="submit" disabled={isSaving}>

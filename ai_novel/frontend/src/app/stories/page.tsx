@@ -88,8 +88,13 @@ export default function StoriesPage() {
   const handleCreateStory = async () => {
     try {
       setIsLoading(true);
+      // 現在の日時を取得して「小説:YYYY/MM/DD HH:MM」形式のタイトルを生成
+      const now = new Date();
+      const formattedDate = format(now, 'yyyy/MM/dd HH:mm', { locale: ja });
+      const storyTitle = `小説:${formattedDate}`;
+      
       const newStory = await storyApi.createStory({
-        title: '新しい小説',
+        title: storyTitle,
         description: '説明を入力してください',
       });
       router.push(`/stories/new`);
@@ -135,12 +140,30 @@ export default function StoriesPage() {
 
   // 以下は小説一覧表示のコード
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10" onKeyDown={(e) => {
+      // Enterキーが押された時にデフォルトの送信動作を防止
+      if (e.key === 'Enter') {
+        e.preventDefault();
+      }
+    }}>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">小説一覧</h1>
-        <Button onClick={handleCreateStory} disabled={isLoading}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          新しい小説を作成
+        <Button 
+          type="button" 
+          onClick={handleCreateStory} 
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              作成中...
+            </>
+          ) : (
+            <>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              新しい小説を作成
+            </>
+          )}
         </Button>
       </div>
 

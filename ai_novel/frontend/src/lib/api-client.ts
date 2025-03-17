@@ -172,6 +172,11 @@ export const characterApi = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+    
+  deleteCharacter: (storyId: string | number, characterId: string | number) =>
+    fetchApi(`/stories/${storyId}/characters/${characterId}/`, {
+      method: "DELETE",
+    }),
 }
 
 /**

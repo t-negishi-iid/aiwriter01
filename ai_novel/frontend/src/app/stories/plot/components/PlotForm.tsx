@@ -13,7 +13,6 @@ interface PlotFormProps {
   isSaving: boolean;
   isGenerating: boolean;
   onSave: (plot: PlotData) => Promise<boolean>;
-  onDelete: (plotId: number) => Promise<boolean>;
   onGenerate: (plot: PlotData) => Promise<PlotData | null>;
   onCancel: () => void;
 }
@@ -23,7 +22,6 @@ export function PlotForm({
   isSaving,
   isGenerating,
   onSave,
-  onDelete,
   onGenerate,
   onCancel
 }: PlotFormProps) {
@@ -32,8 +30,16 @@ export function PlotForm({
 
   // plotが変更されたらフォームデータを更新
   useEffect(() => {
+    console.log('PlotForm - plot変更検知:', plot);
+    console.log('PlotForm - raw_content:', plot.raw_content ? '存在します' : 'なし');
     setFormData(plot);
   }, [plot]);
+
+  // コンポーネントマウント時にフォームデータの状態をログ出力
+  useEffect(() => {
+    console.log('PlotForm - マウント時のformData:', formData);
+    console.log('PlotForm - マウント時のraw_content:', formData.raw_content ? '存在します' : 'なし');
+  }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,28 +51,19 @@ export function PlotForm({
     await onSave(formData);
   };
 
-  const handleDelete = async () => {
-    if (!formData.id) return;
-
-    if (window.confirm('このあらすじを削除してもよろしいですか？')) {
-      const success = await onDelete(formData.id);
-      if (success) {
-        onCancel();
-      }
-    }
-  };
-
   const handleGenerateDetail = async () => {
     if (!formData.content) return;
 
     const generatedPlot = await onGenerate(formData);
     if (generatedPlot) {
+      console.log('PlotForm - 生成後のPlot:', generatedPlot);
+      console.log('PlotForm - 生成後のraw_content:', generatedPlot.raw_content ? '存在します' : 'なし');
       setFormData(generatedPlot);
     }
   };
 
   const handleSaveDetailOnly = async () => {
-    if (!formData.detailedContent) return;
+    if (!formData.raw_content) return;
 
     setIsSavingDetail(true);
     try {
@@ -95,7 +92,7 @@ export function PlotForm({
                 詳細あらすじ生成中...
               </>
             ) : (
-              '詳細あらすじを生成'
+              '詳細あらすじを生成（3幕を一括生成します）'
             )}
           </Button>
         </div>
@@ -119,6 +116,7 @@ export function PlotForm({
 
             <div className={styles.formButtons}>
               <div className={styles.formButtonsLeft}>
+                {/* 削除ボタンを削除 */}
               </div>
               <div className={styles.formButtonsRight}>
                 <Button type="submit" disabled={isSaving}>
@@ -137,8 +135,8 @@ export function PlotForm({
             <div className={styles.detailFormContainer}>
               <label className="block text-sm font-medium mb-10">詳細あらすじ</label>
               <Textarea
-                name="detailedContent"
-                value={formData.detailedContent || ''}
+                name="raw_content"
+                value={formData.raw_content || ''}
                 onChange={handleChange}
                 rows={10}
                 placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
@@ -148,7 +146,7 @@ export function PlotForm({
                 <Button
                   type="button"
                   onClick={handleSaveDetailOnly}
-                  disabled={isSavingDetail || !formData.detailedContent}
+                  disabled={isSavingDetail || !formData.raw_content}
                 >
                   {isSavingDetail ? (
                     <>

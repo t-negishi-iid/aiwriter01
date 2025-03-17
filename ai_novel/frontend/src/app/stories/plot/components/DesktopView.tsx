@@ -17,7 +17,6 @@ interface DesktopViewProps {
   error: string | null;
   setSelectedPlot: (plot: PlotData | null) => void;
   handleSavePlot: (plot: PlotData) => Promise<boolean>;
-  handleDeletePlot: (plotId: number) => Promise<boolean>;
   handleGenerateDetailedPlot: (plot: PlotData) => Promise<PlotData | null>;
   handleCancelForm: () => void;
   refreshPlots: () => void;
@@ -34,7 +33,6 @@ export function DesktopView({
   error,
   setSelectedPlot,
   handleSavePlot,
-  handleDeletePlot,
   handleGenerateDetailedPlot,
   handleCancelForm,
   refreshPlots,
@@ -42,29 +40,47 @@ export function DesktopView({
 }: DesktopViewProps) {
   // 基本設定の幕を編集するための処理
   const handleEditAct = async (act: number) => {
+    console.log(`[handleEditAct] 第${act}幕の編集ボタンがクリックされました`);
+    console.log('[handleEditAct] plots配列の内容:', plots);
+
     // 該当する幕のプロットデータを探す
-    const actPlot = plots.find(plot => plot.act === act);
-    
+    const actPlot = plots.find(plot => plot.act_number === act);
+    console.log('[handleEditAct] 既存プロット検索結果:', actPlot);
+
     if (actPlot) {
       // 既存のプロットデータがある場合はそれを選択
       // プロットの詳細情報（raw_content）が存在しない場合は、APIから取得
+      console.log('[handleEditAct] raw_content:', actPlot.raw_content ? '存在します' : 'なし');
+
       if (!actPlot.raw_content && actPlot.id) {
+        console.log(`[handleEditAct] raw_contentがないため、API呼び出しを実行します: /api/stories/${storyId}/acts/${act}/`);
         try {
           // プロット詳細を取得
-          const response = await fetch(`/stories/${storyId}/acts/${actPlot.id}/`);
+          const response = await fetch(`/api/stories/${storyId}/acts/${act}/`);
+          console.log('[handleEditAct] API応答:', response.status, response.statusText);
+
           if (response.ok) {
             const detailedPlot = await response.json();
+            console.log('[handleEditAct] 取得したプロット詳細:', detailedPlot);
+            console.log('[handleEditAct] 取得したraw_content:', detailedPlot.raw_content ? '存在します' : 'なし');
+            console.log('[handleEditAct] 取得したraw_contentの内容:', detailedPlot.raw_content);
+
             // 詳細情報を含むプロットデータを選択
             setSelectedPlot(detailedPlot);
             return;
+          } else {
+            console.error('[handleEditAct] APIエラー:', response.status, response.statusText);
           }
         } catch (error) {
-          console.error('プロット詳細取得エラー:', error);
+          console.error('[handleEditAct] プロット詳細取得エラー:', error);
         }
       }
+      console.log('[handleEditAct] 既存プロットをそのまま選択します');
       setSelectedPlot(actPlot);
     } else if (basicSetting) {
       // 基本設定からプロットデータを作成
+      console.log('[handleEditAct] 既存プロットがないため、基本設定から新規プロットを作成します');
+      
       const newPlot = {
         id: 0, // 新規プロットとして扱う
         act: act,
@@ -78,7 +94,10 @@ export function DesktopView({
         title: `第${act}幕`,
         status: 'draft'
       };
+      console.log('[handleEditAct] 作成した新規プロット:', newPlot);
       setSelectedPlot(newPlot);
+    } else {
+      console.log('[handleEditAct] 基本設定もプロットも見つかりませんでした');
     }
   };
 
@@ -105,7 +124,7 @@ export function DesktopView({
         ) : (
           <div className={styles.plotListContainer}>
             {/* 作品設定ブロック */}
-            <BasicSettingBlock 
+            <BasicSettingBlock
               basicSetting={basicSetting}
               onEditAct={handleEditAct}
             />
@@ -130,7 +149,6 @@ export function DesktopView({
             isSaving={isSaving}
             isGenerating={isGenerating}
             onSave={handleSavePlot}
-            onDelete={handleDeletePlot}
             onGenerate={handleGenerateDetailedPlot}
             onCancel={handleCancelForm}
           />

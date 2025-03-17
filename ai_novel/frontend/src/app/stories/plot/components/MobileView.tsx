@@ -20,7 +20,6 @@ interface MobileViewProps {
   error: string | null;
   setSelectedPlot: (plot: PlotData | null) => void;
   handleSavePlot: (plot: PlotData) => Promise<boolean>;
-  handleDeletePlot: (plotId: number) => Promise<boolean>;
   handleGenerateDetailedPlot: (plot: PlotData) => Promise<PlotData | null>;
   handleCancelForm: () => void;
   refreshPlots: () => void;
@@ -37,7 +36,6 @@ export function MobileView({
   error,
   setSelectedPlot,
   handleSavePlot,
-  handleDeletePlot,
   handleGenerateDetailedPlot,
   handleCancelForm,
   refreshPlots,
@@ -161,7 +159,6 @@ export function MobileView({
               isSaving={isSaving}
               isGenerating={isGenerating}
               onSave={handleSavePlot}
-              onDelete={handleDeletePlot}
               onGenerate={handleGenerateDetailedPlot}
               onCancel={handleCancelForm}
             />

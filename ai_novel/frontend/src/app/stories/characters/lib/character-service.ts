@@ -52,8 +52,8 @@ export async function fetchBasicSetting(storyId: string | null) {
   if (!storyId) return null;
 
   try {
-    // 作品設定API（/stories/${storyId}/latest-basic-setting/）を呼び出す
-    const response = await basicSettingApi.getBasicSetting(storyId);
+    // 最新の作品設定API（/stories/${storyId}/latest-basic-setting/）を呼び出す
+    const response = await fetchApi(`/stories/${storyId}/latest-basic-setting/`);
     return response;
   } catch (error) {
     console.error('作品設定（BasicSetting）取得エラー:', error);
@@ -103,12 +103,12 @@ export async function deleteCharacter(characterId: number): Promise<boolean> {
     // 代わりにgetCharacterメソッドを使用してキャラクター情報を取得する例
     // 実際の削除処理は適切なAPIメソッドに置き換える必要があります
     await characterApi.getCharacter(characterId, characterId);
-    
+
     toast({
       title: "削除完了",
       description: "キャラクターを削除しました",
     });
-    
+
     return true;
   } catch (error) {
     console.error('キャラクター削除エラー:', error);
@@ -148,67 +148,86 @@ export function extractCharactersFromBasicSetting(basicSetting: any): any[] {
   if (!basicSetting) return [];
 
   try {
+    console.log('BasicSetting データ構造:', basicSetting);
+
     // 作品設定のフォーマットに応じて登場人物設定を抽出
-    if (basicSetting.content && typeof basicSetting.content === 'string') {
-      // JSONとして解析を試みる
-      try {
-        const contentObj = JSON.parse(basicSetting.content);
-        if (contentObj.characters && Array.isArray(contentObj.characters)) {
-          return contentObj.characters;
-        }
-      } catch (e) {
-        console.warn('作品設定のJSONパースに失敗しました:', e);
-      }
+    if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
+      console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
+
 
       // 登場人物セクションを正規表現で抽出
-      const characterSectionRegex = /【登場人物】([\s\S]*?)(?:【|$)/;
-      const characterSection = characterSectionRegex.exec(basicSetting.content);
-      
+      const characterSectionRegex = /## (?:主な)?登場人物\s*\n([\s\S]*?)(?:\n##|$)/;
+      const characterSection = characterSectionRegex.exec(basicSetting.raw_content);
+
+      console.log('正規表現マッチ結果:', characterSection ? '成功' : '失敗');
+
       if (characterSection && characterSection[1]) {
+        console.log('抽出された登場人物セクション:', characterSection[1]);
+
         // 登場人物の情報を行ごとに分割
         const characterLines = characterSection[1].trim().split('\n');
-        
+        console.log('分割された行数:', characterLines.length);
+
         // 各行から登場人物情報を抽出
-        return characterLines
-          .filter(line => line.trim() !== '')
-          .map((line, index) => {
-            // 名前と説明を分離（例: "太郎: 主人公の親友"）
-            const match = line.match(/^(.+?)[:：](.*)$/);
-            if (match) {
-              return {
-                id: index,
-                name: match[1].trim(),
-                description: match[2].trim(),
-                // 他の必要なフィールドを追加
-                role: '',
-                personality: '',
-                appearance: '',
-                background: '',
-                raw_content: match[2].trim()
-              };
+        const characters = [];
+        let currentCharacter = null;
+
+        for (let i = 0; i < characterLines.length; i++) {
+          const line = characterLines[i].trim();
+          console.log(`行 ${i}: ${line}`);
+
+          // 新しいキャラクター定義の開始（### で始まる行）
+          if (line.startsWith('### ')) {
+            if (currentCharacter) {
+              characters.push(currentCharacter);
+              console.log('キャラクター追加:', currentCharacter);
             }
-            
-            // パターンにマッチしない場合は名前のみ
-            return {
-              id: index,
-              name: line.trim(),
+
+            currentCharacter = {
+              id: characters.length,
+              name: line.replace('### ', '').trim(),
               description: '',
-              // 他の必要なフィールドを追加
               role: '',
               personality: '',
               appearance: '',
               background: '',
               raw_content: ''
             };
-          });
+            console.log('新しいキャラクター作成:', currentCharacter.name);
+          }
+          // 役割の定義（#### 役割 の次の行）
+          else if (line.startsWith('#### 役割') && currentCharacter && i + 1 < characterLines.length) {
+            currentCharacter.role = characterLines[i + 1].trim();
+            console.log(`役割設定: ${currentCharacter.role}`);
+            i++; // 次の行をスキップ
+          }
+          // 説明の定義（#### 説明 の次の行）
+          else if (line.startsWith('#### 説明') && currentCharacter && i + 1 < characterLines.length) {
+            currentCharacter.description = characterLines[i + 1].trim();
+            currentCharacter.raw_content = characterLines[i + 1].trim();
+            console.log(`説明設定: ${currentCharacter.description}`);
+            i++; // 次の行をスキップ
+          }
+        }
+
+        // 最後のキャラクターを追加
+        if (currentCharacter) {
+          characters.push(currentCharacter);
+          console.log('最後のキャラクター追加:', currentCharacter);
+        }
+
+        console.log('抽出されたキャラクター一覧:', characters);
+        return characters;
       }
     }
-    
+
     // 登場人物フィールドが直接存在する場合
     if (basicSetting.characters && Array.isArray(basicSetting.characters)) {
+      console.log('直接charactersフィールドから取得:', basicSetting.characters);
       return basicSetting.characters;
     }
-    
+
+    console.log('キャラクター情報が見つかりませんでした');
     return [];
   } catch (error) {
     console.error('登場人物設定の抽出エラー:', error);

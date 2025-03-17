@@ -19,6 +19,7 @@ import { useCharacters } from './hooks/useCharacters';
 import { CharacterList } from './components/CharacterList';
 import { CharacterForm } from './components/CharacterForm';
 import { BasicSettingCharacterList } from './components/BasicSettingCharacterList';
+import { StorySettingBlock } from './components/StorySettingBlock';
 
 export default function CharactersPage() {
   const searchParams = useSearchParams();
@@ -166,27 +167,11 @@ export default function CharactersPage() {
                 ) : (
                   <div className={styles.characterListContainer}>
                     {/* 作品設定ブロック */}
-                    <div className={styles.settingBlock}>
-                      <div className={styles.settingBlockHeader}>
-                        <h2 className="text-xl font-semibold">作品設定</h2>
-                      </div>
-                      <div className={styles.settingBlockContent}>
-                        <p className="text-gray-600 mb-2">作品設定の登場人物情報</p>
-                        <Textarea
-                          className={styles.charactersMark}
-                          value={charactersMark}
-                          readOnly
-                          rows={6}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => router.push(`/stories/${storyId}/settings`)}
-                          className="w-full mt-2"
-                        >
-                          作品設定を編集
-                        </Button>
-                      </div>
-                    </div>
+                    <StorySettingBlock 
+                      charactersMarkdown={charactersMark} 
+                      onEditClick={() => router.push(`/stories/${storyId}/settings`)}
+                      basicSetting={basicSetting}
+                    />
 
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (
@@ -301,27 +286,11 @@ export default function CharactersPage() {
                 ) : (
                   <div className={styles.characterList}>
                     {/* 作品設定ブロック */}
-                    <div className={styles.settingBlock}>
-                      <div className={styles.settingBlockHeader}>
-                        <h2 className="text-xl font-semibold">作品設定</h2>
-                      </div>
-                      <div className={styles.settingBlockContent}>
-                        <p className="text-gray-600 mb-2">作品設定の登場人物情報</p>
-                        <Textarea
-                          className={styles.charactersMark}
-                          value={charactersMark}
-                          readOnly
-                          rows={6}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={() => router.push(`/stories/${storyId}/settings`)}
-                          className="w-full mt-2"
-                        >
-                          作品設定を編集
-                        </Button>
-                      </div>
-                    </div>
+                    <StorySettingBlock 
+                      charactersMarkdown={charactersMark} 
+                      onEditClick={() => router.push(`/stories/${storyId}/settings`)}
+                      basicSetting={basicSetting}
+                    />
 
                     {/* 作品設定の登場人物 */}
                     {basicSettingCharacters.length > 0 && (

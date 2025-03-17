@@ -116,6 +116,10 @@ class DifyNovelAPI:
             "response_mode": "blocking" if blocking else "streaming"
         }
 
+        # デバッグ用にリクエストデータの内容をログに出力
+        logger.error(f"DEBUG - _make_api_request - api_type: {api_type}")
+        logger.error(f"DEBUG - _make_api_request - request_data: {json.dumps(request_data)[:500]}")
+
         retries = 0
         last_error = None
 
@@ -159,6 +163,9 @@ class DifyNovelAPI:
             Dict[str, Any]: 処理済みレスポンス
         """
         try:
+            # デバッグ用にレスポンスデータの内容をログに出力
+            logger.error(f"DEBUG - _process_response - response_data: {json.dumps(response_data)[:500]}")
+            
             # ワークフローAPIのレスポンス形式に対応
             if "data" in response_data and "outputs" in response_data["data"]:
                 result = response_data["data"]["outputs"].get("result", "")
@@ -224,7 +231,7 @@ class DifyNovelAPI:
     def create_plot_detail(
         self,
         basic_setting: str,
-        all_characters_list: List[Dict[str, Any]],
+        all_characters: str,
         user_id: str,
         blocking: bool = True
     ) -> Dict[str, Any]:
@@ -232,21 +239,22 @@ class DifyNovelAPI:
         あらすじ詳細を生成
 
         Args:
-            basic_setting: 基本設定
-            all_characters_list: 　全キャラクター詳細リスト
+            basic_setting: 基本設定 : str
+            all_characters: 全キャラクター詳細（str）
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
 
         Returns:
             Dict[str, Any]: レスポンス
         """
-        # 全キャラクター詳細を文字列にシリアライズ
-        all_characters = json.dumps(all_characters_list, ensure_ascii=False)
-
         inputs = {
             "basic_setting": basic_setting,
             "all_characters": all_characters
         }
+
+        # デバッグ用にパラメータの先頭200文字をログに出力
+        logger.error(f"DEBUG - create_plot_detail - basic_setting (first 200 chars): {basic_setting[:200]}")
+        logger.error(f"DEBUG - create_plot_detail - all_characters (first 200 chars): {all_characters[:200]}")
 
         return self._make_api_request("plot_detail", inputs, user_id, blocking)
 
@@ -264,7 +272,7 @@ class DifyNovelAPI:
         エピソード詳細を生成
 
         Args:
-            basic_setting: 基本設定
+            basic_setting: 基本設定 : str
             all_characters_list: キャラクター詳細リスト
             plot_details: あらすじ詳細リスト
             target_plot: ターゲットとなるあらすじ詳細

@@ -29,18 +29,26 @@ export function PlotForm({
 }: PlotFormProps) {
   const [formData, setFormData] = useState<PlotData>(plot);
   const [isSavingDetail, setIsSavingDetail] = useState(false);
+  const [currentAct, setCurrentAct] = useState<number>(plot.act_number || 1);
 
-  // plotが変更されたらフォームデータを更新
+  // plotが変更されたらフォームデータを更新し、currentActも更新
   useEffect(() => {
     console.log('PlotForm - plot変更検知:', plot);
     console.log('PlotForm - raw_content:', plot.raw_content ? '存在します' : 'なし');
+    console.log('PlotForm - act_number:', plot.act_number);
     setFormData(plot);
+    
+    // プロットの幕番号が存在する場合は、currentActを更新
+    if (plot.act_number) {
+      setCurrentAct(plot.act_number);
+    }
   }, [plot]);
 
   // コンポーネントマウント時にフォームデータの状態をログ出力
   useEffect(() => {
     console.log('PlotForm - マウント時のformData:', formData);
     console.log('PlotForm - マウント時のraw_content:', formData.raw_content ? '存在します' : 'なし');
+    console.log('PlotForm - マウント時のact_number:', formData.act_number);
   }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -75,6 +83,52 @@ export function PlotForm({
     }
   };
 
+  // 現在の幕に基づいて基本あらすじを表示
+  const renderBasicOverview = () => {
+    if (!basicSetting) {
+      return (
+        <Textarea
+          name="content"
+          value={formData.content}
+          onChange={handleChange}
+          rows={5}
+          placeholder="基本あらすじを入力してください"
+          className={styles.textareaStyle}
+        />
+      );
+    }
+
+    // 現在選択されている幕に応じた基本あらすじを表示
+    let actValue = '';
+    switch (currentAct) {
+      case 1:
+        actValue = basicSetting.act1_overview || '';
+        break;
+      case 2:
+        actValue = basicSetting.act2_overview || '';
+        break;
+      case 3:
+        actValue = basicSetting.act3_overview || '';
+        break;
+    }
+
+    return (
+      <div>
+        <div className="flex items-center space-x-4 mb-2">
+          <div className="text-sm font-medium">
+            現在編集中: 第{currentAct}幕
+          </div>
+        </div>
+        <Textarea
+          readOnly
+          value={actValue}
+          rows={3}
+          className={styles.textareaStyle}
+        />
+      </div>
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className={styles.formContainer}>
       <Card>
@@ -99,53 +153,14 @@ export function PlotForm({
           </Button>
         </div>
         <CardHeader>
-          <CardTitle>{formData.title || '新規あらすじ'}</CardTitle>
+          <CardTitle>{formData.title || `第${currentAct}幕`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
 
             <div>
               <label className="block text-sm font-medium mb-3">基本あらすじ</label>
-              {basicSetting ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">第1幕</label>
-                    <Textarea
-                      readOnly
-                      value={basicSetting.act1_overview || ''}
-                      rows={3}
-                      className={styles.textareaStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">第2幕</label>
-                    <Textarea
-                      readOnly
-                      value={basicSetting.act2_overview || ''}
-                      rows={3}
-                      className={styles.textareaStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">第3幕</label>
-                    <Textarea
-                      readOnly
-                      value={basicSetting.act3_overview || ''}
-                      rows={3}
-                      className={styles.textareaStyle}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <Textarea
-                  name="content"
-                  value={formData.content}
-                  onChange={handleChange}
-                  rows={5}
-                  placeholder="基本あらすじを入力してください"
-                  className={styles.textareaStyle}
-                />
-              )}
+              {renderBasicOverview()}
             </div>
 
             <div className={styles.formButtons}>

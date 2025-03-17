@@ -104,7 +104,7 @@ export function PlotForm({
           <div className="space-y-4">
 
             <div>
-              <label className="block text-sm font-medium mb-3">基本あらすじ</label>
+              <label className="block text-sm font-medium mb-10">基本あらすじ</label>
               <Textarea
                 name="content"
                 value={formData.content}
@@ -138,7 +138,7 @@ export function PlotForm({
             </div>
 
             <div className={styles.detailFormContainer}>
-              <label className="block text-sm font-medium mb-3">詳細あらすじ</label>
+              <label className="block text-sm font-medium mb-10">詳細あらすじ</label>
               <Textarea
                 name="detailedContent"
                 value={formData.detailedContent || ''}

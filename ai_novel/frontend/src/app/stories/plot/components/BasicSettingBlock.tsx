@@ -26,17 +26,19 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
           <div>
             <div className="flex justify-between items-center mb-1">
               <h3 className="text-sm font-medium" id="act1-label">第1幕</h3>
-              {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2"
-                  onClick={() => onEditAct(1)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  <span className="text-xs">編集</span>
-                </Button>
-              )}
+              <div className="ml-auto">
+                {onEditAct && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2"
+                    onClick={() => onEditAct(1)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    <span className="text-xs">編集</span>
+                  </Button>
+                )}
+              </div>
             </div>
             <textarea 
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
@@ -51,17 +53,19 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
           <div>
             <div className="flex justify-between items-center mb-1">
               <h3 className="text-sm font-medium" id="act2-label">第2幕</h3>
-              {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2"
-                  onClick={() => onEditAct(2)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  <span className="text-xs">編集</span>
-                </Button>
-              )}
+              <div className="ml-auto">
+                {onEditAct && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2"
+                    onClick={() => onEditAct(2)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    <span className="text-xs">編集</span>
+                  </Button>
+                )}
+              </div>
             </div>
             <textarea 
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
@@ -76,17 +80,19 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
           <div>
             <div className="flex justify-between items-center mb-1">
               <h3 className="text-sm font-medium" id="act3-label">第3幕</h3>
-              {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7 px-2"
-                  onClick={() => onEditAct(3)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  <span className="text-xs">編集</span>
-                </Button>
-              )}
+              <div className="ml-auto">
+                {onEditAct && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2"
+                    onClick={() => onEditAct(3)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    <span className="text-xs">編集</span>
+                  </Button>
+                )}
+              </div>
             </div>
             <textarea 
               className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"

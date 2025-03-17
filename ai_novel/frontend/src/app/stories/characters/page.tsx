@@ -230,9 +230,7 @@ export default function CharactersPage() {
                       キャラクター一覧タブからキャラクターを選択するか、新規作成ボタンをクリックしてください。
                     </p>
                     <Button
-                      onClick={() => {
-                        handleAddNewCharacter();
-                      }}
+                      onClick={handleAddNewCharacter}
                       className={styles.createButton}
                     >
                       新規キャラクター作成

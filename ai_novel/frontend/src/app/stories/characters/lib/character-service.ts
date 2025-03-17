@@ -154,9 +154,8 @@ export function extractCharactersFromBasicSetting(basicSetting: any): any[] {
     if (basicSetting.raw_content && typeof basicSetting.raw_content === 'string') {
       console.log('作品設定:', basicSetting.raw_content.substring(0, 200) + '...');
 
-
       // 登場人物セクションを正規表現で抽出
-      const characterSectionRegex = /## (?:主な)?登場人物\s*\n([\s\S]*?)(?:\n##|$)/;
+      const characterSectionRegex = /## (?:主な)?登場人物\s*(?:\n|---\n)([\s\S]*?)(?:\n##|$)/;
       const characterSection = characterSectionRegex.exec(basicSetting.raw_content);
 
       console.log('正規表現マッチ結果:', characterSection ? '成功' : '失敗');
@@ -194,6 +193,11 @@ export function extractCharactersFromBasicSetting(basicSetting: any): any[] {
               raw_content: ''
             };
             console.log('新しいキャラクター作成:', currentCharacter.name);
+          }
+          // 区切り線（---）は無視
+          else if (line === '---') {
+            console.log('区切り線をスキップ');
+            continue;
           }
           // 役割の定義（#### 役割 の次の行）
           else if (line.startsWith('#### 役割') && currentCharacter && i + 1 < characterLines.length) {

@@ -233,6 +233,8 @@ export function CharacterForm({
           />
         </div>
 
+        {/* 以下のフィールドは当面使用しないためコメントアウト */}
+        {/* 
         <div>
           <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
             年齢
@@ -262,8 +264,11 @@ export function CharacterForm({
             style={{ width: '100%', padding: '5px', margin: '0' }}
           />
         </div>
+        */}
       </div>
 
+      {/* 以下のフィールドは当面使用しないためコメントアウト */}
+      {/* 
       <div>
         <label htmlFor="personality" className="block text-sm font-medium text-gray-700 mb-1">
           性格
@@ -353,8 +358,10 @@ export function CharacterForm({
           style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
         />
       </div>
+      */}
+      
       <div>
-        <label htmlFor="development" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="raw_content" className="block text-sm font-medium text-gray-700 mb-1">
           詳細設定
         </label>
         <textarea

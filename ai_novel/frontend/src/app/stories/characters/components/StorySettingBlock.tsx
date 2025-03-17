@@ -144,13 +144,13 @@ export const StorySettingBlock = ({
       setTimeout(async () => {
         await refreshCharacters();
         console.log('キャラクター一覧の更新が完了しました');
-        
+
         // 保存完了後に画面をリロード
         toast({
           title: "キャラクターを一覧に反映しました",
           description: `${successCount}人のキャラクターを保存しました。画面をリロードします。`,
         });
-        
+
         // 少し遅延を入れてからリロード（トーストメッセージを表示するため）
         setTimeout(() => {
           window.location.reload();
@@ -307,6 +307,7 @@ export const StorySettingBlock = ({
       />
 
       {/* デバッグ用テキストエリア */}
+      {/*
       <div className="mt-4">
         <h3 className="text-md font-semibold mb-2">分割結果（デバッグ用）</h3>
         <Textarea
@@ -316,6 +317,7 @@ export const StorySettingBlock = ({
           style={{ width: '100%', height: '300px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
         />
       </div>
+      */}
     </div >
   );
 };

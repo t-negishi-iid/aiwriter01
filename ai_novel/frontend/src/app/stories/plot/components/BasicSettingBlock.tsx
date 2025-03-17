@@ -11,8 +11,6 @@ interface BasicSettingBlockProps {
 export function BasicSettingBlock({ basicSetting }: BasicSettingBlockProps) {
   if (!basicSetting) return null;
 
-  const plot = basicSetting.plot || {};
-  
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
@@ -24,22 +22,37 @@ export function BasicSettingBlock({ basicSetting }: BasicSettingBlockProps) {
       <CardContent>
         <div className="space-y-2">
           <div>
-            <h3 className="text-sm font-medium">第1幕</h3>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap line-clamp-3">
-              {plot.act1 || '未設定'}
-            </p>
+            <h3 className="text-sm font-medium" id="act1-label">第1幕</h3>
+            <textarea 
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              value={basicSetting.act1_overview || '未設定'}
+              readOnly
+              rows={3}
+              aria-labelledby="act1-label"
+              title="第1幕のあらすじ"
+            />
           </div>
           <div>
-            <h3 className="text-sm font-medium">第2幕</h3>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap line-clamp-3">
-              {plot.act2 || '未設定'}
-            </p>
+            <h3 className="text-sm font-medium" id="act2-label">第2幕</h3>
+            <textarea 
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              value={basicSetting.act2_overview || '未設定'}
+              readOnly
+              rows={3}
+              aria-labelledby="act2-label"
+              title="第2幕のあらすじ"
+            />
           </div>
           <div>
-            <h3 className="text-sm font-medium">第3幕</h3>
-            <p className="text-sm text-gray-600 whitespace-pre-wrap line-clamp-3">
-              {plot.act3 || '未設定'}
-            </p>
+            <h3 className="text-sm font-medium" id="act3-label">第3幕</h3>
+            <textarea 
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
+              value={basicSetting.act3_overview || '未設定'}
+              readOnly
+              rows={3}
+              aria-labelledby="act3-label"
+              title="第3幕のあらすじ"
+            />
           </div>
         </div>
       </CardContent>

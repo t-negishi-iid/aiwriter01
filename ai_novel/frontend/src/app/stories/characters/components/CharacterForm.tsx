@@ -199,28 +199,24 @@ export function CharacterForm({
 
       </div>
 
-      {/* 名前と役割を縦に並べる（横幅いっぱいに表示） - 静的テキストとして表示 */}
+      {/* 名前と役割をシンプルに表示 */}
+      <div className="space-y-2 mb-4">
+        <div>
+          <p className="text-md">
+            <strong>名前</strong>：{formData.name}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-md">
+            <strong>役割</strong>：{formData.role}
+          </p>
+        </div>
+      </div>
+
+      {/* 以下のフィールドは当面使用しないためコメントアウト */}
+      {/* 
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            名前
-          </label>
-          <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50">
-            {formData.name}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            役割
-          </label>
-          <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50">
-            {formData.role}
-          </div>
-        </div>
-
-        {/* 以下のフィールドは当面使用しないためコメントアウト */}
-        {/* 
         <div>
           <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
             年齢
@@ -250,102 +246,104 @@ export function CharacterForm({
             style={{ width: '100%', padding: '5px', margin: '0' }}
           />
         </div>
-        */}
       </div>
+      */}
 
       {/* 以下のフィールドは当面使用しないためコメントアウト */}
       {/* 
-      <div>
-        <label htmlFor="personality" className="block text-sm font-medium text-gray-700 mb-1">
-          性格
-        </label>
-        <textarea
-          id="personality"
-          name="personality"
-          value={formData.personality}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
-      </div>
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="personality" className="block text-sm font-medium text-gray-700 mb-1">
+            性格
+          </label>
+          <textarea
+            id="personality"
+            name="personality"
+            value={formData.personality}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="appearance" className="block text-sm font-medium text-gray-700 mb-1">
-          外見
-        </label>
-        <textarea
-          id="appearance"
-          name="appearance"
-          value={formData.appearance}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
-      </div>
+        <div>
+          <label htmlFor="appearance" className="block text-sm font-medium text-gray-700 mb-1">
+            外見
+          </label>
+          <textarea
+            id="appearance"
+            name="appearance"
+            value={formData.appearance}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="background" className="block text-sm font-medium text-gray-700 mb-1">
-          背景
-        </label>
-        <textarea
-          id="background"
-          name="background"
-          value={formData.background}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
-      </div>
+        <div>
+          <label htmlFor="background" className="block text-sm font-medium text-gray-700 mb-1">
+            背景
+          </label>
+          <textarea
+            id="background"
+            name="background"
+            value={formData.background}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="motivation" className="block text-sm font-medium text-gray-700 mb-1">
-          動機
-        </label>
-        <textarea
-          id="motivation"
-          name="motivation"
-          value={formData.motivation || ''}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
-      </div>
+        <div>
+          <label htmlFor="motivation" className="block text-sm font-medium text-gray-700 mb-1">
+            動機
+          </label>
+          <textarea
+            id="motivation"
+            name="motivation"
+            value={formData.motivation || ''}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="relationship" className="block text-sm font-medium text-gray-700 mb-1">
-          関係性
-        </label>
-        <textarea
-          id="relationship"
-          name="relationship"
-          value={formData.relationship || ''}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
-      </div>
+        <div>
+          <label htmlFor="relationship" className="block text-sm font-medium text-gray-700 mb-1">
+            関係性
+          </label>
+          <textarea
+            id="relationship"
+            name="relationship"
+            value={formData.relationship || ''}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="development" className="block text-sm font-medium text-gray-700 mb-1">
-          発展/成長
-        </label>
-        <textarea
-          id="development"
-          name="development"
-          value={formData.development || ''}
-          onChange={handleChange}
-          rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
-        />
+        <div>
+          <label htmlFor="development" className="block text-sm font-medium text-gray-700 mb-1">
+            発展/成長
+          </label>
+          <textarea
+            id="development"
+            name="development"
+            value={formData.development || ''}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', height: '100px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          />
+        </div>
       </div>
       */}
-      
+
       <div>
         <label htmlFor="raw_content" className="block text-sm font-medium text-gray-700 mb-1">
           詳細設定

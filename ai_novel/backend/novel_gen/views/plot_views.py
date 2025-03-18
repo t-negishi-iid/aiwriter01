@@ -89,7 +89,6 @@ class CreatePlotDetailView(views.APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         """あらすじ詳細を生成"""
         # リクエストの検証
@@ -174,12 +173,25 @@ class CreatePlotDetailView(views.APIView):
             )
 
             # レスポンスの検証
+            logger.error(f"DEBUG - CreatePlotDetailView - API response: {response}")
+            
             if 'error' in response:
                 api_log.is_success = False
                 api_log.response_data = {'error': response['error']}
                 api_log.save()
                 return Response({'error': 'あらすじ詳細の生成に失敗しました', 'details': response['error']},
                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # resultキーがない場合のチェック
+            if 'result' not in response:
+                logger.error(f"DEBUG - CreatePlotDetailView - 'result' key not found in response: {response}")
+                api_log.is_success = False
+                api_log.response_data = {'error': 'APIレスポンスに結果が含まれていません'}
+                api_log.save()
+                return Response(
+                    {'error': 'あらすじ詳細の生成に失敗しました', 'details': 'APIレスポンスに結果が含まれていません'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
             content = response['result']
 

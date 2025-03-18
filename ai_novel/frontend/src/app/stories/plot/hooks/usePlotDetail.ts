@@ -330,8 +330,7 @@ export function usePlotDetail(storyId: string | null) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          basic_setting_id: plot.storyId,
-          plot_id: plot.id 
+          basic_setting_id: plot.storyId
         }),
       });
 

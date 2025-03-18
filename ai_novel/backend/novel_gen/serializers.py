@@ -215,7 +215,7 @@ class CharacterDetailRequestSerializer(serializers.Serializer):
 
 class PlotDetailRequestSerializer(serializers.Serializer):
     """あらすじ詳細リクエストシリアライザ"""
-    pass  # 追加パラメータなし
+    basic_setting_id = serializers.IntegerField(required=True)
 
 
 class EpisodeDetailRequestSerializer(serializers.Serializer):

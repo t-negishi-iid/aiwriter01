@@ -163,16 +163,48 @@ class DifyNovelAPI:
             Dict[str, Any]: 処理済みレスポンス
         """
         try:
-            # デバッグ用にレスポンスデータの内容をログに出力
-            logger.error(f"DEBUG - _process_response - response_data: {json.dumps(response_data)[:500]}")
+            # デバッグ用にレスポンスデータの内容を詳細にログ出力
+            logger.error(f"DEBUG - _process_response - response_data type: {type(response_data)}")
+            logger.error(f"DEBUG - _process_response - response_data keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Not a dict'}")
+            logger.error(f"DEBUG - _process_response - full response_data: {json.dumps(response_data)[:1000]}")
+            
+            # エラーチェック
+            if (isinstance(response_data, dict) and 
+                "data" in response_data and 
+                "error" in response_data["data"] and 
+                response_data["data"]["error"]):
+                # APIから返されたエラーをそのまま返す
+                error_message = response_data["data"]["error"]
+                logger.error(f"DEBUG - _process_response - API returned error: {error_message}")
+                return {"error": f"APIエラー: {error_message}"}
+            
+            # レート制限エラーチェック
+            if (isinstance(response_data, dict) and 
+                "data" in response_data and 
+                "status" in response_data["data"] and 
+                response_data["data"]["status"] == "failed"):
+                # 失敗ステータスの場合は詳細なエラーメッセージを返す
+                error_message = "APIリクエストが失敗しました"
+                if "error" in response_data["data"] and response_data["data"]["error"]:
+                    error_message = response_data["data"]["error"]
+                logger.error(f"DEBUG - _process_response - API request failed: {error_message}")
+                return {"error": f"API実行失敗: {error_message}"}
             
             # ワークフローAPIのレスポンス形式に対応
-            if "data" in response_data and "outputs" in response_data["data"]:
+            if (isinstance(response_data, dict) and 
+                "data" in response_data and 
+                "outputs" in response_data["data"]):
+                # outputsがNoneの場合はエラーとして扱う
+                if response_data["data"]["outputs"] is None:
+                    logger.error("DEBUG - _process_response - outputs is None")
+                    return {"error": "APIレスポンスのoutputsがNullです"}
+                
                 result = response_data["data"]["outputs"].get("result", "")
+                logger.error(f"DEBUG - _process_response - extracted result (first 200 chars): {result[:200]}")
                 return {"result": result}
 
-
             # その他の形式
+            logger.error(f"DEBUG - _process_response - using original response format")
             return response_data
         except Exception as e:
             logger.error(f"Failed to process response: {str(e)}")

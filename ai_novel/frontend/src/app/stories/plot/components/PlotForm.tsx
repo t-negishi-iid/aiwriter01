@@ -7,8 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import styles from '../plot-detail.module.css';
-import { basicSettingApi } from '@/lib/api-client';
 import { toast } from '@/components/ui/use-toast';
+import { fetchApi } from '@/lib/api-client';
 
 interface PlotFormProps {
   plot: PlotData;
@@ -18,6 +18,7 @@ interface PlotFormProps {
   onSave: (plot: PlotData) => Promise<boolean>;
   onGenerate: (plot: PlotData) => Promise<PlotData | null>;
   onCancel: () => void;
+  refreshBasicSetting: (storyId: number) => Promise<void>;
 }
 
 export function PlotForm({
@@ -27,87 +28,74 @@ export function PlotForm({
   isGenerating,
   onSave,
   onGenerate,
-  onCancel
+  onCancel,
+  refreshBasicSetting
 }: PlotFormProps) {
   const [formData, setFormData] = useState<PlotData>(plot);
   const [isSavingDetail, setIsSavingDetail] = useState(false);
   const [currentAct, setCurrentAct] = useState<number>(plot.act_number || 1);
   const storyId = plot.storyId; // storyIdを取得
 
-  // plotが変更されたらフォームデータを更新し、currentActも更新
-  useEffect(() => {
-    console.log('PlotForm - plot変更検知:', plot);
-    console.log('PlotForm - raw_content:', plot.raw_content ? '存在します' : 'なし');
-    console.log('PlotForm - act_number:', plot.act_number);
-    setFormData(plot);
-    
-    // プロットの幕番号が存在する場合は、currentActを更新
-    if (plot.act_number) {
-      setCurrentAct(plot.act_number);
-    }
-  }, [plot]);
 
-  // 幕が変更された時に、その幕の基本設定の内容をcontentに設定
-  useEffect(() => {
-    if (basicSetting && currentAct) {
-      let overview = '';
-      switch (currentAct) {
-        case 1:
-          overview = basicSetting.act1_overview || '';
-          break;
-        case 2:
-          overview = basicSetting.act2_overview || '';
-          break;
-        case 3:
-          overview = basicSetting.act3_overview || '';
-          break;
-      }
-      setFormData(prev => ({ ...prev, content: overview }));
-    }
-  }, [basicSetting, currentAct]);
-
-  // コンポーネントマウント時にフォームデータの状態をログ出力
-  useEffect(() => {
-    console.log('PlotForm - マウント時のformData:', formData);
-    console.log('PlotForm - マウント時のraw_content:', formData.raw_content ? '存在します' : 'なし');
-    console.log('PlotForm - マウント時のact_number:', formData.act_number);
-  }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log(`handleChange: name=${name}, value=${value.substring(0, 30)}...`);
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 基本設定の特定の幕のあらすじも更新する
-    if (basicSetting && storyId && currentAct) {
+
+    let updateSuccess = true;
+
+    // 基本設定の特定の幕のあらすじを更新する
+    if (storyId && currentAct) {
       try {
-        // 現在編集中の幕に応じた基本設定のあらすじを更新
-        await basicSettingApi.updateBasicSettingAct(
-          storyId,
-          currentAct,
-          formData.content
-        );
-        
-        console.log(`基本設定の第${currentAct}幕のあらすじを更新しました`);
+        console.log(`基本設定の第${currentAct}幕あらすじを更新リクエスト:`, formData.content.substring(0, 200) + '...');
+        console.log('story_id: ', storyId);
+        console.log('current_act:', currentAct);
+
+        // 特定の幕のあらすじを更新するAPIを呼び出し
+        const response = await fetchApi(`/stories/${storyId}/basic-setting-act/${currentAct}/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: formData.content }),
+        });
+
+        console.log(`基本設定の第${currentAct}幕あらすじを更新レスポンス:`, response);
+
+        // エラーチェック - レスポンスにエラーフィールドがある場合
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        // 更新成功の場合、基本設定データを再取得して最新情報に更新
+        if (refreshBasicSetting && storyId) {
+          await refreshBasicSetting(Number(storyId));
+        }
+
         toast({
           title: "基本設定更新",
           description: `基本設定の第${currentAct}幕のあらすじを更新しました`,
         });
       } catch (error) {
+        updateSuccess = false;
         console.error('基本設定更新エラー:', error);
         toast({
           title: "エラー",
-          description: "基本設定の更新に失敗しました",
+          description: `基本設定の更新に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
           variant: "destructive",
         });
       }
     }
-    
-    // 通常のプロット保存処理
-    await onSave(formData);
+
+    // 基本設定の更新に成功した場合のみ、通常のプロット保存処理を実行
+    if (updateSuccess) {
+      await onSave(formData);
+    }
   };
 
   const handleGenerateDetail = async () => {
@@ -166,7 +154,7 @@ export function PlotForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.formContainer}>
+    <form className={styles.formContainer}>
       <Card>
         {/* 詳細あらすじ生成ボタン - フォームの一番上に配置 */}
         <div className="flex justify-between mb-4">
@@ -200,11 +188,8 @@ export function PlotForm({
             </div>
 
             <div className={styles.formButtons}>
-              <div className={styles.formButtonsLeft}>
-                {/* 削除ボタンを削除 */}
-              </div>
               <div className={styles.formButtonsRight}>
-                <Button type="submit" disabled={isSaving}>
+                <Button type="button" onClick={handleSubmit} disabled={isSaving}>
                   {isSaving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

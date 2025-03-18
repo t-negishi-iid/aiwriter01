@@ -20,6 +20,7 @@ interface DesktopViewProps {
   handleGenerateDetailedPlot: (plot: PlotData) => Promise<PlotData | null>;
   handleCancelForm: () => void;
   refreshPlots: () => void;
+  refreshBasicSetting: (storyId: number) => Promise<void>;
   storyId: number; // Added storyId prop
 }
 
@@ -36,6 +37,7 @@ export function DesktopView({
   handleGenerateDetailedPlot,
   handleCancelForm,
   refreshPlots,
+  refreshBasicSetting,
   storyId // Added storyId prop
 }: DesktopViewProps) {
   // 基本設定の幕を編集するための処理
@@ -65,6 +67,18 @@ export function DesktopView({
             console.log('[handleEditAct] 取得したraw_content:', detailedPlot.raw_content ? '存在します' : 'なし');
             console.log('[handleEditAct] 取得したraw_contentの内容:', detailedPlot.raw_content);
 
+            // 基本あらすじを設定
+            if (basicSetting) {
+              const actOverview = act === 1 
+                ? basicSetting.act1_overview 
+                : act === 2 
+                  ? basicSetting.act2_overview 
+                  : basicSetting.act3_overview;
+              
+              // 基本あらすじを適用
+              detailedPlot.content = actOverview || '';
+            }
+
             // 詳細情報を含むプロットデータを選択
             setSelectedPlot(detailedPlot);
             return;
@@ -76,7 +90,20 @@ export function DesktopView({
         }
       }
       console.log('[handleEditAct] 既存プロットをそのまま選択します');
-      setSelectedPlot(actPlot);
+      
+      // 基本あらすじを適用
+      if (basicSetting) {
+        const updatedPlot = { ...actPlot };
+        updatedPlot.content = act === 1 
+          ? basicSetting.act1_overview || ''
+          : act === 2
+            ? basicSetting.act2_overview || ''
+            : basicSetting.act3_overview || '';
+        
+        setSelectedPlot(updatedPlot);
+      } else {
+        setSelectedPlot(actPlot);
+      }
     } else if (basicSetting) {
       // 基本設定からプロットデータを作成
       console.log('[handleEditAct] 既存プロットがないため、基本設定から新規プロットを作成します');
@@ -152,6 +179,7 @@ export function DesktopView({
             onSave={handleSavePlot}
             onGenerate={handleGenerateDetailedPlot}
             onCancel={handleCancelForm}
+            refreshBasicSetting={refreshBasicSetting}
           />
         ) : (
           <div className="text-center p-4">

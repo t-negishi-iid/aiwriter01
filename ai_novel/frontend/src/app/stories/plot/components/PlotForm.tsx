@@ -48,13 +48,14 @@ export function PlotForm({
     e.preventDefault();
 
     let updateSuccess = true;
+    console.log('handleSubmit:');
+    console.log('story_id: ', storyId);
+    console.log('current_act:', currentAct);
 
     // 基本設定の特定の幕のあらすじを更新する
     if (storyId && currentAct) {
       try {
         console.log(`基本設定の第${currentAct}幕あらすじを更新リクエスト:`, formData.content.substring(0, 200) + '...');
-        console.log('story_id: ', storyId);
-        console.log('current_act:', currentAct);
 
         // 特定の幕のあらすじを更新するAPIを呼び出し
         const response = await fetchApi(`/stories/${storyId}/basic-setting-act/${currentAct}/`, {
@@ -119,6 +120,16 @@ export function PlotForm({
       setIsSavingDetail(false);
     }
   };
+
+  useEffect(() => {
+    if (plot) {
+      // 初期値を設定
+      setFormData(plot);
+      // 現在の幕を設定
+      setCurrentAct(plot.act_number || 1);
+      console.log('PlotForm - フォームデータを更新しました:', plot);
+    }
+  }, [plot]);
 
   // 現在の幕に基づいて基本あらすじを表示
   const renderBasicOverview = () => {

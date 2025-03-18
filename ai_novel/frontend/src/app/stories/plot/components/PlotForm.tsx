@@ -19,6 +19,7 @@ interface PlotFormProps {
   onGenerate: (plot: PlotData) => Promise<PlotData | null>;
   onCancel: () => void;
   refreshBasicSetting: (storyId: number) => Promise<void>;
+  storyId: number | string;
 }
 
 export function PlotForm({
@@ -29,14 +30,12 @@ export function PlotForm({
   onSave,
   onGenerate,
   onCancel,
-  refreshBasicSetting
+  refreshBasicSetting,
+  storyId
 }: PlotFormProps) {
   const [formData, setFormData] = useState<PlotData>(plot);
   const [isSavingDetail, setIsSavingDetail] = useState(false);
   const [currentAct, setCurrentAct] = useState<number>(plot.act_number || 1);
-  const storyId = plot.storyId; // storyIdを取得
-
-
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const { name, value } = e.target;

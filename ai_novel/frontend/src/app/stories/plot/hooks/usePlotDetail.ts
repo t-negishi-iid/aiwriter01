@@ -87,6 +87,22 @@ export function usePlotDetail(storyId: string | null) {
     }
   }, [basicSetting]); // 依存配列から plots を削除
 
+  // 基本設定のリフレッシュ
+  const refreshBasicSetting = async (storyId: number): Promise<void> => {
+    try {
+      const basicSettingData = await fetchApi(`/stories/${storyId}/latest-basic-setting/`);
+      console.log('基本設定を再取得しました:', basicSettingData);
+      setBasicSetting(basicSettingData);
+    } catch (error) {
+      console.error('基本設定再取得エラー:', error);
+      toast({
+        title: "エラー",
+        description: "基本設定の再取得に失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
+
   // あらすじ一覧を再取得
   const refreshPlots = async () => {
     if (!storyId) return;
@@ -110,28 +126,27 @@ export function usePlotDetail(storyId: string | null) {
   };
 
   // あらすじを保存
-  const handleSavePlot = async (plot: PlotData): Promise<boolean> => {
+  const handleSavePlot = async (plot: Partial<PlotData>): Promise<boolean> => {
     if (!storyId) return false;
 
     setIsSaving(true);
     try {
-      // 新規作成か更新かを判断
       const method = plot.id ? 'PUT' : 'POST';
-      const url = plot.id ? `/stories/${storyId}/acts/${plot.id}/` : `/stories/${storyId}/acts/`;
-
-      const response = await fetch(url, {
+      const endpoint = plot.id
+        ? `/stories/${storyId}/acts/${plot.id}/`
+        : `/stories/${storyId}/acts/`;
+      
+      console.log(`プロット${plot.id ? '更新' : '作成'}リクエスト:`, endpoint, plot);
+      
+      const response = await fetchApi(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(plot),
       });
-
-      if (!response.ok) {
-        throw new Error('プロットの保存に失敗しました');
-      }
-
-      const savedPlot = await response.json();
+      
+      const savedPlot = await response;
       console.log('保存されたプロット:', savedPlot);
 
       // 保存したプロットで状態を更新
@@ -155,7 +170,7 @@ export function usePlotDetail(storyId: string | null) {
       console.error('あらすじ保存エラー:', err);
       toast({
         title: "エラー",
-        description: "あらすじの保存に失敗しました",
+        description: `あらすじの保存に失敗しました: ${err instanceof Error ? err.message : String(err)}`,
         variant: "destructive",
       });
       return false;
@@ -171,7 +186,7 @@ export function usePlotDetail(storyId: string | null) {
     setIsSaving(true);
     try {
       // APIを使用してプロットを削除
-      const response = await fetch(`/stories/${storyId}/acts/${plotId}/`, {
+      const response = await fetchApi(`/stories/${storyId}/acts/${plotId}/`, {
         method: 'DELETE',
       });
 
@@ -206,6 +221,102 @@ export function usePlotDetail(storyId: string | null) {
     }
   };
 
+  // 基本設定の幕を編集するための処理（DesktopViewとMobileViewで共通利用）
+  const handleEditAct = async (act: number) => {
+    console.log(`[handleEditAct] 第${act}幕の編集ボタンがクリックされました`);
+    if (!storyId) return;
+
+    // 該当する幕のプロットデータを探す
+    const actPlot = plots.find(plot => plot.act_number === act);
+    console.log('[handleEditAct] 既存プロット検索結果:', actPlot);
+
+    if (actPlot) {
+      // 既存のプロットデータがある場合はそれを選択
+      // プロットの詳細情報（raw_content）が存在しない場合は、APIから取得
+      console.log('[handleEditAct] raw_content:', actPlot.raw_content ? '存在します' : 'なし');
+
+      if (!actPlot.raw_content && actPlot.id) {
+        console.log(`[handleEditAct] raw_contentがないため、API呼び出しを実行します: /api/stories/${storyId}/acts/${act}/`);
+        try {
+          // プロット詳細を取得
+          const response = await fetchApi(`/stories/${storyId}/acts/${act}/`);
+          console.log('[handleEditAct] API応答:', response.status, response.statusText);
+
+          if (response) {
+            const detailedPlot = response;
+            console.log('[handleEditAct] 取得したプロット詳細:', detailedPlot);
+            console.log('[handleEditAct] 取得したraw_content:', detailedPlot.raw_content ? '存在します' : 'なし');
+
+            // 基本あらすじを設定
+            if (basicSetting) {
+              const actOverview = act === 1 
+                ? basicSetting.act1_overview 
+                : act === 2 
+                  ? basicSetting.act2_overview 
+                  : basicSetting.act3_overview;
+              
+              // 基本あらすじを適用
+              detailedPlot.content = actOverview || '';
+            }
+
+            // storyIdを明示的に設定
+            detailedPlot.storyId = storyId;
+
+            // 詳細情報を含むプロットデータを選択
+            setSelectedPlot(detailedPlot);
+            return;
+          }
+        } catch (error) {
+          console.error('[handleEditAct] プロット詳細取得エラー:', error);
+        }
+      }
+      
+      console.log('[handleEditAct] 既存プロットをそのまま選択します');
+      
+      // 基本あらすじを適用
+      if (basicSetting) {
+        const updatedPlot = { ...actPlot };
+        updatedPlot.content = act === 1 
+          ? basicSetting.act1_overview || ''
+          : act === 2
+            ? basicSetting.act2_overview || ''
+            : basicSetting.act3_overview || '';
+        
+        // storyIdを明示的に設定
+        updatedPlot.storyId = storyId;
+        
+        setSelectedPlot(updatedPlot);
+      } else {
+        // storyIdを明示的に設定
+        const plotWithStoryId = { ...actPlot, storyId };
+        setSelectedPlot(plotWithStoryId);
+      }
+    } else if (basicSetting) {
+      // 基本設定からプロットデータを作成
+      console.log('[handleEditAct] 既存プロットがないため、基本設定から新規プロットを作成します');
+      
+      const newPlot = {
+        id: 0, // 新規プロットとして扱う
+        act: act,
+        act_number: act,
+        content: act === 1 
+          ? basicSetting.act1_overview || ''
+          : act === 2
+            ? basicSetting.act2_overview || ''
+            : basicSetting.act3_overview || '',
+        raw_content: '', // 初期値は空文字列
+        title: `第${act}幕`,
+        status: 'draft',
+        storyId: storyId // storyIdを明示的に設定
+      };
+      
+      console.log('[handleEditAct] 作成した新規プロット:', newPlot);
+      setSelectedPlot(newPlot);
+    } else {
+      console.log('[handleEditAct] 基本設定もプロットも見つかりませんでした');
+    }
+  };
+
   // 詳細あらすじを生成
   const handleGenerateDetailedPlot = async (plot: PlotData): Promise<PlotData | null> => {
     if (!storyId) return null;
@@ -213,7 +324,7 @@ export function usePlotDetail(storyId: string | null) {
     setIsGenerating(true);
     try {
       // APIを使用して詳細あらすじを生成
-      const response = await fetch(`/stories/${storyId}/create-plot-detail/`, {
+      const response = await fetch(`/api/stories/${storyId}/create-plot-detail/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -256,6 +367,11 @@ export function usePlotDetail(storyId: string | null) {
     }
   };
 
+  // フォームをキャンセル
+  const handleCancelForm = () => {
+    setSelectedPlot(null);
+  };
+
   return {
     plots,
     basicSetting,
@@ -269,7 +385,9 @@ export function usePlotDetail(storyId: string | null) {
     handleSavePlot,
     handleDeletePlot,
     handleGenerateDetailedPlot,
-    handleCancelForm: () => setSelectedPlot(null),
-    refreshPlots
+    handleEditAct,
+    handleCancelForm,
+    refreshPlots,
+    refreshBasicSetting
   };
 }

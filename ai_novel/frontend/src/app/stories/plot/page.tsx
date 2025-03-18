@@ -20,15 +20,17 @@ export default function PlotPage() {
     plots,
     basicSetting,
     selectedPlot,
+    setSelectedPlot,
     isLoading,
+    error,
     isSaving,
     isGenerating,
-    error,
-    setSelectedPlot,
     handleSavePlot,
-    handleDeletePlot,
     handleGenerateDetailedPlot,
-    refreshPlots
+    handleEditAct,
+    handleCancelForm,
+    refreshPlots,
+    refreshBasicSetting
   } = usePlotDetail(storyId);
 
   useEffect(() => {
@@ -48,11 +50,6 @@ export default function PlotPage() {
       window.removeEventListener('resize', checkIfMobile);
     };
   }, []);
-
-  // フォームキャンセルハンドラー
-  const handleCancelForm = () => {
-    setSelectedPlot(null);
-  };
 
   // ストーリーIDがない場合は、ストーリー一覧に戻る
   useEffect(() => {
@@ -93,11 +90,12 @@ export default function PlotPage() {
             error={error}
             setSelectedPlot={setSelectedPlot}
             handleSavePlot={handleSavePlot}
-            handleDeletePlot={handleDeletePlot}
             handleGenerateDetailedPlot={handleGenerateDetailedPlot}
             handleCancelForm={handleCancelForm}
             refreshPlots={refreshPlots}
+            refreshBasicSetting={refreshBasicSetting}
             storyId={Number(storyId)}
+            handleEditAct={handleEditAct}
           />
         ) : (
           <DesktopView
@@ -110,11 +108,12 @@ export default function PlotPage() {
             error={error}
             setSelectedPlot={setSelectedPlot}
             handleSavePlot={handleSavePlot}
-            handleDeletePlot={handleDeletePlot}
             handleGenerateDetailedPlot={handleGenerateDetailedPlot}
             handleCancelForm={handleCancelForm}
             refreshPlots={refreshPlots}
+            refreshBasicSetting={refreshBasicSetting}
             storyId={Number(storyId)}
+            handleEditAct={handleEditAct}
           />
         )}
       </div>

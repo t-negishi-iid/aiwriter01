@@ -467,3 +467,66 @@ class LatestBasicSettingView(views.APIView):
                 {'error': f'基本設定の取得中にエラーが発生しました: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class BasicSettingActUpdateView(views.APIView):
+    """
+    基本設定の特定の幕あらすじ更新ビュー
+
+    指定された小説の基本設定の特定の幕のあらすじを更新します。
+    URLパラメータのact_numberに基づいて、対応するフィールドを更新します。
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        """基本設定の特定の幕のあらすじを更新"""
+        story_id = self.kwargs.get('story_id')
+        act_number = self.kwargs.get('act_number')
+        content = request.data.get('content')
+
+        if not content:
+            return Response(
+                {'error': 'あらすじ内容が指定されていません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # ストーリーの存在確認
+            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+
+            # 最新の基本設定を取得
+            basic_setting = BasicSetting.objects.filter(
+                ai_story_id=story_id
+            ).order_by('-created_at').first()
+
+            if not basic_setting:
+                return Response(
+                    {'error': '基本設定が見つかりません'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # 幕番号に応じたフィールドを更新
+            if act_number == 1:
+                basic_setting.act1_overview = content
+            elif act_number == 2:
+                basic_setting.act2_overview = content
+            elif act_number == 3:
+                basic_setting.act3_overview = content
+            else:
+                return Response(
+                    {'error': '無効な幕番号です (1-3の値を指定してください)'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # 変更を保存
+            basic_setting.save()
+
+            serializer = BasicSettingSerializer(basic_setting)
+            return Response(serializer.data)
+
+        except Exception as e:
+            logger.error(f"Error updating basic setting act: {str(e)}")
+            return Response(
+                {'error': f'基本設定の更新中にエラーが発生しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

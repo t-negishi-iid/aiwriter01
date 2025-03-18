@@ -11,7 +11,7 @@ from . import views
 from .views.connectivity import is_live
 from .views.is_live_views import StoryIsLiveView
 from .views.integrated_setting_creator_views import IntegratedSettingCreatorView, IntegratedSettingCreatorDetailView
-from .views.basic_setting_views import LatestBasicSettingView
+from .views.basic_setting_views import LatestBasicSettingView, BasicSettingActUpdateView
 
 app_name = 'novel_gen'
 
@@ -59,6 +59,8 @@ path('stories/<int:story_id>/is_live/', StoryIsLiveView.as_view(), name='story-i
          views.BasicSettingDetailView.as_view(), name='basic-setting-detail'),
     path('stories/<int:story_id>/latest-basic-setting/',
          LatestBasicSettingView.as_view(), name='latest-basic-setting'),
+    path('stories/<int:story_id>/basic-setting-act/<int:act_number>/',
+         BasicSettingActUpdateView.as_view(), name='basic-setting-act-update'),
 
     # キャラクター詳細関連
     path('stories/<int:story_id>/characters/',

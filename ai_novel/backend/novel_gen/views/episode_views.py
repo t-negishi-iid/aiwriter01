@@ -5,108 +5,62 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from django.db import transaction
+from django.db import transaction, models
 
 from ..models import (
     AIStory, BasicSetting, CharacterDetail, ActDetail,
     EpisodeDetail, APIRequestLog
 )
 from ..serializers import (
-    EpisodeDetailCreateSerializer, EpisodeDetailSerializer,
-    EpisodeDetailRequestSerializer
+    EpisodeDetailSerializer, EpisodeDetailRequestSerializer,
+    EpisodeNumberUpdateSerializer, EpisodeCreateSerializer
 )
 from ..dify_api import DifyNovelAPI
 from ..utils import check_and_consume_credit
 
 
-class StoryEpisodesListView(generics.ListAPIView):
+class ActEpisodesListView(generics.ListAPIView):
     """
-    ストーリーのエピソード一覧ビュー
-
-    指定されたストーリーに関連するすべてのエピソードを取得します。
+    幕に属する全エピソードの一覧を取得するビュー
+    
+    URL: /api/stories/{story_id}/acts/{act_id}/episodes/
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EpisodeDetailSerializer
 
     def get_queryset(self):
-        """指定されたストーリーのすべてのエピソードを取得"""
         story_id = self.kwargs.get('story_id')
-        return EpisodeDetail.objects.filter(
-            act__ai_story_id=story_id,
-            act__ai_story__user=self.request.user
-        ).order_by('act__act_number', 'episode_number')
+        act_id = self.kwargs.get('act_id')
+        
+        # 権限チェック
+        story = get_object_or_404(AIStory, id=story_id, user=self.request.user)
+        act = get_object_or_404(ActDetail, id=act_id, ai_story=story)
+        
+        return EpisodeDetail.objects.filter(act=act).order_by('episode_number')
 
 
-class EpisodeDetailListView(generics.ListCreateAPIView):
+class CreateEpisodesView(views.APIView):
     """
-    エピソード詳細一覧・作成ビュー
-
-    指定された幕のエピソード詳細一覧を取得、または新規エピソード詳細を作成します。
+    ActDetailから分割されたエピソード群を生成するビュー
+    
+    URL: /api/stories/{story_id}/acts/{act_id}/create-episodes/
     """
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = EpisodeDetailSerializer
-
-    def get_queryset(self):
-        """指定された幕のエピソード詳細一覧を取得"""
-        act_id = self.kwargs.get('act_id')
-        return EpisodeDetail.objects.filter(
-            act_id=act_id,
-            act__ai_story__user=self.request.user
-        ).order_by('episode_number')
-
-    def perform_create(self, serializer):
-        """エピソード詳細作成時に幕を設定"""
-        act_id = self.kwargs.get('act_id')
-        act = get_object_or_404(
-            ActDetail,
-            id=act_id,
-            ai_story__user=self.request.user
-        )
-        serializer.save(act=act)
-
-
-class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    エピソード詳細・更新・削除ビュー
-
-    指定された幕のエピソード詳細を取得、更新、または削除します。
-    """
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = EpisodeDetailSerializer
-    lookup_url_kwarg = 'pk'
-
-    def get_queryset(self):
-        """指定された幕のエピソード詳細を取得"""
-        act_id = self.kwargs.get('act_id')
-        return EpisodeDetail.objects.filter(
-            act_id=act_id,
-            act__ai_story__user=self.request.user
-        )
-
-
-class CreateEpisodeDetailsView(views.APIView):
-    """
-    エピソード詳細生成ビュー
-
-    基本設定、キャラクター詳細、あらすじ詳細を元にエピソード詳細を生成します。
-    クレジットを消費します。
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
+    
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        """エピソード詳細を生成"""
         story_id = self.kwargs.get('story_id')
+        act_id = self.kwargs.get('act_id')
+        
+        # 権限チェック
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
-
-        # リクエストの検証
+        act = get_object_or_404(ActDetail, id=act_id, ai_story=story)
+        
+        # リクエストパラメータの検証
         serializer = EpisodeDetailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # リクエストパラメータの取得
-        act_id = serializer.validated_data['act_id']
         episode_count = serializer.validated_data['episode_count']
-
+        
         # 基本設定の取得
         try:
             basic_setting = BasicSetting.objects.get(ai_story=story)
@@ -115,7 +69,7 @@ class CreateEpisodeDetailsView(views.APIView):
                 {'error': '基本設定が存在しません。先に基本設定を作成してください。'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        
         # キャラクター詳細の取得
         character_details = CharacterDetail.objects.filter(ai_story=story)
         if not character_details.exists():
@@ -123,32 +77,15 @@ class CreateEpisodeDetailsView(views.APIView):
                 {'error': 'キャラクター詳細が存在しません。先にキャラクター詳細を作成してください。'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
-        # あらすじ詳細（幕）の取得
-        all_acts = ActDetail.objects.filter(ai_story=story).order_by('act_number')
-        if not all_acts.exists():
-            return Response(
-                {'error': 'あらすじ詳細が存在しません。先にあらすじ詳細を作成してください。'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 指定された幕の取得
-        try:
-            target_act = ActDetail.objects.get(id=act_id, ai_story=story)
-        except ActDetail.DoesNotExist:
-            return Response(
-                {'error': '指定された幕が存在しません。'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        
         # クレジットの確認と消費
         success, message = check_and_consume_credit(request.user, 'episode_detail')
         if not success:
             return Response({'error': message}, status=status.HTTP_402_PAYMENT_REQUIRED)
-
+        
         # APIリクエスト
         api = DifyNovelAPI()
-
+        
         # キャラクター詳細データの準備
         character_details_data = [
             {
@@ -163,24 +100,14 @@ class CreateEpisodeDetailsView(views.APIView):
             }
             for char in character_details
         ]
-
+        
         # 幕詳細データの準備
-        all_acts_data = [
-            {
-                'act_number': act.act_number,
-                'title': act.title,
-                'content': act.content
-            }
-            for act in all_acts
-        ]
-
-        # 対象幕データの準備
-        target_act_data = {
-            'act_number': target_act.act_number,
-            'title': target_act.title,
-            'content': target_act.content
+        act_data = {
+            'act_number': act.act_number,
+            'title': act.title,
+            'content': act.content
         }
-
+        
         # APIログの作成
         api_log = APIRequestLog.objects.create(
             user=request.user,
@@ -192,19 +119,18 @@ class CreateEpisodeDetailsView(views.APIView):
             },
             credit_cost=3
         )
-
+        
         try:
             # 同期APIリクエスト
             response = api.create_episode_details(
                 basic_setting=basic_setting.raw_content,
                 character_details=character_details_data,
-                plot_details=all_acts_data,
-                target_plot=target_act_data,
+                act_detail=act_data,
                 episode_count=episode_count,
                 user_id=str(request.user.id),
                 blocking=True
             )
-
+            
             # レスポンスの検証
             if 'error' in response:
                 api_log.is_success = False
@@ -214,32 +140,39 @@ class CreateEpisodeDetailsView(views.APIView):
                     {'error': 'エピソード詳細の生成に失敗しました', 'details': response},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-
-            content = response['answer']
-
-            # パースして複数のエピソードに分割（実際の実装では内容を解析して分割する）
-            # この例では単純化のため、同じ内容を指定された数のエピソードに分けています
-            episode_details = []
-            for episode_number in range(1, episode_count + 1):
-                episode_title = f"エピソード{episode_number}"
-                episode_detail = EpisodeDetail.objects.create(
-                    act=target_act,
-                    episode_number=episode_number,
-                    title=episode_title,
-                    content=content,
-                    raw_content=content
+            
+            episodes_data = response['episodes']
+            
+            # 既存のエピソードを削除
+            EpisodeDetail.objects.filter(act=act).delete()
+            
+            # 新しいエピソードを作成
+            created_episodes = []
+            for index, episode_data in enumerate(episodes_data, 1):
+                episode = EpisodeDetail.objects.create(
+                    act=act,
+                    episode_number=index,
+                    title=episode_data['title'],
+                    content=episode_data['content'],
+                    raw_content=episode_data
                 )
-                episode_details.append(episode_detail)
-
+                created_episodes.append(episode)
+            
             # APIログの更新
             api_log.is_success = True
-            api_log.response = content
+            api_log.response = str(episodes_data)
             api_log.save()
-
+            
             # レスポンスを返す
-            result_serializer = EpisodeDetailSerializer(episode_details, many=True)
-            return Response(result_serializer.data, status=status.HTTP_201_CREATED)
-
+            serializer = EpisodeDetailSerializer(created_episodes, many=True)
+            return Response({
+                'count': len(created_episodes),
+                'next': None,
+                'previous': None,
+                'results': serializer.data,
+                'status': 'success'
+            }, status=status.HTTP_201_CREATED)
+            
         except Exception as e:
             # エラーログ
             api_log.is_success = False
@@ -249,3 +182,128 @@ class CreateEpisodeDetailsView(views.APIView):
                 {'error': 'エピソード詳細の生成に失敗しました', 'details': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    エピソードの取得・更新・削除ビュー
+    
+    URL: /api/stories/{story_id}/acts/{act_id}/episodes/{episode_id}/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EpisodeDetailSerializer
+    
+    def get_object(self):
+        story_id = self.kwargs.get('story_id')
+        act_id = self.kwargs.get('act_id')
+        episode_id = self.kwargs.get('episode_id')
+        
+        # 権限チェック
+        story = get_object_or_404(AIStory, id=story_id, user=self.request.user)
+        act = get_object_or_404(ActDetail, id=act_id, ai_story=story)
+        
+        return get_object_or_404(EpisodeDetail, id=episode_id, act=act)
+    
+    def update(self, request, *args, **kwargs):
+        if 'episode_number' in request.data:
+            # episode_numberの更新は特別な処理を行う
+            return self.update_episode_number(request, *args, **kwargs)
+        else:
+            # 通常の更新処理
+            return super().update(request, *args, **kwargs)
+    
+    @transaction.atomic
+    def update_episode_number(self, request, *args, **kwargs):
+        """エピソードの並び順を入れ替える"""
+        story_id = self.kwargs.get('story_id')
+        act_id = self.kwargs.get('act_id')
+        
+        # シリアライザーでリクエストデータを検証
+        serializer = EpisodeNumberUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        target_position = serializer.validated_data['episode_number']
+        
+        # 対象のエピソードを取得
+        source_episode = self.get_object()
+        current_position = source_episode.episode_number
+        
+        # 同じ位置なら何もしない
+        if current_position == target_position:
+            result_serializer = EpisodeDetailSerializer(source_episode)
+            return Response(result_serializer.data)
+        
+        # 上に移動する場合（current_position > target_position）
+        if current_position > target_position:
+            # PostgreSQLのbulk update
+            EpisodeDetail.objects.filter(
+                act_id=act_id,
+                episode_number__gte=target_position,
+                episode_number__lt=current_position
+            ).update(
+                episode_number=models.F('episode_number') + 1
+            )
+        
+        # 下に移動する場合（current_position < target_position）
+        elif current_position < target_position:
+            # PostgreSQLのbulk update
+            EpisodeDetail.objects.filter(
+                act_id=act_id,
+                episode_number__gt=current_position,
+                episode_number__lte=target_position
+            ).update(
+                episode_number=models.F('episode_number') - 1
+            )
+        
+        # 対象エピソードを更新
+        source_episode.episode_number = target_position
+        source_episode.save()
+        
+        # 更新されたエピソード一覧を取得
+        episodes = EpisodeDetail.objects.filter(act_id=act_id).order_by('episode_number')
+        
+        # レスポンスを返す
+        return Response({
+            'count': episodes.count(),
+            'next': None,
+            'previous': None,
+            'results': EpisodeDetailSerializer(episodes, many=True).data,
+            'status': 'success'
+        })
+
+
+class CreateEpisodeView(views.APIView):
+    """
+    エピソードの新規作成ビュー
+    
+    URL: /api/stories/{story_id}/acts/{act_id}/episodes/new/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        story_id = self.kwargs.get('story_id')
+        act_id = self.kwargs.get('act_id')
+        
+        # 権限チェック
+        story = get_object_or_404(AIStory, id=story_id, user=request.user)
+        act = get_object_or_404(ActDetail, id=act_id, ai_story=story)
+        
+        # リクエストデータの検証
+        serializer = EpisodeCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # 最後のエピソード番号を取得
+        last_episode = EpisodeDetail.objects.filter(act=act).order_by('-episode_number').first()
+        next_episode_number = 1 if last_episode is None else last_episode.episode_number + 1
+        
+        # 新しいエピソードを作成
+        episode = EpisodeDetail.objects.create(
+            act=act,
+            episode_number=next_episode_number,
+            title=serializer.validated_data['title'],
+            content=serializer.validated_data['content']
+        )
+        
+        # レスポンスを返す
+        result_serializer = EpisodeDetailSerializer(episode)
+        return Response(result_serializer.data, status=status.HTTP_201_CREATED)

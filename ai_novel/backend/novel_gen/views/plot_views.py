@@ -211,13 +211,15 @@ class CreatePlotDetailView(views.APIView):
             # 見つからない場合は、デフォルトの3幕構成を作成
             if not act_positions:
                 logger.error("DEBUG - CreatePlotDetailView - No act headers found, creating default acts")
-                # デフォルトの3幕構成を作成
-                act_detail = ActDetail.objects.create(
+                # 既存の第1幕があるか確認
+                act_detail, created = ActDetail.objects.update_or_create(
                     ai_story=story,
                     act_number=1,
-                    title='第1幕',
-                    content=content,
-                    raw_content=content
+                    defaults={
+                        'title': '第1幕',
+                        'content': content,
+                        'raw_content': content
+                    }
                 )
                 act_details = [act_detail]
             else:
@@ -237,13 +239,15 @@ class CreatePlotDetailView(views.APIView):
                     
                     act_content = content[content_start:content_end].strip()
                     
-                    # ActDetailオブジェクトを作成してデータベースに保存
-                    act_detail = ActDetail.objects.create(
+                    # 既存の幕があるか確認し、あれば更新、なければ作成
+                    act_detail, created = ActDetail.objects.update_or_create(
                         ai_story=story,
                         act_number=act_number,
-                        title=title,
-                        content=act_content,
-                        raw_content=act_content
+                        defaults={
+                            'title': title,
+                            'content': act_content,
+                            'raw_content': act_content
+                        }
                     )
                     act_details.append(act_detail)
 

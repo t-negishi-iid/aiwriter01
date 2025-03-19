@@ -164,9 +164,16 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
             <ArrowLeft className="mr-1 h-4 w-4" />
             小説一覧に戻る
           </Link>
-          <h1 className="text-3xl font-bold">{story?.title || "無題の小説"}</h1>
           <p className="text-muted-foreground mt-2">
-            {story?.description || "説明はありません"}
+            {story?.catchphrase && story.catchphrase.length > 30
+              ? `${story.catchphrase.substring(0, 30)}...`
+              : story?.catchphrase || "説明はありません"}
+          </p>
+          <h1 className="text-3xl font-bold">{story?.title || "無題の小説"}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {story?.summary && story.summary.length > 80
+              ? `${story.summary.substring(0, 80)}...`
+              : story?.summary || "説明はありません"}
           </p>
         </div>
 

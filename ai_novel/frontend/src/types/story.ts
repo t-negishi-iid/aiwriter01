@@ -2,6 +2,8 @@ export interface Story {
   id: number;
   title: string;
   description: string;
+  catchphrase?: string;
+  summary?: string;
   created_at: string;
   updated_at: string;
 }

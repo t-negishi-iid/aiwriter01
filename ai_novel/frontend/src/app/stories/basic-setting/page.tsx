@@ -280,11 +280,10 @@ export default function BasicSettingPage() {
             <div className="w-full h-full p-5">
               <textarea
                 id="basic-setting-data"
-                className="w-full border-none bg-transparent resize-none outline-none"
+                className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
                 value={basicSettingData}
                 readOnly
                 placeholder="基本設定データがここに表示されます"
-                style={{ width: '100%', height: '3000px', minHeight: '400px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
               />
             </div>
           </div>
@@ -360,8 +359,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">作品世界と舞台設定</h3>
                   <textarea
                     id="story-settings"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
                     placeholder="作品世界と舞台設定を入力してください"
                     value={workSettingData.storySettings}
                     onChange={handleWorkSettingChange('storySettings')}
@@ -373,8 +371,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">主な登場人物</h3>
                   <textarea
                     id="characters"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
                     placeholder="主な登場人物を入力してください"
                     value={workSettingData.characters}
                     onChange={handleWorkSettingChange('characters')}
@@ -386,8 +383,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">あらすじ</h3>
                   <textarea
                     id="plot-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
                     placeholder="あらすじを入力してください"
                     value={workSettingData.plotOverview}
                     onChange={handleWorkSettingChange('plotOverview')}
@@ -399,8 +395,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">第1幕</h3>
                   <textarea
                     id="act1-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
                     placeholder="第1幕の内容を入力してください"
                     value={workSettingData.act1Overview}
                     onChange={handleWorkSettingChange('act1Overview')}
@@ -412,8 +407,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">第2幕</h3>
                   <textarea
                     id="act2-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
                     placeholder="第2幕の内容を入力してください"
                     value={workSettingData.act2Overview}
                     onChange={handleWorkSettingChange('act2Overview')}
@@ -425,8 +419,7 @@ export default function BasicSettingPage() {
                   <h3 className="text-md font-medium p-4">第3幕</h3>
                   <textarea
                     id="act3-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '200px', minHeight: '200px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
                     placeholder="第3幕の内容を入力してください"
                     value={workSettingData.act3Overview}
                     onChange={handleWorkSettingChange('act3Overview')}
@@ -454,8 +447,7 @@ export default function BasicSettingPage() {
                 <div className="bg-white border border-gray-200 rounded-md p-0 overflow-y-auto w-full">
                   <textarea
                     id="raw-content"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4"
-                    style={{ width: '100%', height: '400px', minHeight: '400px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-1200"
                     placeholder="生成された元の内容全体"
                     value={workSettingData.rawContent}
                     onChange={handleWorkSettingChange('rawContent')}

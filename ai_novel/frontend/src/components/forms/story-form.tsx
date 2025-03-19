@@ -28,12 +28,12 @@ interface StoryFormProps {
   cancelButton?: React.ReactNode
 }
 
-export function StoryForm({ 
-  onSubmit, 
-  defaultValues, 
-  isSubmitting = false, 
+export function StoryForm({
+  onSubmit,
+  defaultValues,
+  isSubmitting = false,
   submitButtonText = "ストーリーを作成",
-  cancelButton 
+  cancelButton
 }: StoryFormProps) {
   const [submitting, setSubmitting] = useState(isSubmitting)
 
@@ -74,6 +74,7 @@ export function StoryForm({
                   disabled={submitting}
                   data-testid="title-input"
                   {...field}
+                  className="story-input"
                 />
               </FormControl>
               <FormDescription>
@@ -92,11 +93,12 @@ export function StoryForm({
             <FormItem>
               <FormLabel>キャッチコピー（オプション）</FormLabel>
               <FormControl>
-                <Input
+                <Textarea
                   placeholder="ストーリーのキャッチコピーを入力"
                   disabled={submitting}
                   data-testid="catchphrase-input"
                   {...field}
+                  className="story-textarea th-50"
                 />
               </FormControl>
               <FormDescription>
@@ -121,6 +123,7 @@ export function StoryForm({
                   disabled={submitting}
                   data-testid="summary-input"
                   {...field}
+                  className="story-textarea th-100"
                 />
               </FormControl>
               <FormDescription>
@@ -135,9 +138,9 @@ export function StoryForm({
         {/* 送信ボタン */}
         <div className="flex justify-between items-center gap-4">
           {cancelButton && <div data-testid="cancel-button-container">{cancelButton}</div>}
-          <Button 
-            type="submit" 
-            disabled={submitting} 
+          <Button
+            type="submit"
+            disabled={submitting}
             className={cancelButton ? "flex-1" : "w-full"}
             data-testid="submit-button"
           >

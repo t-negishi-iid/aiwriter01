@@ -54,8 +54,7 @@ export function CharacterItem({ character, index, onSelect, isSelected, isMobile
               <h4 className="text-sm font-medium text-gray-500">基本設定</h4>
               <textarea
                 id={`character-content-${character.id || index}-textarea`}
-                className="mt-1 text-sm w-full border-none bg-transparent resize-none outline-none"
-                style={{ width: '100%', height: '170px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+                className="mt-1 text-sm w-full border-none bg-transparent resize-none outline-none story-textarea th-300"
                 value={character.raw_content || ''}
                 readOnly
                 rows={4}

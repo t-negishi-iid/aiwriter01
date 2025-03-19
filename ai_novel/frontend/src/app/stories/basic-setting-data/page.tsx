@@ -61,13 +61,12 @@ export default function BasicSettingDataPage() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>基本設定</CardTitle>
-          <CardDescription>小説の基本的な設定情報</CardDescription>
+          <CardDescription>小説の基本的な設定をここで行います。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {basicSettingData ? (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-2">基本設定データ</h3>
                 <div className="flex justify-center mt-4 mb-4">
                   <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
                     統合クリエイターで編集する
@@ -88,11 +87,10 @@ export default function BasicSettingDataPage() {
                     <div className="w-full h-full p-5">
                       <textarea
                         id="basic-setting-data"
-                        className="w-full border-none bg-transparent resize-none outline-none"
+                        className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
                         value={basicSettingData || "基本設定データはありません"}
                         readOnly
                         placeholder="基本設定データがここに表示されます"
-                        style={{ width: '100%', height: '400px', minHeight: '400px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
                       />
                     </div>
                   </div>

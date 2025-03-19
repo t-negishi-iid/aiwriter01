@@ -301,8 +301,7 @@ export const StorySettingBlock = ({
         value={editedCharacters}
         onChange={(e) => setEditedCharacters(e.target.value)}
         placeholder="登場人物情報を入力してください..."
-        className="min-h-[300px]"
-        style={{ width: '100%', height: '170px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+        className="story-textarea th-300"
         disabled={isSaving || isProcessing}
       />
 

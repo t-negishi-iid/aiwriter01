@@ -120,6 +120,68 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
+/* テキストエリアのカスタマイズ */
+.story-input {
+  width: 100%;
+  height: 35px;
+  min-height: 35px;
+  box-sizing: border-box;
+  padding: 10px 20px;
+  margin: 0;
+}
+
+
+.story-textarea {
+  width: 100%;
+  height: 100px;
+  min-height: 100px;
+  box-sizing: border-box;
+  padding: 20px;
+  margin: 0;
+  line-height: 1.8;
+}
+
+.th-50 {
+  height: 60px;
+  min-height: 60px;
+  padding: 7px 20px;
+}
+
+.th-100 {
+  height: 100px;
+  min-height: 100px;
+}
+
+.th-200 {
+  height: 200px;
+  min-height: 200px;
+}
+
+.th-300 {
+  height: 300px;
+  min-height: 300px;
+}
+
+.th-400 {
+  height: 400px;
+  min-height: 400px;
+}
+
+.th-500 {
+  height: 500px;
+  min-height: 500px;
+}
+
+.th-600 {
+  height: 600px;
+  min-height: 600px;
+}
+
+.th-1200 {
+  height: 1200px;
+  min-height: 1200px;
+}
+
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {
   background-color: white !important;

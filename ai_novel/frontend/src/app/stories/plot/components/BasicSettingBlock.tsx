@@ -33,9 +33,9 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
             <div className="relative mb-1">
               <h3 className="text-sm font-medium" id="act1-label">第1幕</h3>
               {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 px-2 absolute top-0 right-0"
                   onClick={() => handleEditClick(1)}
                 >
@@ -44,9 +44,8 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                 </Button>
               )}
             </div>
-            <textarea 
-              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
-              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
+            <textarea
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50 story-textarea th-300"
               value={basicSetting.act1_overview || '未設定'}
               readOnly
               rows={3}
@@ -58,9 +57,9 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
             <div className="relative mb-1">
               <h3 className="text-sm font-medium" id="act2-label">第2幕</h3>
               {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 px-2 absolute top-0 right-0"
                   onClick={() => handleEditClick(2)}
                 >
@@ -69,9 +68,8 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                 </Button>
               )}
             </div>
-            <textarea 
-              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
-              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
+            <textarea
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50 story-textarea th-300"
               value={basicSetting.act2_overview || '未設定'}
               readOnly
               rows={3}
@@ -83,9 +81,9 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
             <div className="relative mb-1">
               <h3 className="text-sm font-medium" id="act3-label">第3幕</h3>
               {onEditAct && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 px-2 absolute top-0 right-0"
                   onClick={() => handleEditClick(3)}
                 >
@@ -94,9 +92,8 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
                 </Button>
               )}
             </div>
-            <textarea 
-              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50"
-              style={{ lineHeight: '1.8', width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '15px', margin: '0' }}
+            <textarea
+              className="w-full text-sm text-gray-600 p-2 rounded border border-gray-200 bg-gray-50 story-textarea th-300"
               value={basicSetting.act3_overview || '未設定'}
               readOnly
               rows={3}

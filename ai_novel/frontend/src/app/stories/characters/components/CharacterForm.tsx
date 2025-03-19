@@ -215,7 +215,7 @@ export function CharacterForm({
       </div>
 
       {/* 以下のフィールドは当面使用しないためコメントアウト */}
-      {/* 
+      {/*
       <div className="space-y-4">
         <div>
           <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-1">
@@ -250,7 +250,7 @@ export function CharacterForm({
       */}
 
       {/* 以下のフィールドは当面使用しないためコメントアウト */}
-      {/* 
+      {/*
       <div className="space-y-4">
         <div>
           <label htmlFor="personality" className="block text-sm font-medium text-gray-700 mb-1">
@@ -354,8 +354,7 @@ export function CharacterForm({
           value={formData.raw_content || ''}
           onChange={handleChange}
           rows={3}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{ width: '100%', height: '300px', minHeight: '100px', boxSizing: 'border-box', padding: '20px', margin: '0' }}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 story-textarea th-600"
         />
       </div>
 

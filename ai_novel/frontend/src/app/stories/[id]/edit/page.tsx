@@ -35,7 +35,7 @@ export default function EditStoryPage() {
       try {
         setIsLoading(true);
         const response = await unifiedStoryApi.getStory(storyId);
-        
+
         if (response && typeof response === 'object') {
           // 正しい型に変換
           const story: StoryData = {
@@ -47,7 +47,7 @@ export default function EditStoryPage() {
             created_at: response.created_at ? String(response.created_at) : undefined,
             updated_at: response.updated_at ? String(response.updated_at) : undefined
           };
-          
+
           setStoryData(story);
           setError(null);
         } else {
@@ -69,7 +69,7 @@ export default function EditStoryPage() {
 
     try {
       const result = await updateStory(storyId, data);
-      
+
       if (result.success) {
         router.push(`/stories/${storyId}`);
         return true;
@@ -105,8 +105,8 @@ export default function EditStoryPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
         <div className="flex justify-center mt-4">
-          <button 
-            onClick={() => router.back()} 
+          <button
+            onClick={() => router.back()}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
             data-testid="back-button"
           >
@@ -120,7 +120,7 @@ export default function EditStoryPage() {
   return (
     <div className="container mx-auto py-8 px-4" data-testid="edit-story-page">
       <h1 className="text-2xl font-bold mb-6">小説の編集</h1>
-      
+
       {storyData && (
         <StoryForm
           defaultValues={{
@@ -130,9 +130,9 @@ export default function EditStoryPage() {
           }}
           onSubmit={handleUpdateStory}
           cancelButton={
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleCancel}
               data-testid="cancel-button"
             >

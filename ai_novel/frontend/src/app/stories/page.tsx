@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { unifiedStoryApi } from '@/lib/unified-api-client';
-import { Card as StoryCard, CardHeader as StoryCardHeader, CardTitle as StoryCardTitle, CardDescription as StoryCardDescription, CardContent as StoryCardContent } from '@/components/ui/card';
 import { StoryTabs } from '@/components/story/StoryTabs';
 
 interface Story {
@@ -204,16 +203,16 @@ export default function StoriesPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between pt-2 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/stories?id=${story.id}`)}
-                  data-testid={`view-story-${story.id}`}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  詳細
-                </Button>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/stories?id=${story.id}`)}
+                    data-testid={`view-story-${story.id}`}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    詳細
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -225,6 +224,7 @@ export default function StoriesPage() {
                   </Button>
                   <Button
                     variant="destructive"
+                    size="sm"
                     onClick={() => handleDeleteClick(story)}
                     disabled={deletingStoryId === story.id}
                     data-testid="delete-button"

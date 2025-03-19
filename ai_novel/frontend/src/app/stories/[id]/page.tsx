@@ -5,26 +5,22 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-interface StoryLegacyPageProps {
-  params: {
-    id: string;
-  };
-}
 
-export default function StoryLegacyPage({ params }: StoryLegacyPageProps) {
+export default function StoryLegacyPage() {
   const router = useRouter();
-  const { id } = params;
+  const params = useParams();
+  const storyId = params.id;
 
   // マウント時に新しいURL形式にリダイレクト
   useEffect(() => {
-    if (id) {
-      console.log(`旧URLパターン(/stories/${id})が使用されました。新しいURLパターン(/stories?id=${id})にリダイレクトします。`);
-      router.replace(`/stories?id=${id}`);
+    if (storyId) {
+      console.log(`旧URLパターン(/stories/${storyId})が使用されました。新しいURLパターン(/stories?id=${storyId})にリダイレクトします。`);
+      router.replace(`/stories?id=${storyId}`);
     }
-  }, [id, router]);
+  }, [storyId, router]);
 
   // リダイレクト中の表示
   return (

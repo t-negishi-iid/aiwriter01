@@ -5,9 +5,8 @@
 // 小説詳細ページ　概要タブ
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, Loader2, Edit, Trash } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Eye, Trash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -208,10 +207,11 @@ export default function StoriesPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  asChild
+                  onClick={() => router.push(`/stories?id=${story.id}`)}
                   data-testid={`view-story-${story.id}`}
                 >
-                  <Link href={`/stories?id=${story.id}`}>詳細</Link>
+                  <Eye className="h-4 w-4 mr-2" />
+                  詳細
                 </Button>
                 <div className="flex gap-2">
                   <Button

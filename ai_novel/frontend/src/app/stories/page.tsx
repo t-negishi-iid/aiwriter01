@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { unifiedStoryApi } from '@/lib/unified-api-client';
-import { StoryTabs } from '@/components/story/StoryTabs';
 
 interface Story {
   id: number;
@@ -41,51 +40,74 @@ export default function StoriesPage() {
   const id = searchParams.get('id');
 
   useEffect(() => {
+    // クエリパラメータ id がある場合は、新しいURL形式にリダイレクト
+    if (id) {
+      router.replace(`/stories/summary?id=${id}`);
+      return;
+    }
+
     const fetchStories = async () => {
       try {
         setIsLoading(true);
-        const response = await unifiedStoryApi.getStories();
-
-        // APIレスポンスの形式に応じて処理
-        if (response && typeof response === 'object') {
-          // DRFの標準ページネーション形式の場合
-          if (Array.isArray(response.results)) {
-            // 型変換して設定
-            setStories(response.results.map(item => ({
-              id: Number(item.id),
-              title: String(item.title || ''),
-              catchphrase: item.catchphrase ? String(item.catchphrase) : undefined,
-              summary: item.summary ? String(item.summary) : undefined,
-              created_at: String(item.created_at || new Date().toISOString()),
-              updated_at: String(item.updated_at || new Date().toISOString()),
-              status: item.status ? String(item.status) : undefined
-            })));
-          } else {
-            // 予期しない形式の場合は空配列を設定
-            console.error('Unexpected response format:', response);
-            setStories([]);
-          }
-        } else {
-          // レスポンスが無効な場合
-          console.error('Invalid response:', response);
-          setStories([]);
+        // APIからのレスポンス型の定義
+        interface StoryItem {
+          id: number;
+          title: string;
+          catchphrase?: string;
+          summary?: string;
+          created_at: string;
+          updated_at: string;
+          status?: string;
         }
-
-        setError(null);
+        
+        interface ApiResponse {
+          results: StoryItem[];
+          count: number;
+          next: string | null;
+          previous: string | null;
+        }
+        
+        // APIを呼び出してレスポンスを取得（unknownとして扱う）
+        const response = await unifiedStoryApi.getStories() as unknown;
+        console.log('小説一覧データ:', response);
+        
+        // レスポンスの型チェック
+        const validateStoriesResponse = (data: unknown): data is ApiResponse => {
+          if (data === null || typeof data !== 'object') return false;
+          
+          const obj = data as Record<string, unknown>;
+          return 'results' in obj && Array.isArray(obj.results);
+        };
+        
+        if (!validateStoriesResponse(response)) {
+          throw new Error('APIレスポンスの形式が不正です');
+        }
+        
+        // バリデーション済みのデータをセット
+        setStories(response.results.map((item) => ({
+          id: item.id,
+          title: item.title,
+          catchphrase: item.catchphrase,
+          summary: item.summary,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          status: item.status
+        })));
+        
       } catch (err) {
-        console.error('Failed to fetch stories:', err);
+        console.error('小説一覧の取得に失敗:', err);
         setError('小説一覧の取得に失敗しました');
         setStories([]); // エラー時は空配列を設定
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     // IDがない場合のみ小説一覧を取得
     if (!id) {
       fetchStories();
     }
-  }, [id]);
+  }, [id, router]);
 
   const handleCreateNewStory = () => {
     router.push('/stories/new');
@@ -128,11 +150,7 @@ export default function StoriesPage() {
 
   // 詳細ページが表示されるべき場合
   if (id) {
-    return (
-      <div>
-        <StoryTabs storyId={id} activeTab="overview" />
-      </div>
-    );
+    return null; // リダイレクト処理済み
   }
 
   // ローディング中の表示
@@ -205,10 +223,10 @@ export default function StoriesPage() {
               <CardFooter className="flex justify-between pt-2 border-t">
                 <div className="flex gap-2 w-full justify-between">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => router.push(`/stories?id=${story.id}`)}
-                    data-testid={`view-story-${story.id}`}
+                    onClick={() => router.push(`/stories/summary?id=${story.id}`)}
+                    data-testid={`story-${story.id}-detail-button`}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     詳細

@@ -1,13 +1,12 @@
 /**
  * 旧URLパターンから新しいクエリパラメータ形式へのリダイレクトページ
- * /stories/{id} → /stories?id={id} へリダイレクトします
+ * /stories/{id} → /stories/summary?id={id} へリダイレクトします
  */
 'use client';
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-
 
 export default function StoryLegacyPage() {
   const router = useRouter();
@@ -17,8 +16,8 @@ export default function StoryLegacyPage() {
   // マウント時に新しいURL形式にリダイレクト
   useEffect(() => {
     if (storyId) {
-      console.log(`旧URLパターン(/stories/${storyId})が使用されました。新しいURLパターン(/stories?id=${storyId})にリダイレクトします。`);
-      router.replace(`/stories?id=${storyId}`);
+      console.log(`旧URLパターン(/stories/${storyId})が使用されました。新しいURLパターン(/stories/summary?id=${storyId})にリダイレクトします。`);
+      router.replace(`/stories/summary?id=${storyId}`);
     }
   }, [storyId, router]);
 

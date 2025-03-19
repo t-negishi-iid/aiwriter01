@@ -211,7 +211,7 @@ export default function StoriesPage() {
                   asChild
                   data-testid={`view-story-${story.id}`}
                 >
-                  <Link href={`/stories/${story.id}`}>詳細</Link>
+                  <Link href={`/stories?id=${story.id}`}>詳細</Link>
                 </Button>
                 <div className="flex gap-2">
                   <Button

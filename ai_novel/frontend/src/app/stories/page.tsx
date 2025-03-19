@@ -37,7 +37,7 @@ export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingStoryId, setDeletingStoryId] = useState<number | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -95,10 +95,13 @@ export default function StoriesPage() {
 
   const handleDeleteClick = (story: Story) => {
     console.log('Delete clicked for story:', story);
-    
+
+    // ここにダイアログの起動テストを実装
+    // TODO: Dialogの起動テストを実装
+
     // 標準JSのconfirmを使用する
     const confirmDelete = window.confirm(`「${story.title}」を削除しますか？この操作は元に戻せません。`);
-    
+
     if (confirmDelete) {
       // 削除を実行
       deleteStory(story);
@@ -107,20 +110,21 @@ export default function StoriesPage() {
 
   const deleteStory = async (story: Story) => {
     try {
-      setIsDeleting(true);
+      setDeletingStoryId(story.id);
+      console.log('削除開始:', story.id);
       await unifiedStoryApi.deleteStory(story.id);
-      
+      console.log('削除API呼び出し完了');
+
       // 削除後、リストから該当の小説を除外
       setStories(prev => prev.filter(s => s.id !== story.id));
-      
-      // 成功メッセージ
-      alert('小説を削除しました');
+
+      // 成功メッセージを削除
     } catch (err) {
       console.error('Failed to delete story:', err);
       setError('小説の削除に失敗しました');
-      alert('小説の削除に失敗しました');
+      alert('小説の削除に失敗しました: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
-      setIsDeleting(false);
+      setDeletingStoryId(null);
     }
   };
 
@@ -222,10 +226,10 @@ export default function StoriesPage() {
                   <Button
                     variant="destructive"
                     onClick={() => handleDeleteClick(story)}
-                    disabled={isDeleting}
+                    disabled={deletingStoryId === story.id}
                     data-testid="delete-button"
                   >
-                    {isDeleting ? (
+                    {deletingStoryId === story.id ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         削除中...

@@ -46,7 +46,7 @@ class AIStorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AIStory
-        fields = ('id', 'title', 'user', 'status', 'created_at', 'updated_at')
+        fields = ('id', 'title', 'catchphrase', 'summary', 'user', 'status', 'created_at', 'updated_at')
         read_only_fields = ('id', 'user')
 
 

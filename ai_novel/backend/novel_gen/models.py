@@ -101,6 +101,8 @@ class AIStory(TimeStampedModel):
     title = models.CharField(_('タイトル'), max_length=255, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
     status = models.CharField(_('ステータス'), max_length=20, choices=STATUS_CHOICES, default='draft')
+    catchphrase = models.CharField(_('キャッチコピー'), max_length=50, blank=True, null=True)
+    summary = models.TextField(_('概要'), max_length=200, blank=True, null=True)
 
     class Meta:
         verbose_name = _('AI小説')
@@ -115,7 +117,7 @@ class BasicSettingData(TimeStampedModel):
     """基本設定作成用データ"""
     ai_story = models.ForeignKey(AIStory, on_delete=models.CASCADE, related_name='basic_setting_data')
     basic_setting_data = models.TextField(_('基本設定データ'), blank=True)
-    
+
     # 統合設定クリエーターのデータ
     theme_data = models.JSONField(_('テーマデータ'), blank=True, null=True)
     time_place_data = models.JSONField(_('時代と場所データ'), blank=True, null=True)

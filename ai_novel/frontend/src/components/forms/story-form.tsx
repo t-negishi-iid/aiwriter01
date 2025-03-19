@@ -16,16 +16,25 @@ const formSchema = z.object({
   title: z.string().min(1, {
     message: "タイトルは必須項目です",
   }),
-  description: z.string().optional(),
+  catchphrase: z.string().optional(),
+  summary: z.string().optional(),
 })
 
 interface StoryFormProps {
   onSubmit: (data: z.infer<typeof formSchema>) => void
   defaultValues?: Partial<z.infer<typeof formSchema>>
   isSubmitting?: boolean
+  submitButtonText?: string
+  cancelButton?: React.ReactNode
 }
 
-export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: StoryFormProps) {
+export function StoryForm({ 
+  onSubmit, 
+  defaultValues, 
+  isSubmitting = false, 
+  submitButtonText = "ストーリーを作成",
+  cancelButton 
+}: StoryFormProps) {
   const [submitting, setSubmitting] = useState(isSubmitting)
 
   // フォーム初期化
@@ -33,7 +42,8 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: defaultValues?.title || "",
-      description: defaultValues?.description || "",
+      catchphrase: defaultValues?.catchphrase || "",
+      summary: defaultValues?.summary || "",
     },
   })
 
@@ -50,7 +60,7 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8" data-testid="story-form">
         {/* タイトル */}
         <FormField
           control={form.control}
@@ -62,12 +72,35 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
                 <Input
                   placeholder="ストーリーのタイトルを入力"
                   disabled={submitting}
+                  data-testid="title-input"
                   {...field}
                 />
               </FormControl>
               <FormDescription>
-                ストーリーの仮タイトルを入力してください。
-                後からAIによって良いタイトルが提案されます。
+                ストーリーのタイトルを入力してください。
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* キャッチコピー */}
+        <FormField
+          control={form.control}
+          name="catchphrase"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>キャッチコピー（オプション）</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="ストーリーのキャッチコピーを入力"
+                  disabled={submitting}
+                  data-testid="catchphrase-input"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                ストーリーを一言で表すキャッチコピーがあれば入力してください。
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -77,7 +110,7 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
         {/* 概要 */}
         <FormField
           control={form.control}
-          name="description"
+          name="summary"
           render={({ field }) => (
             <FormItem>
               <FormLabel>概要（オプション）</FormLabel>
@@ -86,6 +119,7 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
                   placeholder="ストーリーの概要や希望する要素を入力"
                   rows={4}
                   disabled={submitting}
+                  data-testid="summary-input"
                   {...field}
                 />
               </FormControl>
@@ -99,10 +133,18 @@ export function StoryForm({ onSubmit, defaultValues, isSubmitting = false }: Sto
         />
 
         {/* 送信ボタン */}
-        <Button type="submit" disabled={submitting} className="w-full">
-          <Save className="mr-2 h-4 w-4" />
-          ストーリーを作成
-        </Button>
+        <div className="flex justify-between items-center gap-4">
+          {cancelButton && <div data-testid="cancel-button-container">{cancelButton}</div>}
+          <Button 
+            type="submit" 
+            disabled={submitting} 
+            className={cancelButton ? "flex-1" : "w-full"}
+            data-testid="submit-button"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {submitting ? "処理中..." : submitButtonText}
+          </Button>
+        </div>
       </form>
     </Form>
   )

@@ -1,69 +1,151 @@
 /**
  * 小説作成用のカスタムフック
- * テストスクリプトtest_stories_new.tsと同様のロジックをReactで使用できるようにしたもの
+ * 統一されたAPIクライアントを使用して小説の作成、更新、削除を行う
  */
 
 import { useState } from 'react';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 
 /**
- * 小説作成のレスポンス型
+ * 小説データの型定義
  */
-interface StoryCreationResponse {
+export interface StoryData {
+  title: string;
+  catchphrase?: string;
+  summary?: string;
+}
+
+/**
+ * APIから返される小説データの型
+ */
+export interface StoryResponseData {
+  id: number;
+  title: string;
+  catchphrase?: string;
+  summary?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * 小説作成・操作のレスポンス型
+ */
+interface StoryResponse {
   success: boolean;
-  data?: any;
+  data?: StoryResponseData;
   error?: string;
 }
 
 /**
- * 小説作成カスタムフック
+ * 小説作成・操作カスタムフック
  * @returns フック関数と状態
  */
 export function useStoryCreation() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdStory, setCreatedStory] = useState<any | null>(null);
+  const [storyData, setStoryData] = useState<StoryResponseData | null>(null);
+
+  /**
+   * エラーハンドリング
+   */
+  const handleError = (error: unknown): string => {
+    console.error('小説操作エラー:', error);
+    
+    if (error && typeof error === 'object' && 'message' in error) {
+      return String(error.message);
+    }
+    
+    return '操作中にエラーが発生しました';
+  };
 
   /**
    * 小説を作成する関数
-   * @param title 小説のタイトル
+   * @param data 小説データ（タイトル、キャッチコピー、概要）
    * @returns 作成結果
    */
-  const createStory = async (title: string): Promise<StoryCreationResponse> => {
-    if (!title.trim()) {
-      setError('タイトルが入力されていません');
-      return { success: false, error: 'タイトルが入力されていません' };
+  const createStory = async (data: StoryData): Promise<StoryResponse> => {
+    if (!data.title || !data.title.trim()) {
+      const errorMsg = 'タイトルが入力されていません';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
 
     try {
       setIsLoading(true);
       setError(null);
 
-      // APIリクエスト - クエリパラメータ形式に変更
-      const response = await fetch('/api/stories?action=create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title }),
-      });
+      // 統一APIクライアントを使用
+      const apiData = {
+        title: data.title.trim(),
+        ...(data.catchphrase && { catchphrase: data.catchphrase.trim() }),
+        ...(data.summary && { summary: data.summary.trim() })
+      };
+      
+      const response = await unifiedStoryApi.createStory(apiData);
+      
+      const storyResponseData: StoryResponseData = response as StoryResponseData;
+      setStoryData(storyResponseData);
+      return { success: true, data: storyResponseData };
+    } catch (err) {
+      const errorMsg = handleError(err);
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // レスポンスをJSON形式で取得
-      const data = await response.json();
+  /**
+   * 小説を更新する関数
+   * @param id 小説ID
+   * @param data 更新データ
+   * @returns 更新結果
+   */
+  const updateStory = async (id: string | number, data: Partial<StoryData>): Promise<StoryResponse> => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-      // APIの成功/失敗を確認
-      if (response.ok) {
-        setCreatedStory(data);
-        return { success: true, data };
-      } else {
-        const errorMessage = data.error || data.detail || '不明なエラー';
-        setError(errorMessage);
-        return { success: false, error: errorMessage, data };
-      }
-    } catch (error) {
-      // ネットワークエラーなどの例外処理
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      const apiData = {
+        ...(data.title && { title: data.title.trim() }),
+        ...(data.catchphrase && { catchphrase: data.catchphrase.trim() }),
+        ...(data.summary && { summary: data.summary.trim() })
+      };
+      
+      const response = await unifiedStoryApi.updateStory(id, apiData);
+      
+      const storyResponseData: StoryResponseData = response as StoryResponseData;
+      setStoryData(storyResponseData);
+      return { success: true, data: storyResponseData };
+    } catch (err) {
+      const errorMsg = handleError(err);
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * 小説を削除する関数
+   * @param id 小説ID
+   * @returns 削除結果
+   */
+  const deleteStory = async (id: string | number): Promise<StoryResponse> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      await unifiedStoryApi.deleteStory(id);
+      
+      setStoryData(null);
+      return { success: true };
+    } catch (err) {
+      const errorMsg = handleError(err);
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     } finally {
       setIsLoading(false);
     }
@@ -71,13 +153,15 @@ export function useStoryCreation() {
 
   return {
     createStory,
+    updateStory,
+    deleteStory,
     isLoading,
     error,
-    createdStory,
+    storyData,
     // リセット用関数
     resetState: () => {
       setError(null);
-      setCreatedStory(null);
+      setStoryData(null);
     }
   };
 }

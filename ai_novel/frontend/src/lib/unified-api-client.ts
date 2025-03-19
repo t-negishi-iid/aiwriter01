@@ -237,21 +237,59 @@ export const handleApiError = (error: ApiError, options?: {
 
 /**
  * 統一されたストーリーAPI関数群
- * 既存のstoryApiと同じインターフェースを維持しつつ、新しいfetch関数を使用
+ * 小説の作成・取得・更新・削除などの操作を行うAPI関数を提供
+ * 
+ * @remarks
+ * バックエンドAPI：/stories/ エンドポイントとその関連操作
+ * 
+ * @param StoryData - APIに送信する小説データの型
+ * {
+ *   title: string;       // 小説のタイトル（必須）
+ *   catchphrase?: string; // キャッチコピー（オプション）
+ *   summary?: string;    // 概要（オプション）
+ * }
+ * 
+ * @param StoryResponse - APIから返される小説データの型
+ * {
+ *   id: number;          // 小説ID
+ *   title: string;       // タイトル
+ *   catchphrase?: string; // キャッチコピー
+ *   summary?: string;    // 概要
+ *   status: string;      // ステータス（'draft'、'published'など）
+ *   created_at: string;  // 作成日時（ISO 8601形式）
+ *   updated_at: string;  // 更新日時（ISO 8601形式）
+ * }
  */
 export const unifiedStoryApi = {
   /**
    * 全ストーリー一覧を取得
+   * 
+   * @returns ページネーション形式の小説一覧
+   * - GET /stories/
+   * - 戻り値: {count, next, previous, results}
    */
   getStories: () => unifiedFetchApi<DRFPaginatedResponse<Record<string, unknown>>>('/stories/'),
 
   /**
    * 特定のストーリーを取得
+   * 
+   * @param id - 取得する小説のID
+   * @returns 小説の詳細情報
+   * - GET /stories/{id}/
+   * - 戻り値: StoryResponse
    */
   getStory: (id: string | number) => unifiedFetchApi<Record<string, unknown>>(`/stories/${id}/`),
 
   /**
    * 新しいストーリーを作成
+   * 
+   * @param data - 作成する小説データ
+   * @param data.title - 小説のタイトル（必須）
+   * @param data.catchphrase - キャッチコピー（オプション）
+   * @param data.summary - 概要（オプション）
+   * @returns 作成された小説の情報
+   * - POST /stories/
+   * - 戻り値: StoryResponse
    */
   createStory: (data: Record<string, unknown>) => unifiedFetchApi<Record<string, unknown>>('/stories/', {
     method: 'POST',
@@ -260,6 +298,15 @@ export const unifiedStoryApi = {
 
   /**
    * ストーリーを更新
+   * 
+   * @param id - 更新する小説のID
+   * @param data - 更新する小説データ
+   * @param data.title - 小説のタイトル（オプション）
+   * @param data.catchphrase - キャッチコピー（オプション）
+   * @param data.summary - 概要（オプション）
+   * @returns 更新された小説の情報
+   * - PUT /stories/{id}/
+   * - 戻り値: StoryResponse
    */
   updateStory: (id: string | number, data: Record<string, unknown>) => unifiedFetchApi<Record<string, unknown>>(`/stories/${id}/`, {
     method: 'PUT',
@@ -268,6 +315,11 @@ export const unifiedStoryApi = {
 
   /**
    * ストーリーを削除
+   * 
+   * @param id - 削除する小説のID
+   * @returns 削除結果（通常はnull）
+   * - DELETE /stories/{id}/
+   * - 戻り値: null
    */
   deleteStory: (id: string | number) => unifiedFetchApi<null>(`/stories/${id}/`, {
     method: 'DELETE',

@@ -56,26 +56,26 @@ export default function StorySummaryPage() {
           updated_at: string;
           status?: string;
         }
-        
+
         // APIを呼び出してレスポンスを取得（unknownとして扱う）
         const response = await unifiedStoryApi.getStory(id) as unknown;
         console.log('小説詳細データ:', response);
-        
+
         // レスポンスの型チェック
         const validateStoryResponse = (data: unknown): data is ApiResponse => {
           if (data === null || typeof data !== 'object') return false;
-          
+
           const obj = data as Record<string, unknown>;
           return 'id' in obj && typeof obj.id === 'number' &&
-                 'title' in obj && typeof obj.title === 'string' &&
-                 'created_at' in obj && typeof obj.created_at === 'string' &&
-                 'updated_at' in obj && typeof obj.updated_at === 'string';
+            'title' in obj && typeof obj.title === 'string' &&
+            'created_at' in obj && typeof obj.created_at === 'string' &&
+            'updated_at' in obj && typeof obj.updated_at === 'string';
         };
-        
+
         if (!validateStoryResponse(response)) {
           throw new Error('APIレスポンスの形式が不正です');
         }
-        
+
         // バリデーション済みのデータをセット
         setStoryDetail({
           id: response.id,
@@ -99,11 +99,11 @@ export default function StorySummaryPage() {
 
   const handleDetailDeleteClick = async () => {
     if (!storyDetail) return;
-    
+
     // 削除確認
     const confirmDelete = window.confirm(`「${storyDetail.title}」を削除しますか？この操作は元に戻せません。`);
     if (!confirmDelete) return;
-    
+
     try {
       setDeletingStoryId(storyDetail.id);
       await unifiedStoryApi.deleteStory(storyDetail.id);
@@ -125,7 +125,7 @@ export default function StorySummaryPage() {
   return (
     <div className="container mx-auto py-6">
       <StoryTabs storyId={id} activeTab="overview" />
-      
+
       {detailLoading ? (
         <div className="flex flex-col items-center justify-center h-[30vh]" data-testid="detail-loading-indicator">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -146,18 +146,18 @@ export default function StorySummaryPage() {
                   {storyDetail.catchphrase}
                 </CardDescription>
               )}
+              <CardContent>
+                {storyDetail.summary ? (
+                  <div className="text-base whitespace-pre-wrap">{storyDetail.summary}</div>
+                ) : (
+                  <p className="text-muted-foreground">概要はありません</p>
+                )}
+              </CardContent>
               <div className="flex text-xs text-muted-foreground mt-2">
                 <div className="mr-4">作成: {new Date(storyDetail.created_at).toLocaleString('ja-JP')}</div>
                 <div>更新: {new Date(storyDetail.updated_at).toLocaleString('ja-JP')}</div>
               </div>
             </CardHeader>
-            <CardContent>
-              {storyDetail.summary ? (
-                <div className="text-base whitespace-pre-wrap">{storyDetail.summary}</div>
-              ) : (
-                <p className="text-muted-foreground">概要はありません</p>
-              )}
-            </CardContent>
             <CardFooter className="flex justify-end pt-4 border-t gap-4">
               <Button
                 variant="outline"

@@ -12,6 +12,15 @@ downloads/
 eggs/
 .eggs/
 lib/
+# frontend/ 配下（任意の階層）の lib ディレクトリとその中身を除外（追跡対象にする）
+!frontend/**/lib/
+!frontend/**/lib/**
+# ai_novel/frontend/ 配下の lib ディレクトリも同様に追跡対象にする
+!ai_novel/frontend/**/lib/
+!ai_novel/frontend/**/lib/**
+# バックエンド固有のlibディレクトリは明示的に無視
+/backend/lib/
+/ai_novel/backend/lib/
 lib64/
 parts/
 sdist/

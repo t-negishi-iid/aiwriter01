@@ -19,9 +19,79 @@
 
 ## 2. テスト方法
 
-### 2.1 テストスクリプトの基本構造
+### 2.1 テストの種類
 
-テストスクリプトは `ai_novel/tests/` ディレクトリ内に TypeScript ファイルとして実装されています。
+1. **cURLによる手動テスト**：開発初期やデバッグ時に使用する簡易テスト
+2. **テストプログラムによる自動テスト**：継続的なテストのための再利用可能なテスト
+
+### 2.2 Unified API クライアントを用いたテスト
+
+当システムでは、`unifiedStoryApi`のような統一APIクライアントを使用して、バックエンドとフロントエンドの間でシームレスな通信を実現しています。この仕組みを活用したテスト方法を推奨します。
+
+#### 2.2.1 API通信フロー
+
+```
+フロントエンドUI → フロントエンドAPIルート → Unified APIクライアント → バックエンドAPI
+```
+
+#### 2.2.2 テストプロキシAPI
+
+フロントエンドでは、Next.jsのAPI Routesを使ってプロキシAPIを実装し、フロントエンドとバックエンドのURL形式の違いを吸収しています：
+
+- フロントエンド：クエリパラメータ形式 (`/api/stories?id=123`)
+- バックエンド：RESTful形式 (`/api/stories/123/`)
+
+### 2.3 cURLを使用した手動テスト手順
+
+#### 2.3.1 バックエンドAPIの直接テスト
+
+```bash
+# 一覧取得
+curl -s http://localhost:8001/api/stories/ | python3 -m json.tool
+
+# 個別取得
+curl -s http://localhost:8001/api/stories/123/ | python3 -m json.tool
+
+# 作成
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"title":"テスト小説", "catchphrase":"キャッチフレーズ", "summary":"概要"}' \
+  http://localhost:8001/api/stories/
+
+# 更新
+curl -X PUT -H "Content-Type: application/json" \
+  -d '{"title":"更新テスト", "catchphrase":"更新キャッチフレーズ", "summary":"更新概要"}' \
+  http://localhost:8001/api/stories/123/
+
+# 削除
+curl -X DELETE http://localhost:8001/api/stories/123/
+```
+
+#### 2.3.2 フロントエンドプロキシAPIのテスト
+
+```bash
+# 一覧取得
+curl -s http://localhost:3000/api/stories | python3 -m json.tool
+
+# 個別取得
+curl -s http://localhost:3000/api/stories?id=123 | python3 -m json.tool
+
+# 作成
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"title":"テスト小説", "catchphrase":"キャッチフレーズ", "summary":"概要"}' \
+  http://localhost:3000/api/stories
+
+# 更新
+curl -X PUT -H "Content-Type: application/json" \
+  -d '{"title":"更新テスト", "catchphrase":"更新キャッチフレーズ", "summary":"更新概要"}' \
+  http://localhost:3000/api/stories?id=123
+
+# 削除
+curl -X DELETE http://localhost:3000/api/stories?id=123
+```
+
+### 2.4 テストプログラムの基本構造
+
+テストプログラムは `ai_novel/tests/` ディレクトリ内に TypeScript ファイルとして実装されています。
 各機能のテストスクリプトは次の命名規則に従います：
 
 ```
@@ -30,41 +100,32 @@ test_[機能名].ts
 
 例：`test_stories_new.ts` (小説作成API)、`test_characters.ts` (キャラクター関連API)
 
-### 2.2 【重要】フロントエンドとの互換性確保
+### 2.5 【重要】URL形式とレスポンス形式の差異に注意
 
-- 本テストの目的は確実に動くコードを迅速に作ることです。
-- テストプログラムのコアロジック（主にAPI呼び出し関係）を移植可能な関数として開発します。
-- テストプログラムが完全に動くことが確認できたら、コアロジックの関数をそのままフロントエンドにコピーします。
-- フロントエンドをテストして、動作するまで確認します。
-- フロントエンドに新たなバグが発覚したり、新たな機能が必要になった場合は、まずテストプログラムで確認し、動くようになったらコードをコピーしてテストを行います。
+バックエンドとフロントエンド間のURLとレスポンス形式の主な違い：
 
-### 2.3 テストモード
+1. **URL形式**：
+   - バックエンド：RESTful形式 (`/api/stories/123/`)
+   - フロントエンド：クエリパラメータ形式 (`/api/stories?id=123`)
 
-各テストスクリプトは以下のモードをサポートしています：
+2. **HTTP ステータスコード**：
+   - バックエンド：標準的なHTTPステータスコード（204 No Contentなど）
+   - フロントエンド：統一APIクライアントを通じて処理された結果
 
-1. **インタラクティブモード**: ユーザー入力を求める対話式テスト
-2. **パラメータ指定モード**: コマンドライン引数でパラメータを指定
-3. **バックエンド直接アクセスモード**: フロントエンドをバイパスしてバックエンドに直接リクエスト
-4. **比較モード**: フロントエンドとバックエンドの両方にリクエストし結果を比較
-5. **自動テストモード**: CI/CD向けに成功/失敗を終了コードで返す
+3. **削除操作のレスポンス**：
+   - バックエンド：204 No Content（レスポンスボディなし）
+   - フロントエンド：204 No Content（レスポンスボディなし）
 
-### 2.4 コマンドライン引数
-
-標準的に実装すべきコマンドライン引数：
-
-| 引数 | 省略形 | 説明 |
-|------|-------|------|
-| `--help` | `-h` | ヘルプを表示 |
-| `--backend-direct` | `-b` | バックエンドに直接アクセス |
-| `--compare` | `-c` | フロントエンドとバックエンドの結果を比較 |
-| `--test` | | 自動テストモード（終了コード0/1で結果を返す） |
-| `--random` | | ランダムデータを生成してテスト |
-
-機能固有のパラメータも追加可能（例：`--title "タイトル"` など）
-
-### 2.5 テスト項目
+### 2.6 テスト項目
 
 1. 小説 (Story)
+   - 一覧取得 (GET) が正常に動作し、ページネーションが正しい
+   - 個別取得 (GET with id) が正常に動作
+   - 作成 (POST) が正常に動作
+   - 更新 (PUT) が正常に動作
+   - 削除 (DELETE) が正常に動作
+   - **新機能：`catchphrase`と`summary`フィールドのサポート**
+
 2. 基本設定作成用データ (BasicSettingData)
 3. 基本設定 (BasicSetting)
 4. キャラクター (Character)
@@ -73,369 +134,205 @@ test_[機能名].ts
 7. エピソード本文 (EpisodeContent)
 8. タイトル生成 (Title)
 
-### 2.6 テストデータ
+## 3. Unified API クライアントの実装とテスト
 
-basic-setting-data 以降のテストは、前のワークフローの成果データを必要とします。
-そこで、前のテストによって取得した成果データは、ai_novel/tests/data/ 以下に保存し、後のテストで流用可能にしてください。
-
-ai_novel/tests/data/
-|-BasicSetting
-|-BasicSettingData
-|-Character
-|-Plot_Act
-|-Episode
-|-EpisodeContent
-|-Title
-
-## 3. 新しい機能のテスト実装ガイド
-
-新機能のテストスクリプトを実装する際の標準的な手順：
-
-### 3.1 基本テンプレート
+### 3.1 Unified API クライアントの基本構造
 
 ```typescript
-/**
- * [機能名]APIテストスクリプト
- */
-import * as readline from 'readline';
-import fetch from 'node-fetch';
+// APIクライアント関数
+export const unifiedStoryApi = {
+  // 一覧取得
+  getStories: () => unifiedFetchApi<DRFPaginatedResponse<Record<string, unknown>>>('/stories/'),
+  
+  // 個別取得
+  getStory: (id: string | number) => unifiedFetchApi<Record<string, unknown>>(`/stories/${id}/`),
+  
+  // 作成
+  createStory: (data: Record<string, unknown>) => unifiedFetchApi<Record<string, unknown>>('/stories/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  
+  // 更新
+  updateStory: (id: string | number, data: Record<string, unknown>) => 
+    unifiedFetchApi<Record<string, unknown>>(`/stories/${id}/`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+  }),
+  
+  // 削除
+  deleteStory: (id: string | number) => unifiedFetchApi<null>(`/stories/${id}/`, {
+    method: 'DELETE',
+  }),
+};
+```
 
-// APIのベースURL
-const FRONTEND_API_URL = 'http://localhost:3000/api';
-const BACKEND_API_URL = 'http://localhost:8001/api';
+### 3.2 フロントエンドAPIルートの実装
 
-// コマンドライン引数の解析
-interface CommandLineArgs {
-  // 標準引数
-  help?: boolean;
-  backendDirect?: boolean;
-  compareMode?: boolean;
-  test?: boolean;
-  random?: boolean;
-  // 機能固有の引数
-  id?: string;  // リソースID
-  action?: string; // アクション (create, update, delete など)
-  // その他の機能固有パラメータ
-  // title?: string; など
-}
-
-// コマンドライン引数を解析する関数
-function parseCommandLineArgs(): CommandLineArgs {
-  const args: CommandLineArgs = {};
-
-  for (let i = 2; i < process.argv.length; i++) {
-    const arg = process.argv[i];
-
-    if (arg === '--help' || arg === '-h') {
-      args.help = true;
-    } else if (arg === '--backend-direct' || arg === '-b') {
-      args.backendDirect = true;
-    } else if (arg === '--compare' || arg === '-c') {
-      args.compareMode = true;
-    } else if (arg === '--test') {
-      args.test = true;
-    } else if (arg === '--random') {
-      args.random = true;
-    }
-    // クエリパラメータ形式に対応した機能固有の引数処理
-    else if (arg === '--id' && i + 1 < process.argv.length) {
-      args.id = process.argv[++i];
-    } else if (arg === '--action' && i + 1 < process.argv.length) {
-      args.action = process.argv[++i];
-    }
-    // 例: その他の機能固有パラメータ
-    else if (arg === '--title' && i + 1 < process.argv.length) {
-      args.title = process.argv[++i];
-    }
-  }
-
-  return args;
-}
-
-// APIリクエスト関数
-async function makeApiRequest(params, apiUrl, apiLabel = 'API') {
+```typescript
+// GET - 一覧取得または個別取得
+export async function GET(request: NextRequest) {
   try {
-    // クエリパラメータ形式のURLを構築する例
-    let endpoint = `${apiUrl}/resource`;
-
-    // 機能に応じたクエリパラメータの追加
-    if (params.id) {
-      endpoint += `?id=${params.id}`;
-    }
-
-    // アクションがある場合はアクションを追加
-    if (params.action) {
-      endpoint += endpoint.includes('?') ? `&action=${params.action}` : `?action=${params.action}`;
-    }
-
-    // バックエンドの場合はREST形式のURLに変換
-    if (apiLabel === 'バックエンド') {
-      if (params.id && params.action !== 'create') {
-        // バックエンドでのID指定形式 /resource/{id}/
-        endpoint = `${apiUrl}/resource/${params.id}/`;
-      } else if (params.action === 'create') {
-        // バックエンドでの作成エンドポイント /resource/
-        endpoint = `${apiUrl}/resource/`;
-      }
-    }
-
-    // APIリクエストの実行
-    const response = await fetch(endpoint, {
-      method: 'GET', // または 'POST', 'PATCH', 'DELETE' など
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // POSTなどの場合はbodyも設定
-      // body: JSON.stringify(params),
-    });
-
-    const data = await response.json();
-    return { success: response.ok, data, status: response.status };
-  } catch (error) {
-    return { success: false, error: String(error) };
-  }
-}
-
-// 結果比較関数
-function compareResults(frontendResult, backendResult) {
-  // 結果の比較ロジック
-  // ...
-  return areEqual;
-}
-
-// メイン実行関数
-async function main() {
-  try {
-    const args = parseCommandLineArgs();
-
-    if (args.help) {
-      showHelp();
-      return;
-    }
-
-    // パラメータの準備
-    // ...
-
-    if (args.compareMode) {
-      // 比較モード
-      const frontendResult = await makeApiRequest(params, FRONTEND_API_URL, 'フロントエンド');
-      const backendResult = await makeApiRequest(params, BACKEND_API_URL, 'バックエンド');
-
-      const isMatch = compareResults(frontendResult, backendResult);
-
-      if (args.test) {
-        process.exit(isMatch ? 0 : 1);
-      }
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (id) {
+      // 個別取得
+      const result = await unifiedStoryApi.getStory(id);
+      return NextResponse.json(result);
     } else {
-      // 単一APIモード
-      const apiUrl = args.backendDirect ? BACKEND_API_URL : FRONTEND_API_URL;
-      const apiLabel = args.backendDirect ? 'バックエンド' : 'フロントエンド';
-
-      const result = await makeApiRequest(params, apiUrl, apiLabel);
-
-      // 結果の処理
-      if (args.test) {
-        process.exit(result.success ? 0 : 1);
-      }
+      // 一覧取得
+      const result = await unifiedStoryApi.getStories();
+      return NextResponse.json(result);
     }
   } catch (error) {
-    console.error('実行エラー:', error);
-    if (args.test) process.exit(1);
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : '不明なエラー',
+        details: JSON.stringify(error) 
+      },
+      { status: 500 }
+    );
   }
 }
 
-main().catch(console.error);
+// POST - 作成
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json();
+    const result = await unifiedStoryApi.createStory(data);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : '不明なエラー',
+        details: JSON.stringify(error) 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - 更新
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID parameter is required' },
+        { status: 400 }
+      );
+    }
+    
+    const data = await request.json();
+    const result = await unifiedStoryApi.updateStory(id, data);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : '不明なエラー',
+        details: JSON.stringify(error) 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - 削除
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID is required for DELETE operation' },
+        { status: 400 }
+      );
+    }
+    
+    await unifiedStoryApi.deleteStory(id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json(
+      { 
+        error: error instanceof Error ? error.message : '不明なエラー',
+        details: JSON.stringify(error) 
+      },
+      { status: 500 }
+    );
+  }
+}
 ```
 
-### 3.2 実装手順
+## 4. 注意すべき実装ポイント
 
-1. テストスクリプトのファイルを作成（`test_[機能名].ts`）
-2. 機能固有の引数を定義
-3. API呼び出し関数を実装
-4. 結果表示・比較ロジックを実装
-5. 必要に応じてヘルプメッセージをカスタマイズ
+### 4.1 204 No Contentのハンドリング
 
-### 3.3 比較ロジックのカスタマイズ
-
-機能ごとに重要な比較ポイントが異なるため、`compareResults()` 関数を適切にカスタマイズしてください。
-一般的な比較ポイント：
-
-- HTTP ステータスコード
-- 成功/失敗フラグ
-- レスポンスの構造
-- 重要なフィールドの値
-
-## 4. テスト実行の推奨手順
-
-### 4.1 新機能実装後のテスト
-
-新機能を実装した後の標準的なテスト手順：
-
-1. バックエンド直接アクセスでのテスト
-
-   ```bash
-   npx ts-node test_[機能名].ts --backend-direct
-   ```
-
-2. フロントエンドを通したテスト
-
-   ```bash
-   npx ts-node test_[機能名].ts
-   ```
-
-3. 比較テストの実施
-
-   ```bash
-   npx ts-node test_[機能名].ts --compare
-   ```
-
-### 4.2 CI/CD パイプラインでの利用
-
-CI/CD パイプラインでは自動テストモードを使用：
-
-```bash
-npx ts-node test_[機能名].ts --test
-```
-
-失敗時は終了コード 1 を返すため、CI/CD のテストステップとして組み込み可能です。
-
-### 4.3 バグ調査のためのテスト
-
-フロントエンドとバックエンド間で問題が発生した場合：
-
-1. まず疎通確認を実行
-
-   ```bash
-   curl http://localhost:3000/api/is_live
-   ```
-
-2. バックエンド直接アクセスでテスト
-
-   ```bash
-   npx ts-node test_[機能名].ts --backend-direct
-   ```
-
-3. 比較モードで詳細な差異を確認
-
-   ```bash
-   npx ts-node test_[機能名].ts --compare
-   ```
-
-## 5. 既存のテストスクリプト
-
-現在実装されているテストスクリプト：
-
-- `test_stories_new.ts` - 小説作成APIテスト
-  - 旧形式: `/api/stories/new` (フロントエンド) → `/api/stories/` (バックエンド)
-  - 新形式: `/api/stories?action=create` (フロントエンド) → `/api/stories/` (バックエンド)
-  - 旧形式は後方互換性のためにサポートされていますが、新規実装では新形式を使用してください
-
-## 6. ベストプラクティス
-
-1. **一貫性を保つ**: すべてのテストスクリプトで同じパターンとオプションを使用
-2. **エラーハンドリング**: 適切なエラーメッセージとエラー処理を行う
-3. **詳細なログ出力**: 何が起きているかを明確に示すログを出力
-4. **パラメータ検証**: リクエスト前にパラメータの有効性を確認
-5. **独立したテスト**: テストは他のテストに依存せず単独で実行可能に
-6. **ランダムデータサポート**: 自動テスト用にランダムデータ生成をサポート
-7. **コメント**: コードに適切なコメントを追加して理解しやすくする
-8. **クエリパラメータの適切な処理**:
-   - クエリパラメータ形式（例：`/api/resource?id=123&action=update`）を適切に構築する
-   - パラメータのエスケープ（特殊文字やURLエンコードが必要な値）を正しく行う
-   - フロントエンド（クエリパラメータ形式）とバックエンド（REST形式）の違いを考慮する
-9. **URL違いへの対応**: フロントエンドとバックエンドでのURLパターンの違いを適切に処理する
-10. **後方互換性テスト**: 旧URLパターンと新URLパターン両方でテストを実施する
-
-## 7. 既知の問題と対処法
-
-1. **タイミング問題**: バックエンドの起動直後はレスポンスが遅い場合があるため、適切なタイムアウト設定を行う
-2. **パスの違い**: フロントエンドとバックエンドでパスが異なる場合がある
-   - 新しいクエリパラメータ形式: フロントエンド `/api/stories?action=create` vs バックエンド `/api/stories/`
-   - 旧URLパターンも後方互換性のために維持（例: `/api/stories/new` → 内部的に `/api/stories?action=create` にリダイレクト）
-3. **認証の違い**: バックエンド直接アクセス時は認証が必要な場合がある
-4. **URLパターンの違い**: フロントエンドはクエリパラメータ形式（例: `/stories?id=123`）、バックエンドはREST形式（例: `/stories/123/`）
-
-## APIレスポンスのステータスコード標準
-
-APIレスポンスのステータスコードは、以下の基準に従って使用します：
-
-### データ取得時のステータスコード
-
-| ステータスコード | 意味 | 使用例 |
-|--------------|------|-------|
-| 200 OK | リクエストが成功し、データが存在する | リソースが正常に取得できた場合 |
-| 204 No Content | リクエストは成功したが、返すコンテンツがない | 対象のリソースは存在するが、データがない場合 |
-| 400 Bad Request | リクエストの形式が不正 | パラメータが不足している、形式が間違っている場合 |
-| 401 Unauthorized | 認証が必要 | 認証されていないユーザーがアクセスした場合 |
-| 403 Forbidden | アクセス権限がない | 認証済みだが権限がない場合 |
-| 404 Not Found | リソース自体が存在しない | 存在しないURLにアクセスした場合 |
-| 500 Internal Server Error | サーバー内部エラー | 予期しないエラーが発生した場合 |
-
-### 重要な原則
-
-1. **データの有無とリソースの有無を区別する**
-   - リソース自体が存在しない場合は404を返す
-   - リソースは存在するがデータがない場合は204を返す
-   - 204を返す場合、レスポンスボディは空にする
-
-2. **エラーレスポンスの形式を統一する**
-   - エラー時のレスポンスボディには、エラーの詳細情報を含める
-   - 例: `{"error": "エラーメッセージ", "details": "詳細情報"}`
-
-3. **フロントエンドでのエラー処理**
-   - フロントエンドはバックエンドのエラーを隠蔽せず、適切に表示する
-   - ステータスコードに基づいて処理を分岐させる
-   - 204の場合は「データが存在しません」などの適切なメッセージを表示する
-
-### 実装例
-
-#### バックエンド（Django）
-
-```python
-def get_object(self):
-    try:
-        obj = BasicSetting.objects.get(story_id=self.kwargs['story_id'])
-        return obj  # 200 OK
-    except BasicSetting.DoesNotExist:
-        # データが存在しない場合は204 No Content
-        return Response(status=status.HTTP_204_NO_CONTENT)
-```
-
-#### フロントエンド（TypeScript）
+削除操作など、204 No Contentレスポンスを返すエンドポイントでは、レスポンスにボディがないことを考慮する必要があります：
 
 ```typescript
-async getIntegratedSettingData(storyId: string | number): Promise<ApiResponse<any>> {
-  try {
-    const response = await fetch(`${apiUrl}/stories/${storyId}/basic-setting/`);
-    
-    // ステータスコードに基づいて処理
-    if (response.status === 204) {
-      // データなし（204 No Content）
-      return {
-        success: true,
-        data: null,
-        message: 'データが存在しません'
-      };
-    } else if (!response.ok) {
-      // エラー（404, 500など）
-      const errorText = await response.text();
-      throw new Error(`API エラー: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-    
-    // 正常なレスポンス（200 OK）
-    const data = await response.json();
-    return {
-      success: true,
-      data: data
-    };
-  } catch (error) {
-    // 例外処理
-    console.error(`エラー: ${error}`);
-    throw error;
+// 正常なレスポンス処理（204 No Contentの考慮）
+if (response.ok) {
+  // 204 No Contentの場合はJSONパースをスキップ
+  if (response.status === 204) {
+    return null as T;
   }
+  
+  const data = await response.json();
+  return data as T;
 }
 ```
 
-この標準に従うことで、APIの一貫性が保たれ、フロントエンドとバックエンドの連携がスムーズになります。
+### 4.2 エラーハンドリング
 
----
+エラーレスポンスは詳細な情報を提供するようにします：
+
+```typescript
+return NextResponse.json(
+  { 
+    error: error instanceof Error ? error.message : '不明なエラー',
+    details: JSON.stringify(error) 
+  },
+  { status: 500 }
+);
+```
+
+### 4.3 バックエンドとフロントエンドの整合性確保
+
+1. **URLパスの統一**：バックエンドのURLパス形式をUnified APIクライアントで適切に扱う
+2. **レスポンス形式の統一**：Django REST Frameworkの標準ページネーション形式を尊重
+3. **エラーハンドリングの一貫性**：エラーレスポンスの形式を統一
+
+## 5. テスト検証のチェックリスト
+
+### 5.1 基本機能テスト
+
+- [ ] 一覧取得 (GET) が正常に動作し、ページネーションが正しい
+- [ ] 個別取得 (GET with id) が正常に動作
+- [ ] 作成 (POST) が正常に動作
+- [ ] 更新 (PUT) が正常に動作
+- [ ] 削除 (DELETE) が正常に動作
+- [ ] `catchphrase`と`summary`フィールドが正しく処理される
+
+### 5.2 エラーケーステスト
+
+- [ ] 存在しないリソースのリクエスト (404)
+- [ ] 不正なパラメータでのリクエスト (400)
+- [ ] 必須パラメータ欠如のリクエスト (400)
+
+## 6. APIエンドポイント一覧
+
+| 機能 | バックエンドURL | フロントエンドURL | HTTPメソッド | 説明 |
+|------|---------------|-----------------|------------|------|
+| 小説一覧取得 | `/api/stories/` | `/api/stories` | GET | 小説の一覧を取得 |
+| 小説詳細取得 | `/api/stories/{id}/` | `/api/stories?id={id}` | GET | 指定IDの小説を取得 |
+| 小説作成 | `/api/stories/` | `/api/stories` | POST | 新しい小説を作成 |
+| 小説更新 | `/api/stories/{id}/` | `/api/stories?id={id}` | PUT | 指定IDの小説を更新 |
+| 小説削除 | `/api/stories/{id}/` | `/api/stories?id={id}` | DELETE | 指定IDの小説を削除 |

@@ -72,7 +72,7 @@ const determineErrorType = (statusCode: number, errorData: Record<string, unknow
 /**
  * バックエンドAPIにリクエストを送信する統一関数
  * DRF標準のレスポンス形式に対応
- * 
+ *
  * @param endpoint - APIエンドポイント
  * @param options - フェッチオプション
  * @returns レスポンス - DRF標準形式のレスポンス（成功時）またはnull（エラー時）
@@ -113,6 +113,12 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
 
     // 正常なレスポンス
     if (response.ok) {
+      // 204 No Contentの場合はnullを返す（特にDELETEリクエスト）
+      if (response.status === 204) {
+        console.log(`[UNIFIED-API] レスポンス: 204 No Content - ${new Date().toISOString()}`);
+        return null as T;
+      }
+      
       const data = await response.json();
       console.log(`[UNIFIED-API] レスポンス: ${JSON.stringify(data).substring(0, 200)}... - ${new Date().toISOString()}`);
       // DRF標準形式をそのまま返す
@@ -126,7 +132,7 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
     try {
       // JSONとしてパースを試みる
       errorData = await response.json();
-      
+
       // DRF標準のエラーメッセージ形式を処理
       if (errorData.detail) {
         errorMessage = errorData.detail as string;
@@ -137,8 +143,8 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
       } else if (typeof errorData === 'object' && Object.keys(errorData).length > 0) {
         // バリデーションエラーの場合は最初のフィールドのエラーを表示
         const firstField = Object.keys(errorData)[0];
-        const firstError = Array.isArray(errorData[firstField]) 
-          ? (errorData[firstField] as string[])[0] 
+        const firstError = Array.isArray(errorData[firstField])
+          ? (errorData[firstField] as string[])[0]
           : String(errorData[firstField]);
         errorMessage = `${firstField}: ${firstError}`;
       }
@@ -146,7 +152,7 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
       // JSONではない場合はテキストとして読み込む
       try {
         errorMessage = await response.text();
-      } catch (_) {
+      } catch {
         errorMessage = response.statusText;
       }
     }
@@ -163,7 +169,7 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
       details: errorData,
       statusCode: response.status
     };
-    
+
     throw apiError;
 
   } catch (error) {
@@ -171,10 +177,10 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
     if (error && typeof error === 'object' && 'type' in error) {
       throw error;
     }
-    
+
     // ネットワークエラーなどの例外
     console.error(`[UNIFIED-API] 例外発生:`, error);
-    
+
     // 構造化されたエラーとしてスロー
     throw {
       type: ApiErrorType.SYSTEM,
@@ -275,11 +281,11 @@ const fetchData = async () => {
   try {
     // DRF標準のページネーションレスポンス
     const response = await unifiedStoryApi.getStories();
-    
+
     // DRF標準形式のデータを直接使用
     const { count, results } = response;
     console.log(`全${count}件のストーリー`);
-    
+
     // データ処理
     results.forEach(story => {
       console.log(story.title);

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 
 /**
- * 小説関連のAPIエンドポイント
+ * 小説関連のAPIエンドポイント - 統一API使用版
  * クエリパラメータ形式でアクションを指定：
- * - /api/stories?action=create - 小説作成
+ * - /api/stories?action=create - 小説作成 (POSTメソッドも使用可能)
  * - /api/stories?id=123 - 小説詳細取得
- * - /api/stories?id=123&action=basic-setting-data - 基本設定データ操作
- * - /api/stories?action=update&id=123 - 小説更新
- * - /api/stories?action=delete&id=123 - 小説削除
+ * - /api/stories?action=update&id=123 - 小説更新 (PUTメソッドも使用可能)
+ * - /api/stories?action=delete&id=123 - 小説削除 (DELETEメソッドも使用可能)
  * - /api/stories - 小説一覧取得
  */
 
@@ -17,125 +17,37 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get('id');
     const action = searchParams.get('action');
 
-    // 統合設定クリエイターデータの取得
-    if (action === 'integrated-setting-creator-detail' && id) {
-      try {
-        console.log(`統合設定クリエイターデータを取得中... storyId: ${id}`);
-        
-        // バックエンドAPIのURLを構築
-        const apiUrl = process.env.BACKEND_API_URL || 'http://localhost:8001/api';
-        const endpoint = `/stories/${id}/integrated-setting-creator/detail/`;
-        const url = `${apiUrl}${endpoint}`;
-        
-        console.log(`バックエンドAPIリクエスト: ${url}`);
-        
-        // バックエンドAPIを直接呼び出し
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`バックエンドAPIエラー: ${response.status} ${response.statusText}`, errorText);
-          throw new Error(`${response.status} ${response.statusText}: ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log(`バックエンドAPIレスポンス: ${JSON.stringify(data).substring(0, 200)}...`);
-        
-        // バックエンドからのレスポンスをそのまま返す
-        return NextResponse.json(data);
-      } catch (error) {
-        console.error('統合設定クリエイターデータ取得エラー:', error);
-        
-        // エラーレスポンスを返す
+    console.log(`Stories API (統一API使用): GET request with id=${id}, action=${action}`);
+
+    // 小説IDとアクションが指定されている場合
+    if (id && action) {
+      if (action === 'delete') {
+        // 削除操作
+        const result = await unifiedStoryApi.deleteStory(id);
+        return NextResponse.json(result);
+      } else if (action === 'update') {
+        // 更新操作（GETでupdateは通常使用しません）
         return NextResponse.json(
-          {
-            success: false,
-            message: `統合設定クリエイターデータの取得に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`,
-            errors: { detail: ['サーバーエラーが発生しました'] }
-          },
-          { status: 500 }
+          { error: 'Update action requires PUT method' },
+          { status: 400 }
         );
       }
+      // その他の特殊アクション（将来的な拡張用）
     }
-
-    // バックエンドの設定
-    const backendHost = process.env.BACKEND_HOST || 'localhost';
-    const backendPort = process.env.BACKEND_PORT || '8001';
-
-    // バックエンドのエンドポイント構築
-    let backendUrl = `http://${backendHost}:${backendPort}/api/stories/`;
-
-    // アクションとパスのマッピング
-    const actionToPathMap: Record<string, string> = {
-      'basic-setting-data': 'basic-setting-data',
-      'basic-setting': 'basic-setting',
-      'create-character': 'create-character-detail',
-      'generate-plot': 'create-plot-detail',
-      'generate-episodes': 'create-episode-details',
-      'generate-episode': 'create-episode-content',
-      'generate-title': 'generate-title',
-      'is-live': 'is_live',
-      'logs': 'api-logs'
-    };
-
-    // 特定の小説とアクションが指定されている場合
-    if (id && action) {
-      // アクションをパスにマッピング
-      const apiPath = actionToPathMap[action] || action.replace(/-/g, '');
-      backendUrl = `http://${backendHost}:${backendPort}/api/stories/${id}/${apiPath}/`;
-
-      console.log(`Mapped action '${action}' to path '${apiPath}'`);
-    }
-    // 小説IDのみが指定されている場合
+    // 小説IDのみが指定されている場合（個別取得）
     else if (id) {
-      backendUrl += `${id}/`;
+      const result = await unifiedStoryApi.getStory(id);
+      return NextResponse.json(result);
     }
-    console.log(`Stories API: Forwarding GET request to ${backendUrl}`);
-
-    // タイムアウト処理
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
-
-    const response = await fetch(backendUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // レスポンスの処理
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
-
-    // バックエンドのレスポンスをそのまま返す
-    return NextResponse.json(data, { status: response.status });
+    // IDもアクションも指定されていない場合（一覧取得）
+    else {
+      const result = await unifiedStoryApi.getStories();
+      return NextResponse.json(result);
+    }
   } catch (error) {
-    console.error('Stories API error:', error);
-
-    // タイムアウトエラーの場合
-    if (error instanceof TypeError && error.message.includes('abort')) {
-      return NextResponse.json(
-        { error: 'バックエンドAPIへの接続がタイムアウトしました' },
-        { status: 504 } // Gateway Timeout
-      );
-    }
-
-    // その他のエラー
+    console.error('Stories API Error:', error);
     return NextResponse.json(
-      {
-        error: '小説取得リクエストに失敗しました',
-        details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -144,163 +56,57 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
     const action = searchParams.get('action');
+    
+    console.log(`Stories API (統一API使用): POST request with action=${action}`);
 
     // リクエストボディを取得
-    const body = await request.json().catch(() => ({}));
-
-    // バックエンドの設定
-    const backendHost = process.env.BACKEND_HOST || 'localhost';
-    const backendPort = process.env.BACKEND_PORT || '8001';
-
-    // バックエンドのエンドポイント構築
-    let backendUrl = `http://${backendHost}:${backendPort}/api/stories/`;
-
-    // アクションとパスのマッピング
-    const actionToPathMap: Record<string, string> = {
-      'basic-setting-data': 'basic-setting-data',
-      'basic-setting': 'basic-setting',
-      'create-character': 'create-character-detail',
-      'generate-plot': 'create-plot-detail',
-      'generate-episodes': 'create-episode-details',
-      'generate-episode': 'create-episode-content',
-      'generate-title': 'generate-title',
-      'is-live': 'is_live',
-      'logs': 'api-logs'
-    };
-
-    // アクションとIDが両方指定されている場合（例: 基本設定データの作成)
-    if (id && action) {
-      // アクションをパスにマッピング
-      const apiPath = actionToPathMap[action] || action.replace(/-/g, '');
-      backendUrl = `http://${backendHost}:${backendPort}/api/stories/${id}/${apiPath}/`;
-
-      console.log(`Mapped action '${action}' to path '${apiPath}'`);
+    const data = await request.json();
+    
+    // actionが'create'または未指定の場合は作成操作
+    if (!action || action === 'create') {
+      const result = await unifiedStoryApi.createStory(data);
+      return NextResponse.json(result);
     }
-    // 小説作成の場合
-    else if (action === 'create') {
-      // /api/stories/
-      backendUrl = `http://${backendHost}:${backendPort}/api/stories/`;
-    }
-    // 小説IDのみが指定されている場合（更新など）
-    else if (id) {
-      backendUrl += `${id}/`;
-    }
-
-    console.log(`Stories API: Forwarding POST request to ${backendUrl}`);
-    console.log(`Request body:`, body);
-
-    // タイムアウト処理
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
-
-    const response = await fetch(backendUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // レスポンスの処理
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
-
-    // バックエンドのレスポンスをそのまま返す
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Stories API error:', error);
-
-    // タイムアウトエラーの場合
-    if (error instanceof TypeError && error.message.includes('abort')) {
-      return NextResponse.json(
-        { error: 'バックエンドAPIへの接続がタイムアウトしました' },
-        { status: 504 } // Gateway Timeout
-      );
-    }
-
-    // その他のエラー
+    
+    // その他のアクションは未サポート
     return NextResponse.json(
-      {
-        error: '小説作成リクエストに失敗しました',
-        details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      },
+      { error: `Unsupported action: ${action}` },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Stories API Error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
 }
 
-export async function PATCH(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    
+    console.log(`Stories API (統一API使用): PUT request with id=${id}`);
 
     if (!id) {
       return NextResponse.json(
-        { error: '小説IDが指定されていません' },
+        { error: 'ID parameter is required for update operation' },
         { status: 400 }
       );
     }
 
     // リクエストボディを取得
-    const body = await request.json().catch(() => ({}));
-
-    // バックエンドの設定
-    const backendHost = process.env.BACKEND_HOST || 'localhost';
-    const backendPort = process.env.BACKEND_PORT || '8001';
-
-    // バックエンドのエンドポイント構築
-    const backendUrl = `http://${backendHost}:${backendPort}/api/stories/${id}/`;
-
-    console.log(`Stories API: Forwarding PATCH request to ${backendUrl}`);
-    console.log(`Request body:`, body);
-
-    // タイムアウト処理
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
-
-    const response = await fetch(backendUrl, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // レスポンスの処理
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
-
-    // バックエンドのレスポンスをそのまま返す
-    return NextResponse.json(data, { status: response.status });
+    const data = await request.json();
+    
+    // 更新操作を実行
+    const result = await unifiedStoryApi.updateStory(id, data);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Stories API error:', error);
-
-    // タイムアウトエラーの場合
-    if (error instanceof TypeError && error.message.includes('abort')) {
-      return NextResponse.json(
-        { error: 'バックエンドAPIへの接続がタイムアウトしました' },
-        { status: 504 } // Gateway Timeout
-      );
-    }
-
-    // その他のエラー
+    console.error('Stories API Error:', error);
     return NextResponse.json(
-      {
-        error: '小説更新リクエストに失敗しました',
-        details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -311,65 +117,38 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
+    console.log(`Stories API (統一API使用): DELETE request with id=${id}`);
+
     if (!id) {
       return NextResponse.json(
-        { error: '小説IDが指定されていません' },
+        { error: 'ID is required for DELETE operation' },
         { status: 400 }
       );
     }
 
-    // バックエンドの設定
-    const backendHost = process.env.BACKEND_HOST || 'localhost';
-    const backendPort = process.env.BACKEND_PORT || '8001';
-
-    // バックエンドのエンドポイント構築
-    const backendUrl = `http://${backendHost}:${backendPort}/api/stories/${id}/`;
-
-    console.log(`Stories API: Forwarding DELETE request to ${backendUrl}`);
-
-    // タイムアウト処理
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
-
-    const response = await fetch(backendUrl, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-      },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    // 204 No Contentの場合は空のJSONを返す
-    if (response.status === 204) {
-      return NextResponse.json({}, { status: 204 });
-    }
-
-    // 他のステータスコードの場合はレスポンスボディを返す
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
-
-    // バックエンドのレスポンスをそのまま返す
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Stories API error:', error);
-
-    // タイムアウトエラーの場合
-    if (error instanceof TypeError && error.message.includes('abort')) {
+    // デバッグ情報を出力
+    console.log(`DELETE操作を実行します: ID=${id}`);
+    
+    try {
+      // 削除操作を実行
+      await unifiedStoryApi.deleteStory(id);
+      
+      // 成功した場合は204レスポンスを返す（バックエンドと同じステータスコード）
+      return new NextResponse(null, { status: 204 });
+    } catch (deleteError) {
+      console.error('Delete operation failed:', deleteError);
       return NextResponse.json(
-        { error: 'バックエンドAPIへの接続がタイムアウトしました' },
-        { status: 504 } // Gateway Timeout
+        { 
+          error: deleteError instanceof Error ? deleteError.message : '削除操作に失敗しました', 
+          details: JSON.stringify(deleteError)
+        },
+        { status: 500 }
       );
     }
-
-    // その他のエラー
+  } catch (error) {
+    console.error('Stories API Error:', error);
     return NextResponse.json(
-      {
-        error: '小説削除リクエストに失敗しました',
-        details: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }

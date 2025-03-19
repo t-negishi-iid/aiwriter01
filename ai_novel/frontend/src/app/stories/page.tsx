@@ -7,9 +7,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { PlusCircle, Loader2, Edit, Trash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,22 +19,25 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { storyApi } from '@/lib/api-client';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 import { Card as StoryCard, CardHeader as StoryCardHeader, CardTitle as StoryCardTitle, CardDescription as StoryCardDescription, CardContent as StoryCardContent } from '@/components/ui/card';
 import { StoryTabs } from '@/components/story/StoryTabs';
 
 interface Story {
   id: number;
   title: string;
-  description: string;
+  catchphrase?: string;
+  summary?: string;
   created_at: string;
   updated_at: string;
+  status?: string;
 }
 
 export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -45,21 +46,24 @@ export default function StoriesPage() {
     const fetchStories = async () => {
       try {
         setIsLoading(true);
-        const response = await storyApi.getStories();
+        const response = await unifiedStoryApi.getStories();
 
         // APIレスポンスの形式に応じて処理
-        if (Array.isArray(response)) {
-          // レスポンスが直接配列の場合
-          setStories(response);
-        } else if (response && typeof response === 'object') {
+        if (response && typeof response === 'object') {
           // DRFの標準ページネーション形式の場合
           if (Array.isArray(response.results)) {
-            setStories(response.results);
-          } else if (response.data && Array.isArray(response.data)) {
-            // 以前の形式（{success: true, data: [...]）の場合
-            setStories(response.data);
+            // 型変換して設定
+            setStories(response.results.map(item => ({
+              id: Number(item.id),
+              title: String(item.title || ''),
+              catchphrase: item.catchphrase ? String(item.catchphrase) : undefined,
+              summary: item.summary ? String(item.summary) : undefined,
+              created_at: String(item.created_at || new Date().toISOString()),
+              updated_at: String(item.updated_at || new Date().toISOString()),
+              status: item.status ? String(item.status) : undefined
+            })));
           } else {
-            // その他の形式の場合は空配列を設定
+            // 予期しない形式の場合は空配列を設定
             console.error('Unexpected response format:', response);
             setStories([]);
           }
@@ -85,134 +89,155 @@ export default function StoriesPage() {
     }
   }, [id]);
 
-  const handleCreateStory = async () => {
-    try {
-      setIsLoading(true);
-      // 現在の日時を取得して「小説:YYYY/MM/DD HH:MM」形式のタイトルを生成
-      const now = new Date();
-      const formattedDate = format(now, 'yyyy/MM/dd HH:mm', { locale: ja });
-      const storyTitle = `小説:${formattedDate}`;
-      
-      const newStory = await storyApi.createStory({
-        title: storyTitle,
-        description: '説明を入力してください',
-      });
-      router.push(`/stories/new`);
-    } catch (err) {
-      console.error('Failed to create story:', err);
-      setError('小説の作成に失敗しました');
-    } finally {
-      setIsLoading(false);
+  const handleCreateNewStory = () => {
+    router.push('/stories/new');
+  };
+
+  const handleDeleteClick = (story: Story) => {
+    console.log('Delete clicked for story:', story);
+    
+    // 標準JSのconfirmを使用する
+    const confirmDelete = window.confirm(`「${story.title}」を削除しますか？この操作は元に戻せません。`);
+    
+    if (confirmDelete) {
+      // 削除を実行
+      deleteStory(story);
     }
   };
 
-  // IDがある場合は概要ページを表示
+  const deleteStory = async (story: Story) => {
+    try {
+      setIsDeleting(true);
+      await unifiedStoryApi.deleteStory(story.id);
+      
+      // 削除後、リストから該当の小説を除外
+      setStories(prev => prev.filter(s => s.id !== story.id));
+      
+      // 成功メッセージ
+      alert('小説を削除しました');
+    } catch (err) {
+      console.error('Failed to delete story:', err);
+      setError('小説の削除に失敗しました');
+      alert('小説の削除に失敗しました');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // 詳細ページが表示されるべき場合
   if (id) {
     return (
-      <div className="container mx-auto py-10">
-        <div className="mb-8">
-          <Link
-            href="/stories"
-            className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            小説一覧に戻る
-          </Link>
-          <h1 className="text-3xl font-bold">小説詳細</h1>
-        </div>
-
+      <div>
         <StoryTabs storyId={id} activeTab="overview" />
-
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>概要</CardTitle>
-            <CardDescription>小説の概要情報</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* 概要の内容はここに追加予定 */}
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
-  // 以下は小説一覧表示のコード
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]" data-testid="loading-indicator">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">小説一覧を読み込み中...</p>
+      </div>
+    );
+  }
+
+  // エラー表示
+  if (error) {
+    return (
+      <div className="container mx-auto p-4" data-testid="error-message">
+        <Alert variant="destructive">
+          <AlertTitle>エラー</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="flex justify-center mt-4">
+          <Button onClick={() => window.location.reload()} data-testid="reload-button">
+            ページを再読み込み
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-10" onKeyDown={(e) => {
-      // Enterキーが押された時にデフォルトの送信動作を防止
-      if (e.key === 'Enter') {
-        e.preventDefault();
-      }
-    }}>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">小説一覧</h1>
-        <Button 
-          type="button" 
-          onClick={handleCreateStory} 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              作成中...
-            </>
-          ) : (
-            <>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              新しい小説を作成
-            </>
-          )}
+    <div className="container mx-auto p-4" data-testid="stories-page">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">小説一覧</h1>
+        <Button onClick={handleCreateNewStory} data-testid="create-story-button">
+          <PlusCircle className="h-4 w-4 mr-2" />
+          新規作成
         </Button>
       </div>
 
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTitle>エラーが発生しました</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">読み込み中...</span>
-        </div>
-      ) : stories.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-muted-foreground mb-4">小説がありません</p>
-          <Button onClick={handleCreateStory}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            新しい小説を作成
+      {stories.length === 0 ? (
+        <div className="text-center p-8 border rounded-lg bg-muted/50" data-testid="empty-state">
+          <p className="text-lg text-muted-foreground mb-4">小説がまだありません</p>
+          <Button onClick={handleCreateNewStory} variant="secondary" data-testid="empty-create-button">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            小説を作成する
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="stories-grid">
           {stories.map((story) => (
-            <Card key={story.id} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl">{story.title}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {story.description}
-                </CardDescription>
+            <Card key={story.id} className="flex flex-col" data-testid={`story-card-${story.id}`}>
+              <CardHeader>
+                <CardTitle className="line-clamp-2">{story.title}</CardTitle>
+                {story.catchphrase && (
+                  <CardDescription className="line-clamp-2">
+                    {story.catchphrase}
+                  </CardDescription>
+                )}
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  作成日:{' '}
-                  {format(new Date(story.created_at), 'yyyy年MM月dd日', {
-                    locale: ja,
-                  })}
-                </p>
+              <CardContent className="flex-grow">
+                {story.summary && (
+                  <p className="text-sm line-clamp-3 text-muted-foreground">
+                    {story.summary}
+                  </p>
+                )}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  作成: {new Date(story.created_at).toLocaleString('ja-JP')}
+                </div>
               </CardContent>
-              <CardFooter className="bg-muted/50 pt-4">
+              <CardFooter className="flex justify-between pt-2 border-t">
                 <Button
-                  variant="default"
-                  className="w-full"
-                  onClick={() => router.push(getStoryUrl(story.id.toString()))}
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  data-testid={`view-story-${story.id}`}
                 >
-                  詳細を見る
+                  <Link href={`/stories/${story.id}`}>詳細</Link>
                 </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/stories/${story.id}/edit`)}
+                    data-testid={`edit-story-${story.id}`}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    編集
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteClick(story)}
+                    disabled={isDeleting}
+                    data-testid="delete-button"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        削除中...
+                      </>
+                    ) : (
+                      <>
+                        <Trash className="h-4 w-4 mr-2" />
+                        削除
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}
@@ -221,6 +246,3 @@ export default function StoriesPage() {
     </div>
   );
 }
-
-// URLパターンは新しいクエリパラメータ形式に変更
-const getStoryUrl = (id: string) => `/stories?id=${id}`;

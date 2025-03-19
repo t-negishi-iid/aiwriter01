@@ -23,6 +23,8 @@
 
 1. **cURLによる手動テスト**：開発初期やデバッグ時に使用する簡易テスト
 2. **テストプログラムによる自動テスト**：継続的なテストのための再利用可能なテスト
+   - **個別機能テスト**：特定のAPIエンドポイントの動作を検証
+   - **一気通貫テスト**：CRUD操作を連続して実行し、全体の整合性を検証
 
 ### 2.2 Unified API クライアントを用いたテスト
 
@@ -30,7 +32,7 @@
 
 #### 2.2.1 API通信フロー
 
-```
+```plaintext
 フロントエンドUI → フロントエンドAPIルート → Unified APIクライアント → バックエンドAPI
 ```
 
@@ -91,14 +93,14 @@ curl -X DELETE http://localhost:3000/api/stories?id=123
 
 ### 2.4 テストプログラムの基本構造
 
-テストプログラムは `ai_novel/tests/` ディレクトリ内に TypeScript ファイルとして実装されています。
+テストプログラムは `ai_novel/frontend/tests/api/` ディレクトリ内に TypeScript ファイルとして実装されています。
 各機能のテストスクリプトは次の命名規則に従います：
 
-```
+```typescript
 test_[機能名].ts
 ```
 
-例：`test_stories_new.ts` (小説作成API)、`test_characters.ts` (キャラクター関連API)
+例：`test_stories.ts` (小説API)、`test_characters.ts` (キャラクターAPI)
 
 ### 2.5 【重要】URL形式とレスポンス形式の差異に注意
 
@@ -119,11 +121,11 @@ test_[機能名].ts
 ### 2.6 テスト項目
 
 1. 小説 (Story)
-   - 一覧取得 (GET) が正常に動作し、ページネーションが正しい
-   - 個別取得 (GET with id) が正常に動作
-   - 作成 (POST) が正常に動作
-   - 更新 (PUT) が正常に動作
-   - 削除 (DELETE) が正常に動作
+   - 一覧取得 (GET)
+   - 個別取得 (GET with id)
+   - 作成 (POST)
+   - 更新 (PUT)
+   - 削除 (DELETE)
    - **新機能：`catchphrase`と`summary`フィールドのサポート**
 
 2. 基本設定作成用データ (BasicSettingData)
@@ -188,10 +190,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : '不明なエラー',
-        details: JSON.stringify(error) 
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -206,10 +205,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : '不明なエラー',
-        details: JSON.stringify(error) 
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -234,10 +230,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : '不明なエラー',
-        details: JSON.stringify(error) 
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -261,10 +254,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : '不明なエラー',
-        details: JSON.stringify(error) 
-      },
+      { error: error instanceof Error ? error.message : '不明なエラー' },
       { status: 500 }
     );
   }
@@ -336,3 +326,155 @@ return NextResponse.json(
 | 小説作成 | `/api/stories/` | `/api/stories` | POST | 新しい小説を作成 |
 | 小説更新 | `/api/stories/{id}/` | `/api/stories?id={id}` | PUT | 指定IDの小説を更新 |
 | 小説削除 | `/api/stories/{id}/` | `/api/stories?id={id}` | DELETE | 指定IDの小説を削除 |
+
+## 7. 一気通貫テストプログラム
+
+### 7.1 基本構造
+
+新しいテストプログラム `test_stories.ts` は、連続したCRUD操作を自動的に実行し、フロントエンドとバックエンドの両方で機能検証を行います。テストプログラムは以下のディレクトリに配置されています：
+
+```
+ai_novel/frontend/tests/api/test_stories.ts
+```
+
+### 7.2 主要機能
+
+- バックエンドとフロントエンドの両方をテスト可能
+- 小説の作成、取得、更新、削除を連続して実行
+- フロントエンドとバックエンドの結果比較
+- ランダムテストデータの自動生成
+- コマンドライン引数によるテスト制御
+
+### 7.3 テストフロー
+
+```plaintext
+1. 小説一覧の取得
+2. 新しい小説の作成
+3. 作成した小説の取得と確認
+4. 小説データの更新
+5. 更新後の小説データの取得と確認
+6. 小説の削除
+7. 削除後の小説が取得できないことを確認
+```
+
+### 7.4 実行方法
+
+```bash
+# 基本実行（フロントエンドAPIをテスト）
+cd ai_novel/frontend
+npx ts-node tests/api/test_stories.ts
+
+# バックエンドAPIをテスト
+npx ts-node tests/api/test_stories.ts --backend
+
+# フロントエンドとバックエンドの両方をテストして比較
+npx ts-node tests/api/test_stories.ts --compare
+
+# タイトル指定でテスト
+npx ts-node tests/api/test_stories.ts --title "テスト小説" --catchphrase "テストです" --summary "テスト概要"
+
+# ランダムデータでテスト
+npx ts-node tests/api/test_stories.ts --random
+
+# 自動テスト（CI/CD向け）
+npx ts-node tests/api/test_stories.ts --test
+```
+
+### 7.5 テストプログラムの主要コンポーネント
+
+#### 7.5.1 テスト関数群
+
+```typescript
+// 小説一覧を取得する
+async function getStories(apiBaseUrl: string): Promise<ApiResponse<DRFPaginatedResponse<StoryData>>>
+
+// 小説を取得する
+async function getStory(id: number | string, apiBaseUrl: string): Promise<ApiResponse<StoryData>>
+
+// 小説を作成する
+async function createStory(data: StoryData, apiBaseUrl: string): Promise<ApiResponse<StoryData>>
+
+// 小説を更新する
+async function updateStory(id: number | string, data: StoryData, apiBaseUrl: string): Promise<ApiResponse<StoryData>>
+
+// 小説を削除する
+async function deleteStory(id: number | string, apiBaseUrl: string): Promise<ApiResponse<null>>
+```
+
+#### 7.5.2 一気通貫テストフロー関数
+
+```typescript
+/**
+ * 小説のテストフローを実行する
+ */
+async function runStoryTestFlow(
+  storyData: StoryData, 
+  apiBaseUrl: string,
+  label: string = 'API'
+): Promise<boolean> {
+  // 小説一覧の取得
+  // 小説の作成
+  // 作成した小説の取得
+  // 小説の更新
+  // 更新後の小説を取得して確認
+  // 小説の削除
+  // 削除後の小説が取得できないことを確認
+}
+```
+
+#### 7.5.3 比較テスト機能
+
+```typescript
+/**
+ * フロントエンドとバックエンドの結果を比較する
+ */
+function compareResults<T>(frontendResult: ApiResponse<T>, backendResult: ApiResponse<T>): boolean {
+  // ステータスコードの比較
+  // 成功/失敗状態の比較
+  // データの比較
+  // 総合判定
+}
+```
+
+### 7.6 テスト実行例
+
+```bash
+===== フロントエンドテスト開始 =====
+📋 小説一覧を取得中...
+✅ 小説一覧を取得しました (11件)
+📝 小説「眠れる物語の守護者」を作成中...
+✅ 小説「眠れる物語の守護者」を作成しました (ID: 33)
+🔍 小説ID: 33を取得中...
+✅ 小説「眠れる物語の守護者」を取得しました
+📝 小説ID: 33を更新中...
+✅ 小説を更新しました (ID: 33)
+🔍 小説ID: 33を取得中...
+✅ 小説「眠れる物語の守護者 (更新済み)」を取得しました
+🗑️ 小説ID: 33を削除中...
+✅ 小説を削除しました (ID: 33)
+🔍 小説ID: 33を取得中...
+❌ 小説の取得に失敗しました: 不明なエラー
+✅ フロントエンドテスト成功: すべてのテストが通過しました
+```
+
+## 8. 新しいAPIのテスト実装手順
+
+新しいAPIのテスト実装には以下の手順を推奨します：
+
+1. **API仕様の確認**：バックエンドのURLパス、必須パラメータ、レスポンス形式を確認
+2. **Unified APIクライアントの実装**：`unified-api-client.ts`にAPI関数を追加
+3. **フロントエンドAPIルートの実装**：Next.jsのAPIルートを実装
+4. **cURLによる手動テスト**：基本的な動作確認
+5. **テストプログラムの作成**：`test_stories.ts`を参考に新しいテストプログラムを作成
+6. **一気通貫テストの実行**：作成、取得、更新、削除の流れを確認
+
+## 9. ベストプラクティス
+
+1. **URL形式の違いを適切に処理**：バックエンドとフロントエンドでURL形式が異なることを常に意識する
+2. **204 No Contentの適切な処理**：削除操作などでレスポンスボディがない場合の処理を実装する
+3. **エラーハンドリングの充実**：明確なエラーメッセージを提供し、デバッグを容易にする
+4. **コンソール出力の活用**：テスト進行状況やデータ内容を分かりやすく表示する
+5. **モジュール化とコード再利用**：共通処理を関数化して再利用性を高める
+6. **比較テストの活用**：フロントエンドとバックエンドの整合性を常に確認する
+
+テストプログラムが完全に動くことを確認したら、同様の手法で他のAPIエンドポイントのテストも実装していきましょう。

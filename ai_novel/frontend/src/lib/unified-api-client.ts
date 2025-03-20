@@ -237,12 +237,11 @@ export const episodeApi = {
    * @param storyId - 小説ID
    * @param actId - 幕ID
    * @returns ページネーション形式のエピソード一覧
-   * - GET /api/stories/{story_id}/acts/{act_id}/episodes/
+   * - GET /stories/{story_id}/acts/{act_id}/episodes/
    * - 戻り値: {count, next, previous, results}
    */
-  getActEpisodes: async (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> => {
-    return unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(`/stories/${storyId}/acts/${actId}/episodes/`);
-  },
+  getActEpisodes: (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+    unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(`/stories/${storyId}/acts/${actId}/episodes/`),
 
   /**
    * ActDetailからエピソード群を生成
@@ -251,22 +250,24 @@ export const episodeApi = {
    * @param actId - 幕ID
    * @param episodeCount - 分割するエピソードの数
    * @returns 生成されたエピソードの一覧
-   * - POST /api/stories/{story_id}/acts/{act_id}/create-episodes/
+   * - POST /stories/{story_id}/acts/{act_id}/create-episodes/
    * - 戻り値: {count, next, previous, results, status}
    */
-  createEpisodes: async (
+  createEpisodes: (
     storyId: string | number, 
     actId: string | number, 
     episodeCount: number
-  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => {
-    return unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
+  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+    unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
       `/stories/${storyId}/acts/${actId}/create-episodes/`, 
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ episode_count: episodeCount }),
       }
-    );
-  },
+    ),
 
   /**
    * 特定のエピソードを取得
@@ -275,16 +276,15 @@ export const episodeApi = {
    * @param actId - 幕ID
    * @param episodeId - エピソードID
    * @returns エピソードの詳細情報
-   * - GET /api/stories/{story_id}/acts/{act_id}/episodes/{episode_id}/
+   * - GET /stories/{story_id}/acts/{act_id}/episodes/{pk}/
    * - 戻り値: エピソード情報
    */
-  getEpisode: async (
+  getEpisode: (
     storyId: string | number, 
     actId: string | number, 
     episodeId: string | number
-  ): Promise<EpisodeDetail> => {
-    return unifiedFetchApi<EpisodeDetail>(`/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`);
-  },
+  ): Promise<EpisodeDetail> => 
+    unifiedFetchApi<EpisodeDetail>(`/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`),
 
   /**
    * エピソードの内容を更新
@@ -294,23 +294,25 @@ export const episodeApi = {
    * @param episodeId - エピソードID
    * @param data - 更新するデータ（タイトルと内容）
    * @returns 更新されたエピソード情報
-   * - PUT /api/stories/{story_id}/acts/{act_id}/episodes/{episode_id}/
+   * - PUT /stories/{story_id}/acts/{act_id}/episodes/{pk}/
    * - 戻り値: 更新されたエピソード情報
    */
-  updateEpisodeContent: async (
+  updateEpisodeContent: (
     storyId: string | number, 
     actId: string | number, 
     episodeId: string | number, 
     data: EpisodeCreateRequest
-  ): Promise<EpisodeDetail> => {
-    return unifiedFetchApi<EpisodeDetail>(
+  ): Promise<EpisodeDetail> => 
+    unifiedFetchApi<EpisodeDetail>(
       `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
       {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       }
-    );
-  },
+    ),
 
   /**
    * エピソードの並び順を変更
@@ -320,23 +322,25 @@ export const episodeApi = {
    * @param episodeId - エピソードID
    * @param episodeNumber - 新しいエピソード番号
    * @returns 更新後の全エピソード一覧
-   * - PUT /api/stories/{story_id}/acts/{act_id}/episodes/{episode_id}/
+   * - PUT /stories/{story_id}/acts/{act_id}/episodes/{pk}/
    * - 戻り値: {count, next, previous, results, status}
    */
-  updateEpisodeNumber: async (
+  updateEpisodeNumber: (
     storyId: string | number, 
     actId: string | number, 
     episodeId: string | number, 
     episodeNumber: number
-  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => {
-    return unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
+  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+    unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
       `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
       {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ episode_number: episodeNumber }),
       }
-    );
-  },
+    ),
 
   /**
    * エピソードを削除
@@ -345,21 +349,20 @@ export const episodeApi = {
    * @param actId - 幕ID
    * @param episodeId - エピソードID
    * @returns 削除結果
-   * - DELETE /api/stories/{story_id}/acts/{act_id}/episodes/{episode_id}/
+   * - DELETE /stories/{story_id}/acts/{act_id}/episodes/{pk}/
    * - 戻り値: null
    */
-  deleteEpisode: async (
+  deleteEpisode: (
     storyId: string | number, 
     actId: string | number, 
     episodeId: string | number
-  ): Promise<null> => {
-    return unifiedFetchApi<null>(
+  ): Promise<null> => 
+    unifiedFetchApi<null>(
       `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
       {
         method: 'DELETE',
       }
-    );
-  },
+    ),
 
   /**
    * 新しいエピソードを作成
@@ -368,22 +371,24 @@ export const episodeApi = {
    * @param actId - 幕ID
    * @param data - 作成するエピソードデータ
    * @returns 作成されたエピソード情報
-   * - POST /api/stories/{story_id}/acts/{act_id}/episodes/new/
+   * - POST /stories/{story_id}/acts/{act_id}/episodes/new/
    * - 戻り値: 作成されたエピソード情報
    */
-  createNewEpisode: async (
+  createNewEpisode: (
     storyId: string | number, 
     actId: string | number, 
     data: EpisodeCreateRequest
-  ): Promise<EpisodeDetail> => {
-    return unifiedFetchApi<EpisodeDetail>(
+  ): Promise<EpisodeDetail> => 
+    unifiedFetchApi<EpisodeDetail>(
       `/stories/${storyId}/acts/${actId}/episodes/new/`, 
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       }
-    );
-  },
+    ),
 };
 
 /**

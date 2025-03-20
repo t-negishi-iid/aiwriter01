@@ -220,7 +220,18 @@ class PlotDetailRequestSerializer(serializers.Serializer):
 
 class EpisodeDetailRequestSerializer(serializers.Serializer):
     """エピソード詳細リクエストシリアライザ"""
-    act_id = serializers.IntegerField(required=True)
+    episode_count = serializers.IntegerField(required=True, min_value=1, max_value=10)
+
+
+class EpisodeNumberUpdateSerializer(serializers.Serializer):
+    """エピソード番号更新シリアライザ"""
+    episode_number = serializers.IntegerField(required=True, min_value=1)
+
+
+class EpisodeCreateSerializer(serializers.Serializer):
+    """エピソード作成シリアライザ"""
+    title = serializers.CharField(required=True, max_length=255)
+    content = serializers.CharField(required=True)
 
 
 class EpisodeContentRequestSerializer(serializers.Serializer):

@@ -80,19 +80,19 @@ urlpatterns = [
          views.CreatePlotDetailView.as_view(), name='create-plot-detail'),
 
     # エピソード詳細関連
-    path('acts/<int:act_id>/episodes/',
-         views.EpisodeDetailListView.as_view(), name='episode-list'),
-    path('acts/<int:act_id>/episodes/<int:pk>/',
+    path('stories/<int:story_id>/acts/<int:act_id>/create-episodes/',
+         views.CreateEpisodesView.as_view(), name='create-episodes'),
+    path('stories/<int:story_id>/acts/<int:act_id>/episodes/',
+         views.ActEpisodesListView.as_view(), name='act-episodes-list'),
+    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/',
          views.EpisodeDetailView.as_view(), name='episode-detail'),
-    path('stories/<int:story_id>/create-episode-details/',
-         views.CreateEpisodeDetailsView.as_view(), name='create-episode-details'),
-    path('stories/<int:story_id>/episodes/',
-         views.StoryEpisodesListView.as_view(), name='story-episodes-list'),
+    path('stories/<int:story_id>/acts/<int:act_id>/episodes/new/',
+         views.CreateEpisodeView.as_view(), name='create-episode'),
 
     # エピソード本文関連
-    path('episodes/<int:episode_id>/content/',
+    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/content/',
          views.EpisodeContentView.as_view(), name='episode-content'),
-    path('stories/<int:story_id>/create-episode-content/',
+    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/create-episode-content/',
          views.CreateEpisodeContentView.as_view(), name='create-episode-content'),
 
     # タイトル生成関連

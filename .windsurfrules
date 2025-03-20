@@ -6,6 +6,30 @@ You are an expert full-stack developer specialized in building CGM (Consumer Gen
 
 - Japanese Only
 
+## サーバーの再起動スクリプト
+
+### バックエンド
+
+cd /Users/t-negishi/dev/novel-writing/aiwriter01/ai_novel/frontend
+./brestart.sh
+
+#### バックエンド ログ確認
+
+cd /Users/t-negishi/dev/novel-writing/aiwriter01/ai_novel/backend
+./showLogBackend.sh
+
+#### バックエンド・リビルド＆再起動
+
+cd /Users/t-negishi/dev/novel-writing/aiwriter01/ai_novel/backend
+./rbrestart.sh
+
+### フロントエンド
+
+cd /Users/t-negishi/dev/novel-writing/aiwriter01/ai_novel/frontend
+./frestart.sh
+
+
+
 ## 基本設定
 
 - 本システムはDocker環境を用いています。詳細は .docker-compose.yml を必ず参照してから開発を行ってください。

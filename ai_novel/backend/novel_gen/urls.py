@@ -26,16 +26,16 @@ def api_root(request, format=None):
         'credit-history': reverse('novel_gen:credit-history', request=request, format=format),
         'stories': reverse('novel_gen:story-list', request=request, format=format),
         'is_live': reverse('novel_gen:is-live', request=request, format=format),
-        'create-plot-detail': reverse('novel_gen:create-plot-detail', args=[1], request=request, format=format), 
+        'create-plot-detail': reverse('novel_gen:create-plot-detail', args=[1], request=request, format=format),
     })
 
 urlpatterns = [
     # API ルート
     path('', api_root, name='api-root'),
-    
+
     # 疎通確認用エンドポイント
     path('is_live/', is_live, name='is-live'),
-    
+
     # 小説ごとの疎通確認用エンドポイント
     path('stories/<int:story_id>/is_live/', StoryIsLiveView.as_view(), name='story-is-live'),
 

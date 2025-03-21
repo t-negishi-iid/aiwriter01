@@ -435,37 +435,118 @@ const IntegratedSettingCreator: React.FC = () => {
 
     // テーマセクション
     if (selectedData.theme?.title) {
-      markdown += `## テーマ\n${selectedData.theme.title}\n\n`;
+      markdown += `## テーマ\n### ${selectedData.theme.title}\n\n`;
+      
+      if (selectedData.theme.description) {
+        markdown += `#### 説明\n${selectedData.theme.description}\n\n`;
+      }
+      
+      if (selectedData.theme.examples && selectedData.theme.examples.length > 0) {
+        markdown += `#### 例\n`;
+        selectedData.theme.examples.forEach(example => {
+          markdown += `- ${example}\n`;
+        });
+        markdown += '\n';
+      }
     }
 
     // 時代と場所
     if (selectedData.timePlace?.title) {
-      markdown += `## 時代と場所\n${selectedData.timePlace.title}\n\n`;
+      markdown += `## 時代と場所\n### ${selectedData.timePlace.title}\n\n`;
+      
+      if (selectedData.timePlace.category) {
+        markdown += `#### カテゴリ\n${selectedData.timePlace.category}\n\n`;
+      }
+      
+      if (selectedData.timePlace.description) {
+        markdown += `#### 説明\n${selectedData.timePlace.description}\n\n`;
+      }
+      
+      if (selectedData.timePlace.content) {
+        markdown += `#### 詳細\n${selectedData.timePlace.content}\n\n`;
+      }
+      
+      if (selectedData.timePlace.examples && selectedData.timePlace.examples.length > 0) {
+        markdown += `#### 例\n`;
+        selectedData.timePlace.examples.forEach(example => {
+          markdown += `- ${example}\n`;
+        });
+        markdown += '\n';
+      }
     }
 
     // 世界観
     if (selectedData.worldSetting?.title) {
-      markdown += `## 世界観\n${selectedData.worldSetting.title}\n\n`;
+      markdown += `## 世界観\n### ${selectedData.worldSetting.title}\n\n`;
+      
+      if (selectedData.worldSetting.category) {
+        markdown += `#### カテゴリ\n${selectedData.worldSetting.category}\n\n`;
+      }
+      
+      if (selectedData.worldSetting.description) {
+        markdown += `#### 説明\n${selectedData.worldSetting.description}\n\n`;
+      }
+      
+      if (selectedData.worldSetting.worldView && selectedData.worldSetting.worldView.length > 0) {
+        markdown += `#### 世界観要素\n`;
+        selectedData.worldSetting.worldView.forEach(view => {
+          markdown += `- ${view}\n`;
+        });
+        markdown += '\n';
+      }
+      
+      if (selectedData.worldSetting.features && selectedData.worldSetting.features.length > 0) {
+        markdown += `#### 特徴\n`;
+        selectedData.worldSetting.features.forEach(feature => {
+          markdown += `- ${feature}\n`;
+        });
+        markdown += '\n';
+      }
+      
+      if (selectedData.worldSetting.examples && selectedData.worldSetting.examples.length > 0) {
+        markdown += `#### 例\n`;
+        selectedData.worldSetting.examples.forEach(example => {
+          markdown += `- ${example}\n`;
+        });
+        markdown += '\n';
+      }
     }
 
     // プロットパターン
     if (selectedData.plotPattern?.title) {
-      markdown += `## プロットパターン\n${selectedData.plotPattern.title}\n\n`;
+      markdown += `## プロットパターン\n### ${selectedData.plotPattern.title}\n\n`;
+      
+      if (selectedData.plotPattern.description) {
+        markdown += `#### 説明\n${selectedData.plotPattern.description}\n\n`;
+      }
 
       // プロットパターンの概要と構成
       if (selectedData.plotPattern.overview) {
-        markdown += `### 概要\n${selectedData.plotPattern.overview}\n\n`;
+        markdown += `#### 概要\n${selectedData.plotPattern.overview}\n\n`;
       }
 
       if (selectedData.plotPattern.sections && selectedData.plotPattern.sections.length > 0) {
-        markdown += `### 構成\n`;
+        markdown += `#### 構成\n`;
         selectedData.plotPattern.sections.forEach(section => {
-          markdown += `#### ${section.title}\n`;
-          if (section.content) {
+          markdown += `##### ${section.title}\n`;
+          if (section.content && section.content.length > 0) {
             section.content.forEach(line => {
               markdown += `- ${line}\n`;
             });
           }
+          
+          // サブセクションがあれば追加
+          if (section.subsections && section.subsections.length > 0) {
+            section.subsections.forEach(subsection => {
+              markdown += `###### ${subsection.title}\n`;
+              if (subsection.content && subsection.content.length > 0) {
+                subsection.content.forEach(line => {
+                  markdown += `- ${line}\n`;
+                });
+              }
+            });
+          }
+          
           markdown += '\n';
         });
       }
@@ -474,34 +555,109 @@ const IntegratedSettingCreator: React.FC = () => {
     // 感情要素
     if (selectedData.emotional?.selectedElements && selectedData.emotional.selectedElements.length > 0) {
       markdown += `## 感情要素\n`;
+      
+      // カテゴリごとに要素をグループ化
+      const elementsByCategory: Record<string, string[]> = {};
       selectedData.emotional.selectedElements.forEach(element => {
-        markdown += `- ${element.category}: ${element.element}\n`;
+        if (!elementsByCategory[element.category]) {
+          elementsByCategory[element.category] = [];
+        }
+        elementsByCategory[element.category].push(element.element);
       });
-      markdown += '\n';
+      
+      // カテゴリごとに表示
+      Object.keys(elementsByCategory).forEach(category => {
+        markdown += `### ${category}\n`;
+        elementsByCategory[category].forEach(element => {
+          markdown += `- ${element}\n`;
+        });
+        markdown += '\n';
+      });
+      
+      // カテゴリの説明があれば追加
+      if (selectedData.emotional.categories && selectedData.emotional.categories.length > 0) {
+        markdown += `### カテゴリ詳細\n`;
+        selectedData.emotional.categories.forEach(category => {
+          markdown += `#### ${category.title}\n`;
+          if (category.usage) {
+            markdown += `##### 用途\n${category.usage}\n\n`;
+          }
+          if (category.scenes) {
+            markdown += `##### シーン例\n${category.scenes}\n\n`;
+          }
+        });
+      }
     }
 
     // 過去の謎
-    if (selectedData.pastMystery?.events && selectedData.pastMystery.events.length > 0) {
+    if (selectedData.pastMystery?.title) {
       markdown += `## 過去の謎\n`;
-      selectedData.pastMystery.events.forEach(event => {
-        markdown += `- ${event}\n`;
-      });
-      markdown += '\n';
+      
+      markdown += `### ${selectedData.pastMystery.title}\n\n`;
+      
+      if (selectedData.pastMystery?.description) {
+        markdown += `#### 説明\n${selectedData.pastMystery.description}\n\n`;
+      }
+      
+      if (selectedData.pastMystery?.events && selectedData.pastMystery.events.length > 0) {
+        markdown += `#### 過去の出来事\n`;
+        selectedData.pastMystery.events.forEach(event => {
+          markdown += `- ${event}\n`;
+        });
+        markdown += '\n';
+      }
+      
+      // セクション別の謎の要素
+      if (selectedData.pastMystery?.sections) {
+        Object.keys(selectedData.pastMystery.sections).forEach(sectionName => {
+          const sectionItems = selectedData.pastMystery?.sections[sectionName];
+          if (sectionItems && sectionItems.length > 0) {
+            markdown += `#### ${sectionName}\n`;
+            sectionItems.forEach(item => {
+              markdown += `- ${item}\n`;
+            });
+            markdown += '\n';
+          }
+        });
+      }
     }
 
     // スタイル
     if (selectedData.writingStyle) {
       markdown += `## 文体と語り\n`;
+      
+      if (selectedData.writingStyle.author) {
+        markdown += `### 参考作家\n${selectedData.writingStyle.author}\n\n`;
+      }
+      
+      if (selectedData.writingStyle.title) {
+        markdown += `### タイトル\n${selectedData.writingStyle.title}\n\n`;
+      }
+      
+      if (selectedData.writingStyle.description) {
+        markdown += `### 説明\n${selectedData.writingStyle.description}\n\n`;
+      }
+      
       if (selectedData.writingStyle.pointOfView) {
         markdown += `### 視点\n${selectedData.writingStyle.pointOfView}\n\n`;
       }
+      
       if (selectedData.writingStyle.tense) {
         markdown += `### 時制\n${selectedData.writingStyle.tense}\n\n`;
       }
+      
       if (selectedData.writingStyle.tone && selectedData.writingStyle.tone.length > 0) {
         markdown += `### トーン\n`;
         selectedData.writingStyle.tone.forEach(tone => {
           markdown += `- ${tone}\n`;
+        });
+        markdown += '\n';
+      }
+      
+      if (selectedData.writingStyle.narrative && selectedData.writingStyle.narrative.length > 0) {
+        markdown += `### ナラティブスタイル\n`;
+        selectedData.writingStyle.narrative.forEach(style => {
+          markdown += `- ${style}\n`;
         });
         markdown += '\n';
       }

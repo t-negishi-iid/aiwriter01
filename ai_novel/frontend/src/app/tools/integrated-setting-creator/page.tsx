@@ -5,9 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast'; // useToastをインポート
 import styles from './page.module.css';
-import ReactMarkdown from 'react-markdown';
 
 // 各種セレクターコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
@@ -197,17 +196,20 @@ const createInitialTimePlace = (): SelectedTimePlace => {
   };
 };
 
-export default function IntegratedSettingCreator() {
-  const [activeTab, setActiveTab] = useState('theme');
-  const [selectedData, setSelectedData] = useState<SelectedData>({});
-  const [markdownOutput, setMarkdownOutput] = useState<string>('');
-  const [showPreview, setShowPreview] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+const IntegratedSettingCreator: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState('theme');
+  const [selectedData, setSelectedData] = useState<SelectedData>({});
+  const [markdownOutput, setMarkdownOutput] = useState('');
+  const [showPreview, setShowPreview] = useState(false); // showPreviewを復活
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
+  const { toast } = useToast(); // useToastを使用
+  // 初回ロード済みフラグを追加
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   // マークダウンデータをパースして構造化データに変換する
   const parseMarkdownData = useCallback((markdown: string): SelectedData => {
@@ -355,8 +357,8 @@ export default function IntegratedSettingCreator() {
       // tabパラメータを更新
       params.set('tab', tabId);
 
-      // URLを更新（履歴に残す）
-      router.push(`/tools/integrated-setting-creator?${params.toString()}`);
+      // URLを更新（履歴に残さない）
+      router.replace(`/tools/integrated-setting-creator?${params.toString()}`, { scroll: false });
     }
   }, [searchParams, router]);
 
@@ -369,7 +371,8 @@ export default function IntegratedSettingCreator() {
       setActiveTab(tabId);
     }
 
-    if (storyId) {
+    // 初回ロード時のみデータを取得
+    if (storyId && !initialDataLoaded) {
       // API呼び出しを行う
       const fetchData = async () => {
         try {
@@ -417,12 +420,14 @@ export default function IntegratedSettingCreator() {
           loadFromLocalStorage();
         } finally {
           setIsLoading(false);
+          // データロード完了フラグを設定
+          setInitialDataLoaded(true);
         }
       };
 
       fetchData();
     }
-  }, [searchParams, parseMarkdownData, loadFromLocalStorage]);
+  }, [searchParams, parseMarkdownData, loadFromLocalStorage, initialDataLoaded]);
 
   // マークダウン出力を生成する関数
   const generateMarkdown = useCallback(() => {
@@ -554,19 +559,19 @@ export default function IntegratedSettingCreator() {
         });
       }
     }
-  }, [searchParams]);
+  }, [toast, searchParams]);
 
-  // 画面サイズの監視
+  // 画面サイズを監視して表示状態を調整
   useEffect(() => {
     const checkScreenSize = () => {
       const isMobileView = window.innerWidth <= 768;
-      setShowPreview(isMobileView);
+      setShowPreview(!isMobileView);
     };
 
     // 初期チェック
     checkScreenSize();
 
-    // リサイズイベントのリスナーを追加
+    // リサイズイベントのリスナー
     window.addEventListener('resize', checkScreenSize);
 
     // クリーンアップ
@@ -576,7 +581,7 @@ export default function IntegratedSettingCreator() {
   }, []);
 
   // 設定データを保存する関数
-  const saveSettings = async () => {
+  const saveSettings = useCallback(async () => {
     const storyId = searchParams.get('storyId');
     if (!storyId) {
       toast({
@@ -657,7 +662,7 @@ export default function IntegratedSettingCreator() {
 
       console.error('[ERROR] 保存例外:', error);
     }
-  };
+  }, [searchParams, generateMarkdown, selectedData, markdownOutput, toast]);
 
   // データの更新日時を表示
   const formatLastUpdated = () => {
@@ -698,10 +703,6 @@ export default function IntegratedSettingCreator() {
     return null;
   };
 
-  const regenerateMarkdown = () => {
-    generateMarkdown();
-  };
-
   const saveIntegratedSettings = () => {
     saveSettings();
   };
@@ -725,6 +726,7 @@ export default function IntegratedSettingCreator() {
           <p>storyId: {storyId || 'なし'}</p>
           <p>activeTab: {activeTab}</p>
           <p>selectedData: {Object.keys(selectedData).length > 0 ? 'あり' : 'なし'}</p>
+          <p>showPreview: {showPreview ? 'true' : 'false'}</p>
         </div> */}
 
         {/* エラー表示 */}
@@ -771,7 +773,7 @@ export default function IntegratedSettingCreator() {
 
       <div className={styles.contentContainer}>
         {/* 左側：セレクタ内容 */}
-        <div className={styles.selectorPanel}>
+        <div className={`${styles.selectorPanel} ${showPreview ? styles.hiddenOnMobile : ''}`}>
           {activeTab === 'theme' && (
             <ThemeSelector
               selectedData={selectedData}
@@ -816,17 +818,11 @@ export default function IntegratedSettingCreator() {
           )}
         </div>
 
-        {/* 右側：プレビュー内容 */}
-        <div className={styles.previewPanel}>
+        {/* 右側：プレビュー */}
+        <div className={`${styles.previewPanel} ${!showPreview ? styles.hiddenOnMobile : ''}`}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">マークダウンプレビュー</h3>
+            <h3 className="text-xl font-bold">基本設定プレビュー</h3>
             <div className="space-x-2">
-              <Button
-                onClick={regenerateMarkdown}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                再生成
-              </Button>
               <Button
                 onClick={saveIntegratedSettings}
                 className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
@@ -836,10 +832,12 @@ export default function IntegratedSettingCreator() {
             </div>
           </div>
           <div className={styles.markdownPreview}>
-            <ReactMarkdown>{markdownOutput}</ReactMarkdown>
+            <pre className="whitespace-pre-wrap text-sm font-mono">{markdownOutput}</pre>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default IntegratedSettingCreator;

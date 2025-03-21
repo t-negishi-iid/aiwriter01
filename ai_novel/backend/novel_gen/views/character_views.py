@@ -79,7 +79,7 @@ class CreateCharacterDetailView(views.APIView):
     """
     キャラクター詳細生成ビュー
 
-    基本設定とキャラクター情報を元にキャラクター詳細を生成します。
+    Dify APを使って基本設定とキャラクター情報を元にキャラクター詳細を生成します。
     クレジットを消費します。
     """
     permission_classes = [permissions.IsAuthenticated]

@@ -84,7 +84,7 @@ class CreatePlotDetailView(views.APIView):
     """
     あらすじ詳細生成ビュー
 
-    基本設定とキャラクター詳細を元にあらすじ詳細（3幕分）を生成します。
+    Dify APIを介して基本設定とキャラクター詳細を元にあらすじ詳細（3幕分）を生成します。
     クレジットを消費します。
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -138,7 +138,7 @@ class CreatePlotDetailView(views.APIView):
 
         # キャラクター詳細データの準備（raw_contentの配列）
         all_characters_array = [char.raw_content for char in character_details]
-        
+
         # キャラクター詳細を1つの文字列に連結
         all_characters_with_newlines = []
         for char_content in all_characters_array:
@@ -146,7 +146,7 @@ class CreatePlotDetailView(views.APIView):
             if not char_content.endswith('\n'):
                 char_content += '\n'
             all_characters_with_newlines.append(char_content)
-        
+
         # 改行で区切られた1つの文字列に連結
         all_characters = '\n'.join(all_characters_with_newlines)
 
@@ -163,7 +163,7 @@ class CreatePlotDetailView(views.APIView):
             # デバッグ用のログ出力
             logger.error(f"DEBUG - CreatePlotDetailView - basic_setting.raw_content: {basic_setting.raw_content[:200]}")
             logger.error(f"DEBUG - CreatePlotDetailView - all_characters (first 200 chars): {all_characters[:200]}")
-            
+
             # 同期APIリクエスト
             response = api.create_plot_detail(
                 basic_setting=basic_setting.raw_content,
@@ -174,7 +174,7 @@ class CreatePlotDetailView(views.APIView):
 
             # レスポンスの検証
             logger.error(f"DEBUG - CreatePlotDetailView - API response: {response}")
-            
+
             if 'error' in response:
                 api_log.is_success = False
                 api_log.response_data = {'error': response['error']}
@@ -203,11 +203,11 @@ class CreatePlotDetailView(views.APIView):
 
             # 「第X幕」という見出しで分割
             act_pattern = r'## 第(\d+)幕'
-            
+
             # 正規表現で「第X幕」を検索
             act_matches = re.finditer(act_pattern, content)
             act_positions = [(int(match.group(1)), match.start()) for match in act_matches]
-            
+
             # 見つからない場合は、デフォルトの3幕構成を作成
             if not act_positions:
                 logger.error("DEBUG - CreatePlotDetailView - No act headers found, creating default acts")
@@ -229,16 +229,16 @@ class CreatePlotDetailView(views.APIView):
                     # タイトル部分を抽出（「## 第X幕」の行から次の行まで）
                     title_match = re.search(r'## 第\d+幕\s*\n(?:###\s*([^\n]+))?', content[start_pos:])
                     title = title_match.group(1).strip() if title_match and title_match.group(1) else f'第{act_number}幕'
-                    
+
                     # 内容の開始位置を特定
                     content_start = start_pos
                     if i < len(act_positions) - 1:
                         content_end = act_positions[i+1][1]
                     else:
                         content_end = len(content)
-                    
+
                     act_content = content[content_start:content_end].strip()
-                    
+
                     # 既存の幕があるか確認し、あれば更新、なければ作成
                     act_detail, created = ActDetail.objects.update_or_create(
                         ai_story=story,

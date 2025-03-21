@@ -178,25 +178,28 @@ class IntegratedSettingCreatorSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     story = AIStorySerializer(read_only=True, source='ai_story')
     basic_setting_data = serializers.CharField(required=True)
+    integrated_data = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = BasicSettingData
-        fields = ('id', 'user', 'story', 'basic_setting_data', 'created_at')
+        fields = ('id', 'user', 'story', 'basic_setting_data', 'integrated_data', 'created_at')
 
     def create(self, validated_data):
         """
         統合設定クリエイターデータの保存
-        フロントエンドから送られてきたMarkdownテキストを基本設定データモデルに保存
+        フロントエンドから送られてきたMarkdownテキストと選択状態を基本設定データモデルに保存
         """
         user = validated_data.get('user')
         story = validated_data.get('story')
         basic_setting_data = validated_data.get('basic_setting_data', '')
+        integrated_data = validated_data.get('integrated_data')
 
         # 基本設定データオブジェクトを作成または更新
         instance, created = BasicSettingData.objects.update_or_create(
             ai_story=story,
             defaults={
-                'basic_setting_data': basic_setting_data
+                'basic_setting_data': basic_setting_data,
+                'integrated_data': integrated_data
             }
         )
 

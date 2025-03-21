@@ -41,7 +41,7 @@ class ActEpisodesListView(generics.ListAPIView):
 
 class CreateEpisodesView(views.APIView):
     """
-    ActDetailから分割されたエピソード群を生成するビュー
+    Dify APIでActDetailから分割されたエピソード群を生成するビュー
 
     URL: /api/stories/{story_id}/acts/{act_id}/create-episodes/
     """
@@ -219,13 +219,13 @@ class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
         if current_position == target_position:
             result_serializer = EpisodeDetailSerializer(source_episode)
             return Response(result_serializer.data)
-            
+
         # 一時的に負の値を使用して一意制約に違反しないようにする
         # 最大エピソード番号を取得して、それより小さい負の値を使用
         max_episode_number = EpisodeDetail.objects.filter(act_id=act_id).aggregate(
             max_num=models.Max('episode_number'))['max_num'] or 0
         temp_number = -1 * (max_episode_number + 1000)  # 十分に小さい負の値
-        
+
         # まず対象エピソードを一時的な負の番号に変更
         source_episode.episode_number = temp_number
         source_episode.save()

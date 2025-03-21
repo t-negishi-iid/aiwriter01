@@ -18,13 +18,13 @@ class IntegratedSettingCreatorView(views.APIView):
     """
     統合設定クリエイターデータ作成ビュー
 
-    フロントエンドから送信された基本設定データを保存します。
+    フロントエンドから送信された基本設定データと選択状態を保存します。
     """
     permission_classes = [permissions.IsAuthenticated]
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        """基本設定データを保存"""
+        """基本設定データと選択状態を保存"""
         story_id = kwargs.get('story_id')
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
@@ -53,14 +53,20 @@ class IntegratedSettingCreatorView(views.APIView):
                     logger.debug(f"既存の基本設定データを削除します: {existing_data.count()}件")
                     existing_data.delete()
 
+                # シリアライザーのデータ準備
+                serializer_data = {
+                    'user': request.user.id,
+                    'story': story.id,
+                    'basic_setting_data': data.get('basic_setting_data', '')
+                }
+                
+                # integrated_dataが存在する場合は追加
+                if 'integrated_data' in data:
+                    serializer_data['integrated_data'] = data.get('integrated_data')
+                    logger.debug(f"選択状態データを保存します: {len(str(data.get('integrated_data')))}バイト")
+                
                 # 新規作成のためのシリアライザ
-                serializer = IntegratedSettingCreatorSerializer(
-                    data={
-                        'user': request.user.id,
-                        'story': story.id,
-                        'basic_setting_data': data.get('basic_setting_data', '')
-                    }
-                )
+                serializer = IntegratedSettingCreatorSerializer(data=serializer_data)
             except Exception as e:
                 logger.error(f"既存データの削除中にエラーが発生しました: {str(e)}")
                 return Response({
@@ -106,12 +112,12 @@ class IntegratedSettingCreatorDetailView(views.APIView):
     """
     統合設定クリエイターデータ詳細ビュー
 
-    指定された小説の基本設定データを取得します。
+    指定された小説の基本設定データと選択状態を取得します。
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        """基本設定データを取得"""
+        """基本設定データと選択状態を取得"""
         story_id = kwargs.get('story_id')
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
@@ -121,13 +127,17 @@ class IntegratedSettingCreatorDetailView(views.APIView):
                 ai_story=story
             ).latest('created_at')
 
-            # 成功レスポンスを返す - シリアライザデータを直接返す
-            # 成功レスポンスを返す - シンプルな形式
+            # APIレスポンス形式の標準化ポリシーに従ったレスポンス形式
             serialized_data = IntegratedSettingCreatorSerializer(basic_setting_data).data
             return Response({
-                "results": serialized_data,
-                "status": "success"
+                'success': True,
+                'message': '基本設定データが正常に取得されました',
+                'data': serialized_data
             })
         except BasicSettingData.DoesNotExist:
-            # データが存在しない場合は204 No Contentを返す
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            # データが存在しない場合
+            return Response({
+                'success': False,
+                'message': '基本設定データが見つかりません',
+                'data': None
+            }, status=status.HTTP_204_NO_CONTENT)

@@ -48,10 +48,11 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
         const data = await response.json();
         setCategories(data.results);
 
-        // 初期状態では全てのカテゴリーを展開
+        // 初期状態では選択されたカテゴリのみを展開（全てを展開しない）
         const initialExpandedState: { [key: string]: boolean } = {};
         data.results.forEach((category: Category) => {
-          initialExpandedState[category.title] = true;
+          // 選択されている場合のみ展開する
+          initialExpandedState[category.title] = selectedData.timePlace?.category === category.title;
         });
         setExpandedCategories(initialExpandedState);
 
@@ -64,7 +65,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     };
 
     fetchTimePlaceSettings();
-  }, []);
+  }, [selectedData.timePlace?.category]);
 
   // 選択が既に存在するかチェック
   const isSettingSelected = (category: string, setting: TimePlaceSetting): boolean => {

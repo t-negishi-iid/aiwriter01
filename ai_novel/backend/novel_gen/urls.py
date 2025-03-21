@@ -44,48 +44,78 @@ urlpatterns = [
     path('user/credit-history/', views.CreditHistoryListView.as_view(), name='credit-history'),
 
     # 小説関連
+    # 小説一覧取得・作成
     path('stories/', views.AIStoryListCreateView.as_view(), name='story-list'),
+    # 小説詳細取得・更新・削除
     path('stories/<int:pk>/', views.AIStoryDetailView.as_view(), name='story-detail'),
 
-    # 基本設定作成用データ作成関連
+    # 基本設定関連
+    # 基本設定作成
     path('stories/<int:story_id>/integrated-setting-creator/',
          IntegratedSettingCreatorView.as_view(), name='integrated-setting-creator'),
+    # 基本設定の詳細取得
     path('stories/<int:story_id>/integrated-setting-creator/detail/',
          IntegratedSettingCreatorDetailView.as_view(), name='integrated-setting-creator-detail'),
 
-    # 基本設定関連
+    # 作品設定関連
+    # Dify APIで指定されたストーリーの作品設定を基本設置データから生成する
     path('stories/<int:story_id>/basic-setting/',
          views.BasicSettingCreateView.as_view(), name='basic-setting-create'),
+    # 指定されたストーリーの指定された作品設定を取得、更新、削除する
     path('stories/<int:story_id>/basic-setting/<int:pk>/',
          views.BasicSettingDetailView.as_view(), name='basic-setting-detail'),
+    # ストーリーの最新の作品設定を取得する（Old）
     path('stories/<int:story_id>/latest-basic-setting/',
          LatestBasicSettingView.as_view(), name='latest-basic-setting'),
+    # ストーリーの最新の作品設定を取得する（New）
+    path('stories/<int:story_id>/basic-setting/latest/',
+         LatestBasicSettingView.as_view(), name='latest-basic-setting-new'),
+    # BasicSetting.act(1-3)_overview 更新専用（Old）
     path('stories/<int:story_id>/basic-setting-act/<int:act_number>/',
          BasicSettingActUpdateView.as_view(), name='basic-setting-act-update'),
+    # BasicSetting.act(1-3)_overview 更新専用（New）
+    path('stories/<int:story_id>/basic-setting/<int:act_number>/act/',
+         BasicSettingActUpdateView.as_view(), name='basic-setting-act-update-new'),
 
     # キャラクター詳細関連
+    # 指定されたストーリーのキャラクター詳細一覧を取得、または新規キャラクター詳細を作成する
     path('stories/<int:story_id>/characters/',
          views.CharacterDetailListCreateView.as_view(), name='character-list'),
+    # 指定されたストーリーの指定されたキャラクター詳細を取得、更新、削除する
     path('stories/<int:story_id>/characters/<int:pk>/',
          views.CharacterDetailView.as_view(), name='character-detail'),
+     # Dify APIで新規キャラクター詳細を作成する（old）
     path('stories/<int:story_id>/create-character-detail/',
          views.CreateCharacterDetailView.as_view(), name='create-character-detail'),
+     # Dify API新規キャラクター詳細を作成する（New）
+    path('stories/<int:story_id>/characters/create',
+         views.CreateCharacterDetailView.as_view(), name='create-character'),
 
     # あらすじ詳細関連
+    # 指定されたストーリーの幕詳細一覧を取得、または新規幕詳細を作成する
     path('stories/<int:story_id>/acts/',
          views.ActDetailListView.as_view(), name='act-list'),
+    # 指定されたストーリーの指定された幕詳細を取得、更新、削除する
     path('stories/<int:story_id>/acts/<int:pk>/',
          views.ActDetailView.as_view(), name='act-detail'),
+    # Dify APIで新規幕詳細を作成する（old）
     path('stories/<int:story_id>/create-plot-detail/',
          views.CreatePlotDetailView.as_view(), name='create-plot-detail'),
+    # Dify API新規幕詳細を作成する（New）
+    path('stories/<int:story_id>/acts/create',
+         views.CreatePlotDetailView.as_view(), name='act-create'),
 
     # エピソード詳細関連
+    # Dify APIでActDetailから分割されたエピソード群を生成する
     path('stories/<int:story_id>/acts/<int:act_id>/create-episodes/',
          views.CreateEpisodesView.as_view(), name='create-episodes'),
+    # 指定されたストーリーの指定された幕のエピソード一覧を取得
     path('stories/<int:story_id>/acts/<int:act_id>/episodes/',
          views.ActEpisodesListView.as_view(), name='act-episodes-list'),
+    # 指定されたストーリーの指定された幕の指定されたエピソードを取得、更新、削除する
     path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/',
          views.EpisodeDetailView.as_view(), name='episode-detail'),
+    # 新規エピソードの作成
     path('stories/<int:story_id>/acts/<int:act_id>/episodes/new/',
          views.CreateEpisodeView.as_view(), name='create-episode'),
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './page.module.css';
@@ -63,6 +63,22 @@ export default function IntegratedSettingCreator() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // タブを変更し、URLを更新する関数
+  const changeTab = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+    
+    const storyId = searchParams.get('storyId');
+    if (storyId) {
+      // 現在のURLパラメータを取得
+      const params = new URLSearchParams(searchParams.toString());
+      // tabパラメータを更新
+      params.set('tab', tabId);
+      
+      // URLを更新（履歴に残す）
+      router.push(`/tools/integrated-setting-creator?${params.toString()}`);
+    }
+  }, [searchParams, router]);
+
   // 選択データをローカルストレージから読み込む
   useEffect(() => {
     const storyId = searchParams.get('storyId');
@@ -79,9 +95,15 @@ export default function IntegratedSettingCreator() {
     }
   }, []);
 
-  // URLからストーリーIDを取得し、既存のデータがあれば読み込む
+  // URLからタブとストーリーIDを取得し、既存のデータがあれば読み込む
   useEffect(() => {
     const storyId = searchParams.get('storyId');
+    // URLからタブパラメータを取得し、存在すれば対応するタブをアクティブにする
+    const tabParam = searchParams.get('tab');
+    if (tabParam && TABS.some(tab => tab.id === tabParam)) {
+      setActiveTab(tabParam);
+    }
+
     if (!storyId) return;
 
     const fetchData = async () => {
@@ -511,7 +533,7 @@ export default function IntegratedSettingCreator() {
           <select
             className={styles.mobileTabSelect}
             value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
+            onChange={(e) => changeTab(e.target.value)}
             aria-label="タブを選択"
             title="タブを選択"
           >
@@ -535,7 +557,7 @@ export default function IntegratedSettingCreator() {
             <button
               key={tab.id}
               className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => changeTab(tab.id)}
             >
               {tab.label}
             </button>

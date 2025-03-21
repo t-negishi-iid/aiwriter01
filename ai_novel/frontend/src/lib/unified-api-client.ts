@@ -392,51 +392,6 @@ export const episodeApi = {
 };
 
 /**
- * エラーを処理する関数
- * コンポーネントから呼び出して適切なUIを表示する
- *
- * @param error APIエラー
- * @param options エラー処理オプション
- */
-export const handleApiError = (error: ApiError, options?: {
-  onSystemError?: (error: ApiError) => void;
-  onUserNotification?: (error: ApiError) => void;
-  onAuthError?: (error: ApiError) => void;
-}) => {
-  if (!error) return;
-
-  switch (error.type) {
-    case ApiErrorType.USER_NOTIFICATION:
-      // ユーザー通知
-      console.log(`[ユーザー通知] ${error.message}`);
-      if (options?.onUserNotification) {
-        options.onUserNotification(error);
-      }
-      // ここでToast通知などのUI表示を行う
-      break;
-
-    case ApiErrorType.AUTH:
-      // 認証エラー
-      console.log(`[認証エラー] ${error.message}`);
-      if (options?.onAuthError) {
-        options.onAuthError(error);
-      }
-      // ログイン画面へのリダイレクトなど
-      break;
-
-    case ApiErrorType.SYSTEM:
-    default:
-      // システムエラー
-      console.error(`[システムエラー] ${error.message}`, error.details);
-      if (options?.onSystemError) {
-        options.onSystemError(error);
-      }
-      // エラー画面表示など
-      break;
-  }
-};
-
-/**
  * 統一されたストーリーAPI関数群
  * 小説の作成・取得・更新・削除などの操作を行うAPI関数を提供
  *
@@ -525,6 +480,81 @@ export const unifiedStoryApi = {
   deleteStory: (id: string | number) => unifiedFetchApi<null>(`/stories/${id}/`, {
     method: 'DELETE',
   }),
+
+  /**
+   * 統合設定クリエイターデータを保存
+   *
+   * @param storyId - 小説ID
+   * @param data - 保存するデータ
+   * @param data.basic_setting_data - 基本設定データ（必須）
+   * @param data.integrated_data - 選択状態データ（オプション）
+   * @returns 保存された統合設定クリエイターデータ
+   * - POST /stories/{story_id}/integrated-setting-creator/
+   * - 戻り値: {success: true, message: string, data: Record<string, unknown>}
+   */
+  saveIntegratedSettingCreatorData: (storyId: string | number, data: Record<string, unknown>) => 
+    unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/integrated-setting-creator/`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * 統合設定クリエイターデータを取得
+   *
+   * @param storyId - 小説ID
+   * @returns 統合設定クリエイターデータ
+   * - GET /stories/{story_id}/integrated-setting-creator/detail/
+   * - 戻り値: {success: true, message: string, data: Record<string, unknown>}
+   */
+  getIntegratedSettingCreatorData: (storyId: string | number) => 
+    unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/integrated-setting-creator/detail/`, {
+      method: 'GET',
+    }),
+};
+
+/**
+ * エラーを処理する関数
+ * コンポーネントから呼び出して適切なUIを表示する
+ *
+ * @param error APIエラー
+ * @param options エラー処理オプション
+ */
+export const handleApiError = (error: ApiError, options?: {
+  onSystemError?: (error: ApiError) => void;
+  onUserNotification?: (error: ApiError) => void;
+  onAuthError?: (error: ApiError) => void;
+}) => {
+  if (!error) return;
+
+  switch (error.type) {
+    case ApiErrorType.USER_NOTIFICATION:
+      // ユーザー通知
+      console.log(`[ユーザー通知] ${error.message}`);
+      if (options?.onUserNotification) {
+        options.onUserNotification(error);
+      }
+      // ここでToast通知などのUI表示を行う
+      break;
+
+    case ApiErrorType.AUTH:
+      // 認証エラー
+      console.log(`[認証エラー] ${error.message}`);
+      if (options?.onAuthError) {
+        options.onAuthError(error);
+      }
+      // ログイン画面へのリダイレクトなど
+      break;
+
+    case ApiErrorType.SYSTEM:
+    default:
+      // システムエラー
+      console.error(`[システムエラー] ${error.message}`, error.details);
+      if (options?.onSystemError) {
+        options.onSystemError(error);
+      }
+      // エラー画面表示など
+      break;
+  }
 };
 
 // APIクライアント使用例

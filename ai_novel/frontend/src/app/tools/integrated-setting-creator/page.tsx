@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast'; // useToastをインポート
 import styles from './page.module.css';
+import { unifiedStoryApi } from '@/lib/unified-api-client'; // 統一APIクライアントをインポート
 
 // 各種セレクターコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
@@ -157,12 +158,6 @@ interface IntegratedSettingData {
   updated_at: string;
 }
 
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  data?: IntegratedSettingData;
-}
-
 // 日付文字列から安全にDateオブジェクトに変換する関数
 const safeParseDate = (dateString: string): Date | null => {
   try {
@@ -220,12 +215,8 @@ const IntegratedSettingCreator: React.FC = () => {
   // 小説タイトルを取得する関数
   const fetchNovelTitle = useCallback(async (storyId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/`);
-      if (!response.ok) {
-        throw new Error('APIからのデータ取得に失敗しました');
-      }
-      const responseData = await response.json();
-      if (responseData && responseData.title) {
+      const responseData = await unifiedStoryApi.getStory(storyId);
+      if (responseData && typeof responseData.title === 'string') {
         setNovelTitle(responseData.title);
       }
     } catch (error) {
@@ -400,32 +391,24 @@ const IntegratedSettingCreator: React.FC = () => {
         try {
           setIsLoading(true);
 
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/integrated-setting-creator/detail/`);
-
-          if (!response.ok) {
-            throw new Error('APIからのデータ取得に失敗しました');
-          }
-
-          const responseData: ApiResponse = await response.json();
+          const responseData = await unifiedStoryApi.getIntegratedSettingCreatorData(storyId);
 
           console.log('APIレスポンス:', responseData);
 
-          if (responseData && responseData.data) {
-            setIntegratedSettingData(responseData.data);
+          if (responseData && responseData.success && responseData.data) {
+            const integratedData = responseData.data as IntegratedSettingData;
+            setIntegratedSettingData(integratedData);
 
-            if (responseData.data.integrated_data) {
+            if (integratedData.integrated_data) {
               // データベースに保存された選択状態を読み込む
-              console.log('[TRACE] データベースから選択状態を読み込みました', responseData.data.integrated_data);
+              console.log('[TRACE] データベースから選択状態を読み込みました', integratedData.integrated_data);
 
-              // 型安全な変換
-              if (responseData.data.integrated_data) {
-                setSelectedData(responseData.data.integrated_data);
-              }
+              setSelectedData(integratedData.integrated_data);
             } else {
               // 選択状態がない場合はMarkdownから解析
-              if (responseData.data.basic_setting_data) {
-                console.log('[TRACE] Markdownデータから解析します', responseData.data.basic_setting_data.substring(0, 100));
-                const parsedData = parseMarkdownData(responseData.data.basic_setting_data);
+              if (integratedData.basic_setting_data) {
+                console.log('[TRACE] Markdownデータから解析します', integratedData.basic_setting_data.substring(0, 100));
+                const parsedData = parseMarkdownData(integratedData.basic_setting_data);
                 console.log('[TRACE] 解析結果:', parsedData);
                 setSelectedData(parsedData);
               }
@@ -828,28 +811,20 @@ const IntegratedSettingCreator: React.FC = () => {
       // 型安全のために深いコピーを作成
       const safeSelectedData: SelectedData = JSON.parse(JSON.stringify(selectedData));
 
-      // APIリクエストを送信
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/settings/integrated/store/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          story_id: storyId,
-          basic_setting_data: markdownOutput,
-          integrated_data: safeSelectedData
-        }),
+      // 統一APIクライアント関数を使用してデータを保存
+      const responseData = await unifiedStoryApi.saveIntegratedSettingCreatorData(storyId, {
+        basic_setting_data: markdownOutput,
+        integrated_data: safeSelectedData
       });
 
-      // レスポンスをJSON形式に変換
-      const responseData: ApiResponse = await response.json();
       console.log('[TRACE] 保存レスポンス:', JSON.stringify(responseData).substring(0, 500));
 
       // レスポンス処理
-      if (response.ok && responseData.success) {
+      if (responseData && responseData.success) {
         // 保存成功の処理
         if (responseData.data) {
-          setIntegratedSettingData(responseData.data);
+          const integratedData = responseData.data as IntegratedSettingData;
+          setIntegratedSettingData(integratedData);
           setSaveSuccess(true);
         }
 
@@ -860,13 +835,13 @@ const IntegratedSettingCreator: React.FC = () => {
         console.log('[TRACE] 保存成功');
       } else {
         // エラー処理
-        const errorMessage = responseData.message || "不明なエラーが発生しました";
-        setError(errorMessage);
+        const errorMessage = responseData && responseData.message ? responseData.message : "不明なエラーが発生しました";
+        setError(errorMessage as string);
         setSaveSuccess(false);
 
         toast({
           title: "保存エラー",
-          description: errorMessage,
+          description: errorMessage as string,
           variant: "destructive",
         });
 

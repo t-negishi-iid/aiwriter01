@@ -15,9 +15,25 @@ interface ElementCategory {
   effectiveScenes: string[];
 }
 
+interface SelectedData {
+  emotionalElements?: {
+    categories: {
+      title: string;
+      usage: string;
+      effectiveScenes: string[];
+    }[];
+    selectedElements: {
+      category: string;
+      element: string;
+      description: string;
+    }[];
+  };
+  [key: string]: unknown;
+}
+
 interface EmotionalElementsSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function EmotionalElementsSelector({ selectedData, setSelectedData }: EmotionalElementsSelectorProps) {
@@ -31,7 +47,7 @@ export default function EmotionalElementsSelector({ selectedData, setSelectedDat
     if (selectedData.emotionalElements?.selectedElements) {
       setSelectedElements(selectedData.emotionalElements.selectedElements);
     }
-  }, []);
+  }, [selectedData.emotionalElements?.selectedElements]);
 
   // 情緒的要素データの取得
   useEffect(() => {

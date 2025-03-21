@@ -36,6 +36,9 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchWorldSettings = async () => {
@@ -101,6 +104,61 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
     setExpandedCategories(allCollapsed);
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべてのカテゴリを開く
+    expandAllCategories();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべてのカテゴリと設定を検索
+    categories.forEach((category) => {
+      category.settings.forEach((setting) => {
+        const settingKey = `${category.title}|${setting.title}`;
+        
+        // タイトル、世界観、特徴、例で検索
+        const matchesTitle = setting.title.toLowerCase().includes(keyword);
+        const matchesWorldView = setting.worldView?.some(view => view.toLowerCase().includes(keyword)) || false;
+        const matchesFeatures = setting.features?.some(feature => feature.toLowerCase().includes(keyword)) || false;
+        const matchesExamples = setting.examples?.some(example => example.toLowerCase().includes(keyword)) || false;
+
+        results[settingKey] = matchesTitle || matchesWorldView || matchesFeatures || matchesExamples;
+      });
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // 設定の表示判定
+  const shouldShowSetting = (category: string, setting: WorldSetting): boolean => {
+    if (!isSearchActive) return true;
+    
+    const settingKey = `${category}|${setting.title}`;
+    return searchResults[settingKey] || false;
+  };
+
   if (loading) {
     return <div>作品世界と舞台設定データを読み込み中...</div>;
   }
@@ -131,6 +189,34 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
         >
           すべて閉じる
         </button>
+        <input 
+          type="search"
+          value={searchKeyword}
+          onChange={handleSearchInputChange}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              performSearch();
+            }
+          }}
+          placeholder="検索ワード"
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       <div>
@@ -149,44 +235,46 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
             {expandedCategories[category.title] && (
               <div className={styles.settingsGrid}>
                 {category.settings.map((setting, settingIndex) => (
-                  <div
-                    key={settingIndex}
-                    className={`${styles.optionCard} ${selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
-                      }`}
-                    onClick={() => handleSelectWorldSetting(category.title, setting)}
-                  >
-                    <h3 className={styles.optionTitle}>{setting.title}</h3>
-                    {setting.worldView && setting.worldView.length > 0 && (
-                      <div className={styles.featuresList}>
-                        <strong>基本的な世界観:</strong>
-                        <ul className={styles.examplesList}>
-                          {setting.worldView.map((item, i) => (
-                            <li key={i} className={styles.exampleItem}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {setting.features && setting.features.length > 0 && (
-                      <div className={styles.featuresList}>
-                        <strong>特徴的な要素:</strong>
-                        <ul className={styles.examplesList}>
-                          {setting.features.map((feature, i) => (
-                            <li key={i} className={styles.exampleItem}>{feature}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {setting.examples && setting.examples.length > 0 && (
-                      <div>
-                        <strong>代表作品:</strong>
-                        <ul className={styles.examplesList}>
-                          {setting.examples.map((example, i) => (
-                            <li key={i} className={styles.exampleItem}>{example}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                  shouldShowSetting(category.title, setting) && (
+                    <div
+                      key={settingIndex}
+                      className={`${styles.optionCard} ${selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
+                        }`}
+                      onClick={() => handleSelectWorldSetting(category.title, setting)}
+                    >
+                      <h3 className={styles.optionTitle}>{setting.title}</h3>
+                      {setting.worldView && setting.worldView.length > 0 && (
+                        <div className={styles.featuresList}>
+                          <strong>基本的な世界観:</strong>
+                          <ul className={styles.examplesList}>
+                            {setting.worldView.map((item, i) => (
+                              <li key={i} className={styles.exampleItem}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {setting.features && setting.features.length > 0 && (
+                        <div className={styles.featuresList}>
+                          <strong>特徴的な要素:</strong>
+                          <ul className={styles.examplesList}>
+                            {setting.features.map((feature, i) => (
+                              <li key={i} className={styles.exampleItem}>{feature}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {setting.examples && setting.examples.length > 0 && (
+                        <div>
+                          <strong>代表作品:</strong>
+                          <ul className={styles.examplesList}>
+                            {setting.examples.map((example, i) => (
+                              <li key={i} className={styles.exampleItem}>{example}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )
                 ))}
               </div>
             )}

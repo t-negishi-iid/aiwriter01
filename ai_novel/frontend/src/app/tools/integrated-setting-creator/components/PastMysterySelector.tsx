@@ -25,6 +25,9 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedMysteries, setExpandedMysteries] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchPastMysteries = async () => {
@@ -100,6 +103,74 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
     setExpandedMysteries(allCollapsed);
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべての謎を開く
+    expandAllMysteries();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべての謎を検索
+    pastMysteries.forEach((mystery) => {
+      const mysteryKey = mystery.title;
+      
+      // タイトル、説明、イベント、セクションで検索
+      const matchesTitle = mystery.title.toLowerCase().includes(keyword);
+      const matchesDescription = mystery.description.toLowerCase().includes(keyword);
+      const matchesEvents = mystery.events?.some(event => event.toLowerCase().includes(keyword)) || false;
+      
+      // セクション内の項目も検索
+      let matchesSections = false;
+      if (mystery.sections) {
+        for (const [sectionName, items] of Object.entries(mystery.sections)) {
+          // セクション名も検索対象に含める
+          if (sectionName.toLowerCase().includes(keyword)) {
+            matchesSections = true;
+            break;
+          }
+          
+          // セクション内の項目も検索
+          if (items.some(item => item.toLowerCase().includes(keyword))) {
+            matchesSections = true;
+            break;
+          }
+        }
+      }
+
+      results[mysteryKey] = matchesTitle || matchesDescription || matchesEvents || matchesSections;
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // 謎の表示判定
+  const shouldShowMystery = (title: string): boolean => {
+    if (!isSearchActive) return true;
+    return searchResults[title] || false;
+  };
+
   if (loading) {
     return <div>過去の謎データを読み込み中...</div>;
   }
@@ -130,42 +201,72 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
         >
           すべて閉じる
         </button>
+        <input 
+          type="search"
+          value={searchKeyword}
+          onChange={handleSearchInputChange}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              performSearch();
+            }
+          }}
+          placeholder="検索ワード"
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       <div>
         {pastMysteries.map((mystery, index) => (
-          <div key={index} className={styles.categoryContainer}>
-            <div
-              className={styles.leftAlignedHeader}
-              onClick={() => toggleMystery(mystery.title)}
-            >
-              <span className={styles.expandIcon}>
-                {expandedMysteries[mystery.title] ? '▼' : '▶'}
-              </span>
-              <h3 className={styles.categoryTitle}>「{mystery.title}」</h3>
-            </div>
-
-            {(expandedMysteries[mystery.title] || selectedData.pastMystery?.title === mystery.title) && (
+          shouldShowMystery(mystery.title) && (
+            <div key={index} className={styles.categoryContainer}>
               <div
-                className={`${styles.optionCard} ${selectedData.pastMystery?.title === mystery.title ? styles.selectedOption : ''}`}
-                onClick={() => handleSelectPastMystery(mystery)}
+                className={styles.leftAlignedHeader}
+                onClick={() => toggleMystery(mystery.title)}
               >
-                <p className={styles.optionDescription}>{mystery.description}</p>
-
-                {/* すべてのセクションを表示 */}
-                {mystery.sections && Object.entries(mystery.sections).map(([sectionName, items]) => (
-                  <div key={sectionName} className={styles.sectionContainer}>
-                    <strong>{sectionName}:</strong>
-                    <ul className={styles.examplesList}>
-                      {items.map((item, i) => (
-                        <li key={i} className={styles.exampleItem}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                <span className={styles.expandIcon}>
+                  {expandedMysteries[mystery.title] ? '▼' : '▶'}
+                </span>
+                <h3 className={styles.categoryTitle}>「{mystery.title}」</h3>
               </div>
-            )}
-          </div>
+
+              {(expandedMysteries[mystery.title] || selectedData.pastMystery?.title === mystery.title) && (
+                <div
+                  className={`${styles.optionCard} ${selectedData.pastMystery?.title === mystery.title ? styles.selectedOption : ''}`}
+                  onClick={() => handleSelectPastMystery(mystery)}
+                >
+                  <p className={styles.optionDescription}>{mystery.description}</p>
+
+                  {/* すべてのセクションを表示 */}
+                  {mystery.sections && Object.entries(mystery.sections).map(([sectionName, items]) => (
+                    <div key={sectionName} className={styles.sectionContainer}>
+                      <strong>{sectionName}:</strong>
+                      <ul className={styles.examplesList}>
+                        {items.map((item, i) => (
+                          <li key={i} className={styles.exampleItem}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
         ))}
       </div>
     </div>

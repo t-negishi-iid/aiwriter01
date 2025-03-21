@@ -25,6 +25,9 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedStyles, setExpandedStyles] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchWritingStyles = async () => {
@@ -91,6 +94,57 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
     setExpandedStyles(allCollapsed);
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべてのスタイルを開く
+    expandAllStyles();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべてのスタイルを検索
+    writingStyles.forEach((style) => {
+      const styleKey = style.author;
+      
+      // 著者名、構造、技法、テーマで検索
+      const matchesAuthor = style.author.toLowerCase().includes(keyword);
+      const matchesStructure = style.structure?.toLowerCase().includes(keyword) || false;
+      const matchesTechniques = style.techniques?.some(tech => tech.toLowerCase().includes(keyword)) || false;
+      const matchesThemes = style.themes?.toLowerCase().includes(keyword) || false;
+
+      results[styleKey] = matchesAuthor || matchesStructure || matchesTechniques || matchesThemes;
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // スタイルの表示判定
+  const shouldShowStyle = (author: string): boolean => {
+    if (!isSearchActive) return true;
+    return searchResults[author] || false;
+  };
+
   if (loading) {
     return <div>作風データを読み込み中...</div>;
   }
@@ -121,53 +175,83 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
         >
           すべて閉じる
         </button>
+        <input 
+          type="search"
+          value={searchKeyword}
+          onChange={handleSearchInputChange}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              performSearch();
+            }
+          }}
+          placeholder="検索ワード"
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       <div>
         {writingStyles.map((style, index) => (
-          <div key={index} className={styles.categoryContainer}>
-            <div
-              className={styles.leftAlignedHeader}
-              onClick={() => toggleStyle(style.author)}
-            >
-              <span className={styles.expandIcon}>
-                {expandedStyles[style.author] ? '▼' : '▶'}
-              </span>
-              <h3 className={styles.categoryTitle}>{style.author}</h3>
-            </div>
-
-            {expandedStyles[style.author] && (
+          shouldShowStyle(style.author) && (
+            <div key={index} className={styles.categoryContainer}>
               <div
-                className={`${styles.optionCard} ${selectedData.writingStyle?.author === style.author ? styles.selectedOption : ''}`}
-                onClick={() => handleSelectWritingStyle(style)}
+                className={styles.leftAlignedHeader}
+                onClick={() => toggleStyle(style.author)}
               >
-                {style.structure && (
-                  <div className={styles.featuresList}>
-                    <strong>文体と構造的特徴:</strong>
-                    <p>{style.structure}</p>
-                  </div>
-                )}
-
-                {style.techniques && style.techniques.length > 0 && (
-                  <div className={styles.featuresList}>
-                    <strong>表現技法:</strong>
-                    <ul className={styles.examplesList}>
-                      {style.techniques.map((technique, i) => (
-                        <li key={i} className={styles.exampleItem}>{technique}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {style.themes && (
-                  <div className={styles.featuresList}>
-                    <strong>テーマと主題:</strong>
-                    <p>{style.themes}</p>
-                  </div>
-                )}
+                <span className={styles.expandIcon}>
+                  {expandedStyles[style.author] ? '▼' : '▶'}
+                </span>
+                <h3 className={styles.categoryTitle}>{style.author}</h3>
               </div>
-            )}
-          </div>
+
+              {expandedStyles[style.author] && (
+                <div
+                  className={`${styles.optionCard} ${selectedData.writingStyle?.author === style.author ? styles.selectedOption : ''}`}
+                  onClick={() => handleSelectWritingStyle(style)}
+                >
+                  {style.structure && (
+                    <div className={styles.featuresList}>
+                      <strong>文体と構造的特徴:</strong>
+                      <p>{style.structure}</p>
+                    </div>
+                  )}
+
+                  {style.techniques && style.techniques.length > 0 && (
+                    <div className={styles.featuresList}>
+                      <strong>表現技法:</strong>
+                      <ul className={styles.examplesList}>
+                        {style.techniques.map((technique, i) => (
+                          <li key={i} className={styles.exampleItem}>{technique}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {style.themes && (
+                    <div className={styles.featuresList}>
+                      <strong>テーマと主題:</strong>
+                      <p>{style.themes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
         ))}
       </div>
     </div>

@@ -34,6 +34,9 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchTimePlaceSettings = async () => {
@@ -99,6 +102,59 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     setExpandedCategories(allCollapsed);
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべてのカテゴリを開く
+    expandAllCategories();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべてのカテゴリと設定を検索
+    categories.forEach((category) => {
+      category.settings.forEach((setting) => {
+        const settingKey = `${category.title}|${setting.title}`;
+        // タイトル、例、コンテンツで検索
+        const matchesTitle = setting.title.toLowerCase().includes(keyword);
+        const matchesExamples = setting.examples?.some(ex => ex.toLowerCase().includes(keyword)) || false;
+        const matchesContent = setting.content?.toLowerCase().includes(keyword) || false;
+
+        results[settingKey] = matchesTitle || matchesExamples || matchesContent;
+      });
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // 設定の表示判定
+  const shouldShowSetting = (category: string, setting: TimePlaceSetting): boolean => {
+    if (!isSearchActive) return true;
+    
+    const settingKey = `${category}|${setting.title}`;
+    return searchResults[settingKey] || false;
+  };
+
   if (loading) {
     return <div>時代と場所データを読み込み中...</div>;
   }
@@ -129,6 +185,29 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
         >
           すべて閉じる
         </button>
+        <input 
+          type="search"
+          value={searchKeyword}
+          onChange={handleSearchInputChange}
+          placeholder="検索ワード"
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       {categories.map((category, categoryIndex) => (
@@ -146,25 +225,27 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
           {expandedCategories[category.title] && (
             <div className={styles.settingsContainer}>
               {category.settings.map((setting, settingIndex) => (
-                <div
-                  key={settingIndex}
-                  className={`${styles.optionCard} ${selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
-                    }`}
-                  onClick={() => handleSelectTimePlaceSetting(category.title, setting)}
-                >
-                  <h4 className={styles.optionTitle}>{setting.title}</h4>
+                shouldShowSetting(category.title, setting) && (
+                  <div
+                    key={settingIndex}
+                    className={`${styles.optionCard} ${selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
+                      }`}
+                    onClick={() => handleSelectTimePlaceSetting(category.title, setting)}
+                  >
+                    <h4 className={styles.optionTitle}>{setting.title}</h4>
 
-                  {setting.examples && setting.examples.length > 0 && (
-                    <div className={styles.examplesListContainer}>
-                      <strong>代表的な作品例:</strong>
-                      <ul className={styles.examplesList}>
-                        {setting.examples.map((example, i) => (
-                          <li key={i} className={styles.exampleItem}>{example}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                    {setting.examples && setting.examples.length > 0 && (
+                      <div className={styles.examplesListContainer}>
+                        <strong>代表的な作品例:</strong>
+                        <ul className={styles.examplesList}>
+                          {setting.examples.map((example, i) => (
+                            <li key={i} className={styles.exampleItem}>{example}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )
               ))}
             </div>
           )}

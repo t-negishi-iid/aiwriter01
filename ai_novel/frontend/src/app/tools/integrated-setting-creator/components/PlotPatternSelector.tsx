@@ -36,6 +36,9 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedPatterns, setExpandedPatterns] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchPlotPatterns = async () => {
@@ -102,6 +105,89 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
     setExpandedPatterns(allCollapsed);
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべてのパターンを開く
+    expandAllPatterns();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべてのプロットパターンを検索
+    plotPatterns.forEach((pattern) => {
+      const patternKey = pattern.title;
+      
+      // タイトル、概要で検索
+      const matchesTitle = pattern.title.toLowerCase().includes(keyword);
+      const matchesOverview = pattern.overview.toLowerCase().includes(keyword);
+      
+      // セクションとサブセクションで検索
+      let matchesSections = false;
+      
+      for (const section of pattern.sections) {
+        // セクションタイトルで検索
+        if (section.title.toLowerCase().includes(keyword)) {
+          matchesSections = true;
+          break;
+        }
+        
+        // セクションコンテンツで検索
+        if (section.content.some(line => line.toLowerCase().includes(keyword))) {
+          matchesSections = true;
+          break;
+        }
+        
+        // サブセクションで検索
+        for (const subsection of section.subsections) {
+          // サブセクションタイトルで検索
+          if (subsection.title.toLowerCase().includes(keyword)) {
+            matchesSections = true;
+            break;
+          }
+          
+          // サブセクションコンテンツで検索
+          if (subsection.content.some(line => line.toLowerCase().includes(keyword))) {
+            matchesSections = true;
+            break;
+          }
+        }
+        
+        if (matchesSections) break;
+      }
+
+      results[patternKey] = matchesTitle || matchesOverview || matchesSections;
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // パターンの表示判定
+  const shouldShowPattern = (title: string): boolean => {
+    if (!isSearchActive) return true;
+    return searchResults[title] || false;
+  };
+
   if (loading) {
     return <div>プロットパターンデータを読み込み中...</div>;
   }
@@ -132,62 +218,92 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
         >
           すべて閉じる
         </button>
+        <input 
+          type="search" 
+          value={searchKeyword} 
+          onChange={handleSearchInputChange} 
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              performSearch();
+            }
+          }}
+          placeholder="検索ワード" 
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       <div>
         {plotPatterns.map((pattern, index) => (
-          <div key={index} className={styles.categoryContainer}>
-            <div
-              className={styles.leftAlignedHeader}
-              onClick={() => togglePattern(pattern.title)}
-            >
-              <span className={styles.expandIcon}>
-                {expandedPatterns[pattern.title] ? '▼' : '▶'}
-              </span>
-              <h3 className={styles.categoryTitle}>「{pattern.title}」</h3>
-            </div>
-
-            {expandedPatterns[pattern.title] && (
+          shouldShowPattern(pattern.title) && (
+            <div key={index} className={styles.categoryContainer}>
               <div
-                className={`${styles.optionCard} ${selectedData.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
-                onClick={() => handleSelectPlotPattern(pattern)}
+                className={styles.leftAlignedHeader}
+                onClick={() => togglePattern(pattern.title)}
               >
-                <div className={styles.plotSection}>
-                  <strong>概要:</strong>
-                  <p>{pattern.overview}</p>
-                </div>
-
-                {pattern.sections.map((section, sectionIndex) => (
-                  <div key={sectionIndex} className={styles.plotSection}>
-                    <strong>{section.title}:</strong>
-
-                    {section.content.length > 0 && (
-                      <div className={styles.sectionContent}>
-                        {section.content.map((line, lineIndex) => (
-                          <p key={lineIndex}>{line}</p>
-                        ))}
-                      </div>
-                    )}
-
-                    {section.subsections.length > 0 && (
-                      <div className={styles.subsections}>
-                        {section.subsections.map((subsection, subsectionIndex) => (
-                          <div key={subsectionIndex} className={styles.subsection}>
-                            <h4 className={styles.stageTitle}>{subsection.title}</h4>
-                            <ul className={styles.episodeList}>
-                              {subsection.content.map((line, lineIndex) => (
-                                <li key={lineIndex} className={styles.exampleItem}>{line}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                <span className={styles.expandIcon}>
+                  {expandedPatterns[pattern.title] ? '▼' : '▶'}
+                </span>
+                <h3 className={styles.categoryTitle}>「{pattern.title}」</h3>
               </div>
-            )}
-          </div>
+
+              {expandedPatterns[pattern.title] && (
+                <div
+                  className={`${styles.optionCard} ${selectedData.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
+                  onClick={() => handleSelectPlotPattern(pattern)}
+                >
+                  <div className={styles.plotSection}>
+                    <strong>概要:</strong>
+                    <p>{pattern.overview}</p>
+                  </div>
+
+                  {pattern.sections.map((section, sectionIndex) => (
+                    <div key={sectionIndex} className={styles.plotSection}>
+                      <strong>{section.title}:</strong>
+
+                      {section.content.length > 0 && (
+                        <div className={styles.sectionContent}>
+                          {section.content.map((line, lineIndex) => (
+                            <p key={lineIndex}>{line}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      {section.subsections.length > 0 && (
+                        <div className={styles.subsections}>
+                          {section.subsections.map((subsection, subsectionIndex) => (
+                            <div key={subsectionIndex} className={styles.subsection}>
+                              <h4 className={styles.stageTitle}>{subsection.title}</h4>
+                              <ul className={styles.episodeList}>
+                                {subsection.content.map((line, lineIndex) => (
+                                  <li key={lineIndex} className={styles.exampleItem}>{line}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
         ))}
       </div>
     </div>

@@ -463,26 +463,39 @@ export default function IntegratedSettingCreator() {
     try {
       // バックエンドAPIを呼び出してデータを保存
       console.log(`[TRACE] 統合設定データ保存開始: storyId=${storyId} - ${new Date().toISOString()}`);
-      console.log(`[TRACE] basicSettingDataApi.saveBasicSettingData 呼び出し前 - ${new Date().toISOString()}`);
-      const response = await basicSettingDataApi.saveBasicSettingData(storyId, {
-        basic_setting_data: markdownOutput
+      console.log(`[TRACE] 統合設定クリエイターAPI呼び出し前 - ${new Date().toISOString()}`);
+      
+      // バックエンドAPIを直接呼び出す
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/integrated-setting-creator/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          basic_setting_data: markdownOutput
+        }),
+        credentials: 'include', // Cookie（セッション）を含める
       });
-      console.log(`[TRACE] basicSettingDataApi.saveBasicSettingData 呼び出し後 - ${new Date().toISOString()}`);
-      console.log('[TRACE] 保存レスポンス:', JSON.stringify(response).substring(0, 500)); // デバッグ用
 
-      // 標準DRFページネーション形式に対応したレスポンス処理
-      if (!response || response.success === false) {
-        // エラーメッセージの取得方法を改善
-        const errorMessage = response?.message ||
-          (response?.errors ? Object.values(response.errors).flat().join(', ') : '保存に失敗しました');
-        throw new Error(errorMessage);
+      console.log(`[TRACE] 統合設定クリエイターAPI呼び出し後 - ${new Date().toISOString()}`);
+      
+      // レスポンスが正常でない場合はエラーを投げる
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('APIエラー:', response.status, errorText);
+        throw new Error(`APIエラー: ${response.status} ${errorText}`);
       }
+      
+      // レスポンスをJSON形式に変換
+      const responseData = await response.json();
+      console.log('[TRACE] 保存レスポンス:', JSON.stringify(responseData).substring(0, 500)); // デバッグ用
 
-      // データが results 配列に含まれている場合の処理
-      const responseData = response.data || (response.results && response.results.length > 0 ? response.results[0] : null);
-
-      if (!responseData) {
-        throw new Error('レスポンスデータが見つかりません');
+      // レスポンス処理
+      if (!responseData || responseData.success === false) {
+        // エラーメッセージの取得
+        const errorMessage = responseData?.message || 
+          (responseData?.error ? responseData.error : '保存に失敗しました');
+        throw new Error(errorMessage);
       }
 
       toast({
@@ -490,7 +503,7 @@ export default function IntegratedSettingCreator() {
         description: "変更が正常に保存されました",
       });
 
-      // リダイレクトを削除し、保存完了のみを通知
+      // 保存完了の通知
       setSaveSuccess(true);
       setSaveError(null);
       setIsSaving(false);

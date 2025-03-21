@@ -83,6 +83,9 @@ interface WritingStyle {
   tense?: string;
   tone?: string[];
   narrative?: string[];
+  structure?: string;
+  techniques?: string[];
+  themes?: string;
 }
 
 // 感情要素の型定義
@@ -636,6 +639,22 @@ const IntegratedSettingCreator: React.FC = () => {
       
       if (selectedData.writingStyle.description) {
         markdown += `### 説明\n${selectedData.writingStyle.description}\n\n`;
+      }
+      
+      if (selectedData.writingStyle.structure) {
+        markdown += `### 文体と構造的特徴\n${selectedData.writingStyle.structure}\n\n`;
+      }
+      
+      if (selectedData.writingStyle.techniques && selectedData.writingStyle.techniques.length > 0) {
+        markdown += `### 技法\n`;
+        selectedData.writingStyle.techniques.forEach(technique => {
+          markdown += `- ${technique}\n`;
+        });
+        markdown += '\n';
+      }
+      
+      if (selectedData.writingStyle.themes) {
+        markdown += `### テーマ\n${selectedData.writingStyle.themes}\n\n`;
       }
       
       if (selectedData.writingStyle.pointOfView) {

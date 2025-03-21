@@ -5,10 +5,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast'; // useToastをインポート
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/components/ui/use-toast";
 import styles from './page.module.css';
-import { unifiedStoryApi } from '@/lib/unified-api-client'; // 統一APIクライアントをインポート
-import { Save, Check, Loader2 } from 'lucide-react'; // アイコンをインポート
+import { unifiedStoryApi } from '@/lib/unified-api-client';
+import { Save, Check, Loader2 } from 'lucide-react';
 
 // 各種セレクターコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
@@ -126,7 +127,7 @@ interface PlotSubsection {
 interface PlotSection {
   title: string;
   content: string[];
-  subsections: PlotSubsection[]; // 必須に変更
+  subsections: PlotSubsection[];
 }
 
 // プロットパターンの型定義
@@ -202,13 +203,13 @@ const IntegratedSettingCreator: React.FC = () => {
   const [activeTab, setActiveTab] = useState('theme');
   const [selectedData, setSelectedData] = useState<SelectedData>({});
   const [markdownOutput, setMarkdownOutput] = useState('');
-  const [showPreview, setShowPreview] = useState(false); // showPreviewを復活
+  const [showPreview, setShowPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast(); // useToastを使用
+  const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
   // 初回ロード済みフラグを追加
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   // 小説のタイトルを保存するステート
@@ -237,7 +238,7 @@ const IntegratedSettingCreator: React.FC = () => {
       const sections = markdown.split(/^##\s+/m);
 
       console.log('セクション数:', sections.length);
-      
+
       // セクションがない場合は初期値を設定
       if (sections.length <= 1) {
         result.theme = { title: '未設定' };
@@ -393,6 +394,7 @@ const IntegratedSettingCreator: React.FC = () => {
         try {
           setIsLoading(true);
 
+          // unifiedStoryApiを使用してデータを取得
           const responseData = await unifiedStoryApi.getIntegratedSettingCreatorData(storyId);
 
           console.log('APIレスポンス:', responseData);
@@ -443,6 +445,17 @@ const IntegratedSettingCreator: React.FC = () => {
     }
   }, [searchParams, fetchNovelTitle]);
 
+  // データの更新日時を表示
+  const formatLastUpdated = useCallback((data = integratedSettingData) => {
+    if (data?.updated_at) {
+      const updatedAt = safeParseDate(data.updated_at);
+      if (updatedAt) {
+        return `最終更新: ${updatedAt.toLocaleDateString()} ${updatedAt.toLocaleTimeString()}`;
+      }
+    }
+    return '';
+  }, [integratedSettingData]);
+
   // マークダウン出力を生成する関数
   const generateMarkdown = useCallback(() => {
     let markdown = '';
@@ -450,11 +463,11 @@ const IntegratedSettingCreator: React.FC = () => {
     // テーマセクション
     if (selectedData.theme?.title) {
       markdown += `## テーマ\n### ${selectedData.theme.title}\n\n`;
-      
+
       if (selectedData.theme.description) {
         markdown += `#### 説明\n${selectedData.theme.description}\n\n`;
       }
-      
+
       if (selectedData.theme.examples && selectedData.theme.examples.length > 0) {
         markdown += `#### 例\n`;
         selectedData.theme.examples.forEach(example => {
@@ -467,19 +480,19 @@ const IntegratedSettingCreator: React.FC = () => {
     // 時代と場所
     if (selectedData.timePlace?.title) {
       markdown += `## 時代と場所\n### ${selectedData.timePlace.title}\n\n`;
-      
+
       if (selectedData.timePlace.category) {
         markdown += `#### カテゴリ\n${selectedData.timePlace.category}\n\n`;
       }
-      
+
       if (selectedData.timePlace.description) {
         markdown += `#### 説明\n${selectedData.timePlace.description}\n\n`;
       }
-      
+
       if (selectedData.timePlace.content) {
         markdown += `#### 詳細\n${selectedData.timePlace.content}\n\n`;
       }
-      
+
       if (selectedData.timePlace.examples && selectedData.timePlace.examples.length > 0) {
         markdown += `#### 例\n`;
         selectedData.timePlace.examples.forEach(example => {
@@ -492,15 +505,15 @@ const IntegratedSettingCreator: React.FC = () => {
     // 世界観
     if (selectedData.worldSetting?.title) {
       markdown += `## 世界観\n### ${selectedData.worldSetting.title}\n\n`;
-      
+
       if (selectedData.worldSetting.category) {
         markdown += `#### カテゴリ\n${selectedData.worldSetting.category}\n\n`;
       }
-      
+
       if (selectedData.worldSetting.description) {
         markdown += `#### 説明\n${selectedData.worldSetting.description}\n\n`;
       }
-      
+
       if (selectedData.worldSetting.worldView && selectedData.worldSetting.worldView.length > 0) {
         markdown += `#### 世界観要素\n`;
         selectedData.worldSetting.worldView.forEach(view => {
@@ -508,7 +521,7 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       }
-      
+
       if (selectedData.worldSetting.features && selectedData.worldSetting.features.length > 0) {
         markdown += `#### 特徴\n`;
         selectedData.worldSetting.features.forEach(feature => {
@@ -516,7 +529,7 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       }
-      
+
       if (selectedData.worldSetting.examples && selectedData.worldSetting.examples.length > 0) {
         markdown += `#### 例\n`;
         selectedData.worldSetting.examples.forEach(example => {
@@ -529,7 +542,7 @@ const IntegratedSettingCreator: React.FC = () => {
     // プロットパターン
     if (selectedData.plotPattern?.title) {
       markdown += `## プロットパターン\n### ${selectedData.plotPattern.title}\n\n`;
-      
+
       if (selectedData.plotPattern.description) {
         markdown += `#### 説明\n${selectedData.plotPattern.description}\n\n`;
       }
@@ -548,7 +561,7 @@ const IntegratedSettingCreator: React.FC = () => {
               markdown += `- ${line}\n`;
             });
           }
-          
+
           // サブセクションがあれば追加
           if (section.subsections && section.subsections.length > 0) {
             section.subsections.forEach(subsection => {
@@ -560,7 +573,7 @@ const IntegratedSettingCreator: React.FC = () => {
               }
             });
           }
-          
+
           markdown += '\n';
         });
       }
@@ -569,9 +582,9 @@ const IntegratedSettingCreator: React.FC = () => {
     // 感情要素
     if (selectedData.emotional?.selectedElements && selectedData.emotional.selectedElements.length > 0) {
       markdown += `## 情緒的・感覚的要素\n`;
-      
+
       // カテゴリごとに要素をグループ化
-      const elementsByCategory: Record<string, Array<{element: string; description?: string}>> = {};
+      const elementsByCategory: Record<string, Array<{ element: string; description?: string }>> = {};
       selectedData.emotional.selectedElements.forEach(element => {
         if (!elementsByCategory[element.category]) {
           elementsByCategory[element.category] = [];
@@ -581,7 +594,7 @@ const IntegratedSettingCreator: React.FC = () => {
           description: element.description
         });
       });
-      
+
       // カテゴリごとに表示
       Object.keys(elementsByCategory).forEach(category => {
         markdown += `### ${category}\n`;
@@ -594,29 +607,29 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       });
-      
+
       // 代表的な活用法と効果的な使用場面を表示（カテゴリごとに1つずつ）
       if (selectedData.emotional.categories && selectedData.emotional.categories.length > 0) {
         markdown += `### 代表的な活用法と効果的な使用場面\n`;
-        
+
         // カテゴリごとに1つだけ表示
         const displayedCategories = new Set<string>();
-        
+
         selectedData.emotional.categories.forEach(category => {
           // 既に同じカテゴリが表示されていたらスキップ
           if (displayedCategories.has(category.title)) {
             return;
           }
-          
+
           displayedCategories.add(category.title);
-          
+
           markdown += `#### ${category.title}\n`;
-          
+
           // 代表的な活用法
           if (category.usage) {
             markdown += `##### 代表的な活用法\n${category.usage}\n\n`;
           }
-          
+
           // 効果的な使用場面
           if (category.scenes) {
             markdown += `##### 効果的な使用場面\n- ${category.scenes}\n\n`;
@@ -628,13 +641,13 @@ const IntegratedSettingCreator: React.FC = () => {
     // 過去の謎
     if (selectedData.pastMystery?.title) {
       markdown += `## 過去の謎\n`;
-      
+
       markdown += `### ${selectedData.pastMystery.title}\n\n`;
-      
+
       if (selectedData.pastMystery?.description) {
         markdown += `#### 説明\n${selectedData.pastMystery.description}\n\n`;
       }
-      
+
       if (selectedData.pastMystery?.events && selectedData.pastMystery.events.length > 0) {
         markdown += `#### 過去の出来事\n`;
         selectedData.pastMystery.events.forEach(event => {
@@ -642,7 +655,7 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       }
-      
+
       // セクション別の謎の要素
       if (selectedData.pastMystery?.sections) {
         Object.keys(selectedData.pastMystery.sections).forEach(sectionName => {
@@ -661,23 +674,23 @@ const IntegratedSettingCreator: React.FC = () => {
     // 文体
     if (selectedData.writingStyle) {
       markdown += `## 参考とする作風\n`;
-      
+
       if (selectedData.writingStyle.author) {
         markdown += `### 参考作風\n${selectedData.writingStyle.author}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.title) {
         markdown += `### タイトル\n${selectedData.writingStyle.title}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.description) {
         markdown += `### 説明\n${selectedData.writingStyle.description}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.structure) {
         markdown += `### 文体と構造的特徴\n${selectedData.writingStyle.structure}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.techniques && selectedData.writingStyle.techniques.length > 0) {
         markdown += `### 技法\n`;
         selectedData.writingStyle.techniques.forEach(technique => {
@@ -685,19 +698,19 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       }
-      
+
       if (selectedData.writingStyle.themes) {
         markdown += `### テーマ\n${selectedData.writingStyle.themes}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.pointOfView) {
         markdown += `### 視点\n${selectedData.writingStyle.pointOfView}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.tense) {
         markdown += `### 時制\n${selectedData.writingStyle.tense}\n\n`;
       }
-      
+
       if (selectedData.writingStyle.tone && selectedData.writingStyle.tone.length > 0) {
         markdown += `### トーン\n`;
         selectedData.writingStyle.tone.forEach(tone => {
@@ -705,7 +718,7 @@ const IntegratedSettingCreator: React.FC = () => {
         });
         markdown += '\n';
       }
-      
+
       if (selectedData.writingStyle.narrative && selectedData.writingStyle.narrative.length > 0) {
         markdown += `### ナラティブスタイル\n`;
         selectedData.writingStyle.narrative.forEach(style => {
@@ -739,7 +752,7 @@ const IntegratedSettingCreator: React.FC = () => {
         if (storyId) {
           localStorage.removeItem(`integratedSettingData_${storyId}`);
         }
-        
+
         // 状態をリセット
         setSelectedData({
           theme: undefined,
@@ -753,10 +766,11 @@ const IntegratedSettingCreator: React.FC = () => {
         setMarkdownOutput('');
         setIntegratedSettingData(null);
         setSaveSuccess(false);
-        
+
         toast({
           title: "リセット完了",
           description: "すべての設定がリセットされました。",
+          className: "save-button-toast",
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -764,6 +778,7 @@ const IntegratedSettingCreator: React.FC = () => {
           title: "リセットエラー",
           description: `設定のリセット中にエラーが発生しました: ${errorMessage}`,
           variant: "destructive",
+          className: "save-button-toast",
         });
       }
     }
@@ -792,64 +807,63 @@ const IntegratedSettingCreator: React.FC = () => {
   const saveSettings = useCallback(async () => {
     const storyId = searchParams.get('storyId');
     if (!storyId) {
+      setError('ストーリーIDが指定されていません。');
       toast({
         title: "エラー",
-        description: "ストーリーIDが指定されていません。URLにstoryIdパラメータが必要です。",
+        description: "ストーリーIDが指定されていません。",
         variant: "destructive",
+        className: "save-button-toast",
       });
       return;
     }
 
+    setIsSaving(true);
+    setError(null);
+    setSaveSuccess(false);
+    
     try {
-      // 保存中状態を設定
-      setSaveSuccess(false);
-      setError(null);
-      setIsSaving(true);
-
       // マークダウンを生成（再生成）
       generateMarkdown();
-
-      console.log('[TRACE] 保存処理開始:', {
-        storyId,
-        markdownLength: markdownOutput.length,
-        selectedDataKeys: Object.keys(selectedData)
-      });
-
-      // 型安全のために深いコピーを作成
-      const safeSelectedData: SelectedData = JSON.parse(JSON.stringify(selectedData));
-
-      // 統一APIクライアント関数を使用してデータを保存
-      const responseData = await unifiedStoryApi.saveIntegratedSettingCreatorData(storyId, {
+      
+      // APIリクエスト用のデータを準備
+      const requestData = {
         basic_setting_data: markdownOutput,
-        integrated_data: safeSelectedData
-      });
-
-      console.log('[TRACE] 保存レスポンス:', JSON.stringify(responseData).substring(0, 500));
-
-      // レスポンス処理
+        integrated_data: selectedData
+      };
+      
+      console.log('[DEBUG] 保存リクエスト:', requestData);
+      
+      // unifiedStoryApiを使用して保存
+      const responseData = await unifiedStoryApi.saveIntegratedSettingCreatorData(storyId, requestData);
+      
+      console.log('[DEBUG] 保存レスポンス:', responseData);
+      
       if (responseData && responseData.success) {
-        // 保存成功の処理
-        if (responseData.data) {
-          const integratedData = responseData.data as IntegratedSettingData;
-          setIntegratedSettingData(integratedData);
-          setSaveSuccess(true);
-        }
-
+        // 成功した場合の処理
+        const savedData = responseData.data as IntegratedSettingData;
+        setIntegratedSettingData(savedData);
+        setSaveSuccess(true);
+        
+        // 成功通知とともに最終更新日時を表示
         toast({
           title: "保存しました",
-          description: "基本設定が正常に保存されました。",
+          description: `設定が保存されました。${formatLastUpdated(savedData)}`,
+          className: "save-button-toast",
         });
-        console.log('[TRACE] 保存成功');
       } else {
         // エラー処理
-        const errorMessage = responseData && responseData.message ? responseData.message : "不明なエラーが発生しました";
-        setError(errorMessage as string);
+        const errorMessage = responseData && responseData.message 
+          ? String(responseData.message) 
+          : "不明なエラーが発生しました";
+        
+        setError(errorMessage);
         setSaveSuccess(false);
 
         toast({
           title: "保存エラー",
-          description: errorMessage as string,
+          description: errorMessage,
           variant: "destructive",
+          className: "save-button-toast",
         });
 
         console.error('[ERROR] 保存エラー:', responseData);
@@ -864,23 +878,13 @@ const IntegratedSettingCreator: React.FC = () => {
         title: "保存エラー",
         description: errorMessage,
         variant: "destructive",
+        className: "save-button-toast",
       });
     } finally {
       // 保存状態をリセット
       setIsSaving(false);
     }
-  }, [generateMarkdown, markdownOutput, searchParams, selectedData, toast]);
-
-  // データの更新日時を表示
-  const formatLastUpdated = () => {
-    if (integratedSettingData?.updated_at) {
-      const updatedAt = safeParseDate(integratedSettingData.updated_at);
-      if (updatedAt) {
-        return `最終更新: ${updatedAt.toLocaleDateString()} ${updatedAt.toLocaleTimeString()}`;
-      }
-    }
-    return '';
-  };
+  }, [generateMarkdown, markdownOutput, searchParams, selectedData, toast, formatLastUpdated]);
 
   const storyId = searchParams.get('storyId');
 
@@ -897,22 +901,65 @@ const IntegratedSettingCreator: React.FC = () => {
     return null;
   };
 
-  // エラー表示
-  const renderErrorState = () => {
-    if (error) {
-      return (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
-          <h3 className="font-bold">エラーが発生しました</h3>
-          <p>{error}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   const saveIntegratedSettings = () => {
     saveSettings();
   };
+
+  useEffect(() => {
+    // トースト通知のスタイルとカスタム表示位置を設定
+    const style = document.createElement('style');
+    style.innerHTML = `
+      /* 保存ボタン下のトースト通知用スタイル */
+      .save-button-toast {
+        margin-top: 8px;
+        margin-bottom: 16px;
+      }
+
+      /* トーストコンテナの基本スタイル */
+      #save-toast-container {
+        position: relative;
+        min-height: 40px;
+        width: 100%;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // トースト表示のDOMが変化したときに、保存ボタン下の領域に移動させる処理
+    const observer = new MutationObserver(() => {
+      const toastContainer = document.querySelector('[role="region"][aria-label="Notifications"]');
+      const saveToastContainer = document.getElementById('save-toast-container');
+
+      if (toastContainer && saveToastContainer) {
+        // メインのトーストコンテナから全てのトーストを保存ボタン下のコンテナに移動
+        if (toastContainer.parentElement !== saveToastContainer) {
+          // HTMLElementとして型を保証
+          const toastContainerElement = toastContainer as HTMLElement;
+          toastContainerElement.style.position = 'static';
+          toastContainerElement.style.width = '100%';
+          toastContainerElement.style.maxWidth = '100%';
+
+          // すでに別の親に追加されていたら一度削除してから追加
+          if (toastContainerElement.parentElement) {
+            toastContainerElement.parentElement.removeChild(toastContainerElement);
+          }
+
+          saveToastContainer.appendChild(toastContainerElement);
+        }
+      }
+    });
+
+    // bodyの変更を監視
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // クリーンアップ関数
+    return () => {
+      document.head.removeChild(style);
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -927,32 +974,6 @@ const IntegratedSettingCreator: React.FC = () => {
           小説の基本設定を統合的に作成するツールです。各カテゴリから要素を選択して、世界観やプロットの基盤を構築します。
         </p>
 
-        {/* デバッグ情報 - 開発時のみ表示 */}
-        {/* <div className="p-4 mb-4 border border-gray-300 bg-gray-50 text-gray-700 rounded">
-          <p className="font-semibold">デバッグ情報</p>
-          <p>isLoading: {isLoading ? 'true' : 'false'}</p>
-          <p>error: {error || 'なし'}</p>
-          <p>storyId: {storyId || 'なし'}</p>
-          <p>activeTab: {activeTab}</p>
-          <p>selectedData: {Object.keys(selectedData).length > 0 ? 'あり' : 'なし'}</p>
-          <p>showPreview: {showPreview ? 'true' : 'false'}</p>
-        </div> */}
-
-        {/* エラー表示 */}
-        {error && (
-          <div className="p-4 mb-4 border border-red-500 bg-red-50 text-red-700 rounded">
-            <p className="font-semibold">エラーが発生しました</p>
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* セーブステータス表示 */}
-        {saveSuccess && integratedSettingData && (
-          <div className="p-4 mb-4 border border-green-500 bg-green-50 text-green-700 rounded">
-            <p>設定が保存されました。{formatLastUpdated()}</p>
-          </div>
-        )}
-
         {/* リセットボタン */}
         <div className={styles.headerContainer}>
           <Button
@@ -964,103 +985,117 @@ const IntegratedSettingCreator: React.FC = () => {
         </div>
 
         {renderLoadingState()}
-        {renderErrorState()}
-      </div>
 
-      {/* タブナビゲーション */}
-      <div className={styles.tabsContainer}>
-        {TABS.map((tab) => (
-          <Button
-            key={tab.id}
-            className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
-            onClick={() => changeTab(tab.id)}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </div>
+        {/* エラー表示 */}
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4 mx-4">
+            <h3 className="font-bold">エラーが発生しました</h3>
+            <p>{error}</p>
+          </div>
+        )}
 
-      <div className={styles.contentContainer}>
-        {/* 左側：セレクタ内容 */}
-        <div className={`${styles.selectorPanel} ${showPreview ? styles.hiddenOnMobile : ''}`}>
-          {activeTab === 'theme' && (
-            <ThemeSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'timePlace' && (
-            <TimePlaceSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'worldSetting' && (
-            <WorldSettingSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'style' && (
-            <WritingStyleSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'emotional' && (
-            <EmotionalElementsSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'mystery' && (
-            <PastMysterySelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
-          {activeTab === 'plot' && (
-            <PlotPatternSelector
-              selectedData={selectedData}
-              setSelectedData={setSelectedData}
-            />
-          )}
+        {/* タブナビゲーション */}
+        <div className={styles.tabsContainer}>
+          {TABS.map((tab) => (
+            <Button
+              key={tab.id}
+              className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
+              onClick={() => changeTab(tab.id)}
+            >
+              {tab.label}
+            </Button>
+          ))}
         </div>
 
-        {/* 右側：プレビュー */}
-        <div className={`${styles.previewPanel} ${!showPreview ? styles.hiddenOnMobile : ''}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold" style={{ display: 'inline-block', width: '50%' }}>
-              基本設定プレビュー
-            </h3>
-            <Button
-              onClick={saveIntegratedSettings}
-              disabled={isSaving}
-              size="sm"
-              variant="default"
-              className="gap-1 font-semibold transition-all duration-200 hover:scale-105"
-              style={{ display: 'inline-block', float: 'right', marginTop: '10px' }}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  保存中...
-                </>
-              ) : saveSuccess ? (
-                <>
-                  <Check className="h-4 w-4 text-green-500" />
-                  保存済み
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  保存
-                </>
-              )}
-            </Button>
+        <div className={styles.contentContainer}>
+          {/* 左側：セレクタ内容 */}
+          <div className={`${styles.selectorPanel} ${showPreview ? styles.hiddenOnMobile : ''}`}>
+            {activeTab === 'theme' && (
+              <ThemeSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'timePlace' && (
+              <TimePlaceSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'worldSetting' && (
+              <WorldSettingSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'style' && (
+              <WritingStyleSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'emotional' && (
+              <EmotionalElementsSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'mystery' && (
+              <PastMysterySelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
+            {activeTab === 'plot' && (
+              <PlotPatternSelector
+                selectedData={selectedData}
+                setSelectedData={setSelectedData}
+              />
+            )}
           </div>
-          <div className={styles.markdownPreview}>
-            <pre className="whitespace-pre-wrap text-sm font-mono">{markdownOutput}</pre>
+
+          {/* 右側：プレビュー */}
+          <div className={`${styles.previewPanel} ${!showPreview ? styles.hiddenOnMobile : ''}`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold" style={{ display: 'inline-block', width: '50%' }}>
+                基本設定プレビュー
+              </h3>
+              <div className="flex flex-col items-end" style={{ width: '50%' }}>
+                <Button
+                  onClick={saveIntegratedSettings}
+                  disabled={isSaving}
+                  size="sm"
+                  variant="default"
+                  className="gap-1 font-semibold transition-all duration-200 hover:scale-105"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      保存中...
+                    </>
+                  ) : saveSuccess ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-500" />
+                      保存済み
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      保存
+                    </>
+                  )}
+                </Button>
+
+                {/* トースト通知表示エリア（保存ボタンの下に配置） */}
+                <div id="save-toast-container" className="w-full mt-2 mb-4">
+                  <Toaster />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.markdownPreview}>
+              <pre className="whitespace-pre-wrap text-sm font-mono">{markdownOutput}</pre>
+            </div>
           </div>
         </div>
       </div>

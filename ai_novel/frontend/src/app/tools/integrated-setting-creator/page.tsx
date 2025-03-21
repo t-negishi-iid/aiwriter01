@@ -349,13 +349,39 @@ export default function IntegratedSettingCreator() {
     }
 
     // 過去の謎
-    if (selectedData.pastMystery && selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
+    if (selectedData.pastMystery) {
       markdown += '## 過去の謎\n';
-
-      selectedData.pastMystery.events.forEach((event: string, index: number) => {
-        markdown += `${index + 1}. ${event}\n`;
-      });
-      markdown += '\n';
+      
+      if (selectedData.pastMystery.title) {
+        markdown += `「${selectedData.pastMystery.title}」\n\n`;
+      }
+      
+      if (selectedData.pastMystery.description) {
+        markdown += `${selectedData.pastMystery.description}\n\n`;
+      }
+      
+      // sectionsが存在する場合（新しい形式）
+      if (selectedData.pastMystery.sections) {
+        Object.entries(selectedData.pastMystery.sections).forEach(([sectionName, items]) => {
+          markdown += `### ${sectionName}\n`;
+          
+          if (Array.isArray(items)) {
+            items.forEach((item, index) => {
+              markdown += `${index + 1}. ${item}\n`;
+            });
+          }
+          
+          markdown += '\n';
+        });
+      }
+      // 後方互換性のため、eventsがある場合は従来通り表示
+      else if (selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
+        markdown += '### 過去の出来事\n';
+        selectedData.pastMystery.events.forEach((event: string, index: number) => {
+          markdown += `${index + 1}. ${event}\n`;
+        });
+        markdown += '\n';
+      }
     }
 
     // プロットパターン

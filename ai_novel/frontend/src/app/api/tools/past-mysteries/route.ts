@@ -6,6 +6,7 @@ interface PastMystery {
   title: string;
   description: string;
   events: string[];
+  sections: { [sectionName: string]: string[] };
 }
 
 export async function GET() {
@@ -47,7 +48,7 @@ function parsePastMysteries(content: string): PastMystery[] {
   const pastMysteries: PastMystery[] = [];
   
   let currentMystery: PastMystery | null = null;
-  let collectingEvents = false;
+  let currentSection: string | null = null;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -63,46 +64,54 @@ function parsePastMysteries(content: string): PastMystery[] {
       currentMystery = {
         title: line.substring(3).trim().replace(/「|」/g, ''),
         description: '',
-        events: []
+        events: [],
+        sections: {}
       };
       
-      collectingEvents = false;
+      currentSection = null;
       continue;
     }
     
     // 現在の謎情報がない場合はスキップ
     if (!currentMystery) continue;
     
-    // 過去の出来事セクション（### 過去の出来事）を検出
-    if (line === '### 過去の出来事') {
-      collectingEvents = true;
-      continue;
-    } else if (line.startsWith('### ')) {
-      // 他のセクションの場合は過去の出来事の収集を停止
-      collectingEvents = false;
-      continue;
-    }
-    
-    // 過去の出来事のリスト項目を検出
-    if (collectingEvents && line.startsWith('- ')) {
-      // 例示部分（例：...）を除去
-      let event = line.substring(2).trim();
-      const exampleIndex = event.indexOf('（例：');
-      if (exampleIndex !== -1) {
-        event = event.substring(0, exampleIndex).trim();
+    // セクション（### で始まる行）を検出
+    if (line.startsWith('### ')) {
+      currentSection = line.substring(4).trim();
+      // 新しいセクションを初期化
+      if (!currentMystery.sections[currentSection]) {
+        currentMystery.sections[currentSection] = [];
       }
-      currentMystery.events.push(event);
+      continue;
     }
     
-    // 代表的な具体例セクションが終わり、過去の出来事セクションが始まる前の行は説明文として扱う
-    if (!collectingEvents && !line.startsWith('#') && !line.startsWith('-') && line !== '') {
+    // リスト項目を検出して現在のセクションに追加
+    if (currentSection && line.startsWith('- ')) {
+      // 例示部分（例：...）を除去
+      let item = line.substring(2).trim();
+      const exampleIndex = item.indexOf('（例：');
+      if (exampleIndex !== -1) {
+        item = item.substring(0, exampleIndex).trim();
+      }
+      
+      // 現在のセクションに追加
+      currentMystery.sections[currentSection].push(item);
+      
+      // 「過去の出来事」セクションのアイテムは互換性のためeventsにも追加
+      if (currentSection === '過去の出来事') {
+        currentMystery.events.push(item);
+      }
+    }
+    
+    // 代表的な具体例セクションが終わり、他のセクションが始まる前の行は説明文として扱う
+    if (!currentSection && !line.startsWith('#') && !line.startsWith('-') && line !== '') {
       if (!currentMystery.description) {
         currentMystery.description = line;
       }
     }
   }
   
-  // 最後の謎の情報を追加
+  // 最後の謎情報があれば保存
   if (currentMystery) {
     pastMysteries.push(currentMystery);
   }

@@ -7,6 +7,7 @@ interface PastMysteryData {
   title: string;
   description: string;
   events: string[];
+  sections: { [sectionName: string]: string[] };
 }
 
 interface PastMysterySelectorProps {
@@ -49,12 +50,21 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
   }, [selectedData.pastMystery?.title]);
 
   const handleSelectPastMystery = (pastMystery: PastMysteryData) => {
-    setSelectedData({
-      ...selectedData,
-      pastMystery
-    });
+    // 既に選択されている謎が再度クリックされた場合は選択を解除
+    if (selectedData.pastMystery?.title === pastMystery.title) {
+      setSelectedData({
+        ...selectedData,
+        pastMystery: undefined
+      });
+    } else {
+      // 新しい謎を選択
+      setSelectedData({
+        ...selectedData,
+        pastMystery
+      });
+    }
 
-    // 選択した謎を展開
+    // 選択状態に関わらず、クリックした謎は展開状態を維持
     setExpandedMysteries(prev => ({
       ...prev,
       [pastMystery.title]: true
@@ -96,21 +106,24 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
               <h3 className={styles.categoryTitle}>「{mystery.title}」</h3>
             </div>
 
-            {expandedMysteries[mystery.title] && (
+            {(expandedMysteries[mystery.title] || selectedData.pastMystery?.title === mystery.title) && (
               <div
                 className={`${styles.optionCard} ${selectedData.pastMystery?.title === mystery.title ? styles.selectedOption : ''}`}
                 onClick={() => handleSelectPastMystery(mystery)}
               >
                 <p className={styles.optionDescription}>{mystery.description}</p>
 
-                <div>
-                  <strong>過去の出来事:</strong>
-                  <ul className={styles.examplesList}>
-                    {mystery.events.map((event, i) => (
-                      <li key={i} className={styles.exampleItem}>{event}</li>
-                    ))}
-                  </ul>
-                </div>
+                {/* すべてのセクションを表示 */}
+                {mystery.sections && Object.entries(mystery.sections).map(([sectionName, items]) => (
+                  <div key={sectionName} className={styles.sectionContainer}>
+                    <strong>{sectionName}:</strong>
+                    <ul className={styles.examplesList}>
+                      {items.map((item, i) => (
+                        <li key={i} className={styles.exampleItem}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
               </div>
             )}
           </div>

@@ -622,12 +622,12 @@ const IntegratedSettingCreator: React.FC = () => {
       }
     }
 
-    // スタイル
+    // 文体
     if (selectedData.writingStyle) {
-      markdown += `## 文体と語り\n`;
+      markdown += `## 参考とする作風\n`;
       
       if (selectedData.writingStyle.author) {
-        markdown += `### 参考作家\n${selectedData.writingStyle.author}\n\n`;
+        markdown += `### 参考作風\n${selectedData.writingStyle.author}\n\n`;
       }
       
       if (selectedData.writingStyle.title) {

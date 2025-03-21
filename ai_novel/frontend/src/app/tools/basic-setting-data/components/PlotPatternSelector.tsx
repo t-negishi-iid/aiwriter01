@@ -22,11 +22,11 @@ interface PlotPattern {
 }
 
 interface PlotPatternSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  data: any;
+  onChange: (data: any) => void;
 }
 
-export default function PlotPatternSelector({ selectedData, setSelectedData }: PlotPatternSelectorProps) {
+export default function PlotPatternSelector({ data, onChange }: PlotPatternSelectorProps) {
   const [plotPatterns, setPlotPatterns] = useState<PlotPattern[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,13 +39,13 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
         if (!response.ok) {
           throw new Error('プロットパターンデータの取得に失敗しました');
         }
-        const data = await response.json();
-        setPlotPatterns(data.results);
+        const plotPatternsData = await response.json();
+        setPlotPatterns(plotPatternsData.results);
 
         // 初期状態では選択されているパターンのみを展開
         const initialExpandedState: { [key: string]: boolean } = {};
-        data.results.forEach((pattern: PlotPattern) => {
-          initialExpandedState[pattern.title] = selectedData.plotPattern?.title === pattern.title;
+        plotPatternsData.results.forEach((pattern: PlotPattern) => {
+          initialExpandedState[pattern.title] = data.plotPattern?.title === pattern.title;
         });
         setExpandedPatterns(initialExpandedState);
 
@@ -58,11 +58,11 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
     };
 
     fetchPlotPatterns();
-  }, [selectedData.plotPattern?.title]);
+  }, [data.plotPattern?.title]);
 
   const handleSelectPlotPattern = (plotPattern: PlotPattern) => {
-    setSelectedData({
-      ...selectedData,
+    onChange({
+      ...data,
       plotPattern
     });
 
@@ -110,7 +110,7 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
 
             {expandedPatterns[pattern.title] && (
               <div
-                className={`${styles.optionCard} ${selectedData.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
+                className={`${styles.optionCard} ${data.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
                 onClick={() => handleSelectPlotPattern(pattern)}
               >
                 <div className={styles.plotSection}>

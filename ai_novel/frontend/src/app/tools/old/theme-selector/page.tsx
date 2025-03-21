@@ -18,6 +18,7 @@ export default function ThemeSelector() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedTheme, setSelectedTheme] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,31 +42,49 @@ export default function ThemeSelector() {
     fetchThemes();
   }, []);
 
-  // カテゴリが選択された時の処理
+  // カテゴリ変更ハンドラ
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCategory(e.target.value);
-    setSelectedTheme(''); // カテゴリが変わったらテーマの選択をリセット
+    setSelectedTheme('');
+    setSearchQuery(''); // カテゴリを変更したら検索クエリをリセット
   };
 
-  // テーマが選択された時の処理
+  // テーマ変更ハンドラ
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedTheme(e.target.value);
   };
 
-  // 選択されたカテゴリに属するテーマのリストを取得
+  // 検索クエリ変更ハンドラ
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // 選択されたカテゴリのテーマを取得（検索クエリでフィルタリング）
   const getThemesForSelectedCategory = () => {
     if (!selectedCategory) return [];
+
     const category = categories.find(cat => cat.title === selectedCategory);
-    return category ? category.themes : [];
+    if (!category) return [];
+
+    // 検索クエリが空の場合は全てのテーマを返す
+    if (!searchQuery.trim()) {
+      return category.themes;
+    }
+
+    // 検索クエリに一致するテーマをフィルタリング
+    return category.themes.filter(theme =>
+      theme.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (theme.description && theme.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
   };
 
   // 選択されたテーマの詳細を取得
   const getSelectedThemeDetails = () => {
     if (!selectedCategory || !selectedTheme) return null;
-    
+
     const category = categories.find(cat => cat.title === selectedCategory);
     if (!category) return null;
-    
+
     return category.themes.find(theme => theme.title === selectedTheme);
   };
 
@@ -81,6 +100,17 @@ export default function ThemeSelector() {
 
   return (
     <div className={styles.container}>
+      <label htmlFor="theme-select">テーマを選択:</label>
+      <label htmlFor="theme-search">テーマを検索:</label>
+      <input
+        type="text"
+        id="theme-search"
+        name="theme-search"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        placeholder="テーマを検索"
+        className={styles.search}
+      />
       <div className={styles.leftPanel}>
         <div className={styles.selectContainer}>
           <label htmlFor="category-select">カテゴリを選択:</label>
@@ -103,7 +133,7 @@ export default function ThemeSelector() {
 
         {selectedCategory && (
           <div className={styles.selectContainer}>
-            <label htmlFor="theme-select">テーマを選択:</label>
+
             <select
               id="theme-select"
               name="theme"
@@ -129,7 +159,7 @@ export default function ThemeSelector() {
           <div className={styles.themeDetails}>
             <h2>{selectedThemeDetails.title}</h2>
             <p className={styles.description}>{selectedThemeDetails.description}</p>
-            
+
             {selectedThemeDetails.examples && selectedThemeDetails.examples.length > 0 && (
               <div className={styles.examples}>
                 <h3>代表作品</h3>

@@ -15,11 +15,11 @@ interface Category {
 }
 
 interface TimePlaceSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  data: any;
+  onChange: (data: any) => void;
 }
 
-export default function TimePlaceSelector({ selectedData, setSelectedData }: TimePlaceSelectorProps) {
+export default function TimePlaceSelector({ data, onChange }: TimePlaceSelectorProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,14 +54,11 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
   }, []);
 
   const handleSelectTimePlaceSetting = (category: string, setting: TimePlaceSetting) => {
-    setSelectedData({
-      ...selectedData,
-      timePlace: {
-        category,
-        title: setting.title,
-        examples: setting.examples,
-        content: setting.content || '' // コンテンツも保存
-      }
+    onChange({
+      category,
+      title: setting.title,
+      examples: setting.examples,
+      content: setting.content || '' // コンテンツも保存
     });
   };
 
@@ -104,7 +101,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
               {category.settings.map((setting, settingIndex) => (
                 <div
                   key={settingIndex}
-                  className={`${styles.optionCard} ${selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
+                  className={`${styles.optionCard} ${data?.title === setting.title ? styles.selectedOption : ''
                     }`}
                   onClick={() => handleSelectTimePlaceSetting(category.title, setting)}
                 >
@@ -128,15 +125,15 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
       ))}
 
       {/* 選択された設定のプレビュー */}
-      {selectedData.timePlace && (
+      {data && (
         <div className={styles.previewContainer}>
           <h3 className={styles.previewTitle}>選択された設定</h3>
           <div className={styles.previewContent}>
-            <p><strong>カテゴリ:</strong> {selectedData.timePlace.category}</p>
-            <p><strong>設定:</strong> {selectedData.timePlace.title}</p>
-            {selectedData.timePlace.content && (
+            <p><strong>カテゴリ:</strong> {data.category}</p>
+            <p><strong>設定:</strong> {data.title}</p>
+            {data.content && (
               <div className={styles.contentPreview}>
-                <pre>{selectedData.timePlace.content}</pre>
+                <pre>{data.content}</pre>
               </div>
             )}
           </div>

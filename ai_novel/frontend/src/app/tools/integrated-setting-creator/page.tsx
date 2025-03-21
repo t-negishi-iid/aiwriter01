@@ -11,7 +11,7 @@ import WritingStyleSelector from './components/WritingStyleSelector';
 import EmotionalElementsSelector from './components/EmotionalElementsSelector';
 import PastMysterySelector from './components/PastMysterySelector';
 import PlotPatternSelector from './components/PlotPatternSelector';
-import { integratedSettingCreatorApi } from '@/lib/api';
+import { basicSettingDataApi } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 
 // 各セレクタのタブ
@@ -90,7 +90,7 @@ export default function IntegratedSettingCreator() {
         console.log(`[TRACE] 統合設定データ取得開始: storyId=${storyId} - ${new Date().toISOString()}`);
 
         // 統合設定データを取得
-        const response = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
+        const response = await basicSettingDataApi.getBasicSettingData(storyId);
         console.log(`[TRACE] 統合設定データ取得完了 - ${new Date().toISOString()}`);
         console.log(`[TRACE] レスポンスデータ:`, JSON.stringify(response).substring(0, 200) + '...');
 
@@ -441,11 +441,11 @@ export default function IntegratedSettingCreator() {
     try {
       // バックエンドAPIを呼び出してデータを保存
       console.log(`[TRACE] 統合設定データ保存開始: storyId=${storyId} - ${new Date().toISOString()}`);
-      console.log(`[TRACE] integratedSettingCreatorApi.saveIntegratedSettingData 呼び出し前 - ${new Date().toISOString()}`);
-      const response = await integratedSettingCreatorApi.saveIntegratedSettingData(storyId, {
+      console.log(`[TRACE] basicSettingDataApi.saveBasicSettingData 呼び出し前 - ${new Date().toISOString()}`);
+      const response = await basicSettingDataApi.saveBasicSettingData(storyId, {
         basic_setting_data: markdownOutput
       });
-      console.log(`[TRACE] integratedSettingCreatorApi.saveIntegratedSettingData 呼び出し後 - ${new Date().toISOString()}`);
+      console.log(`[TRACE] basicSettingDataApi.saveBasicSettingData 呼び出し後 - ${new Date().toISOString()}`);
       console.log('[TRACE] 保存レスポンス:', JSON.stringify(response).substring(0, 500)); // デバッグ用
 
       // 標準DRFページネーション形式に対応したレスポンス処理

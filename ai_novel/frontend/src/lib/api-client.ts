@@ -107,7 +107,7 @@ export const storyApi = {
 }
 
 /**
- * 基本設定作成用データAPI
+ * 基本設定データAPI
  */
 export const basicSettingDataApi = {
   getBasicSettingData: (storyId: string | number) =>
@@ -124,6 +124,87 @@ export const basicSettingDataApi = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  /**
+   * 基本設定データを取得する
+   * @param storyId ストーリーID
+   * @param apiBaseUrl APIベースURL
+   * @returns APIレスポンス
+   */
+  async getBasicSettingData(storyId: string | number, apiBaseUrl: string = 'http://localhost:8001/api'): Promise<BasicSettingData> {
+    console.log(`[TRACE] getBasicSettingData 開始 - storyId: ${storyId} - ${new Date().toISOString()}`);
+
+    // バックエンドAPIに直接アクセス - 正しいエンドポイントを使用
+    const endpoint = `stories/${storyId}/basic-setting/latest/`;
+    console.log(`[TRACE] エンドポイント構築: ${endpoint} - ${new Date().toISOString()}`);
+
+    try {
+      // fetchApiではなく、直接fetchを使用
+      const url = `${apiBaseUrl}/${endpoint}`;
+      console.log(`[TRACE] 完全なURL: ${url} - ${new Date().toISOString()}`);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(`[TRACE] レスポンスステータス: ${response.status} - ${new Date().toISOString()}`);
+
+      // 204 No Contentの場合は空のデータを返す
+      if (response.status === 204) {
+        console.log(`[TRACE] 204 No Content、データが存在しません - ${new Date().toISOString()}`);
+        return {
+          success: true,
+          basic_setting_data: "",
+          integrated_setting_data: "",
+          message: 'データが存在しません'
+        };
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API エラー: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[TRACE] getBasicSettingData 完了 - レスポンス: ${JSON.stringify(data).substring(0, 200)}... - ${new Date().toISOString()}`);
+
+      // バックエンドからのレスポンスをそのまま返す
+      return data;
+    } catch (error) {
+      console.error(`[TRACE] getBasicSettingData エラー: ${error} - ${new Date().toISOString()}`);
+      return {
+        success: false,
+        message: `データの取得に失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`
+      };
+    }
+  },
+
+  // 基本設定データを保存
+  saveBasicSettingData: async (storyId: string | number, data: any): Promise<ApiResponse<any>> => {
+    console.log('基本設定データを保存中...');
+    console.log(`ストーリーID: ${storyId}`);
+
+    // リクエストデータを準備
+    const requestData = {
+      basic_setting_data: data.basic_setting_data
+    };
+
+    console.log(`送信データ (先頭100文字): ${JSON.stringify(requestData).substring(0, 100)}...`);
+
+    // APIリクエストを送信
+    const endpoint = `/stories/${storyId}/basic-setting/`;
+
+    return fetchApi(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData),
+    });
+  },
 }
 
 /**

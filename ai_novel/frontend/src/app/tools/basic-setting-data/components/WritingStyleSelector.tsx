@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from '../page.module.css';
+import { WritingStyleData } from '../types';
 
 interface WritingStyle {
   author: string;
@@ -10,12 +11,17 @@ interface WritingStyle {
   themes?: string;
 }
 
-interface WritingStyleSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+interface WritingStyleOption {
+  style: string;
+  description: string;
 }
 
-export default function WritingStyleSelector({ selectedData, setSelectedData }: WritingStyleSelectorProps) {
+interface WritingStyleSelectorProps {
+  data: WritingStyleData;
+  onChange: (data: WritingStyleData) => void;
+}
+
+export default function WritingStyleSelector({ data, onChange }: WritingStyleSelectorProps) {
   const [writingStyles, setWritingStyles] = useState<WritingStyle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +34,13 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
         if (!response.ok) {
           throw new Error('作風データの取得に失敗しました');
         }
-        const data = await response.json();
-        setWritingStyles(data.results);
+        const fetchedData = await response.json();
+        setWritingStyles(fetchedData.results);
 
         // 初期状態では選択されているスタイルのみを展開
         const initialExpandedState: { [key: string]: boolean } = {};
-        data.results.forEach((style: WritingStyle) => {
-          initialExpandedState[style.author] = selectedData.writingStyle?.author === style.author;
+        fetchedData.results.forEach((style: WritingStyle) => {
+          initialExpandedState[style.author] = data?.author === style.author;
         });
         setExpandedStyles(initialExpandedState);
 
@@ -47,12 +53,12 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
     };
 
     fetchWritingStyles();
-  }, [selectedData.writingStyle?.author]);
+  }, [data?.author]);
 
   const handleSelectWritingStyle = (writingStyle: WritingStyle) => {
-    setSelectedData({
-      ...selectedData,
-      writingStyle
+    onChange({
+      ...data,
+      author: writingStyle.author
     });
 
     // 選択したスタイルを展開
@@ -99,7 +105,7 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
 
             {expandedStyles[style.author] && (
               <div
-                className={`${styles.optionCard} ${selectedData.writingStyle?.author === style.author ? styles.selectedOption : ''}`}
+                className={`${styles.optionCard} ${data?.author === style.author ? styles.selectedOption : ''}`}
                 onClick={() => handleSelectWritingStyle(style)}
               >
                 {style.structure && (

@@ -1,0 +1,181 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: calc(100vh - 120px); 
+  overflow: hidden;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+.tabList {
+  width: 250px;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-right: 1px solid #e1e8ed;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabContent {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  height: 100%;
+  padding-right: 0.5rem; 
+}
+
+.tabsContainer {
+  display: flex;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e1e8ed;
+  overflow-x: auto;
+  padding: 0 1rem;
+}
+
+.tabButton {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+  background-color: #e0e0e0;
+}
+
+.activeTab {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+.tabActions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+}
+
+.mobileTabsContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e1e8ed;
+  padding: 0.75rem 1rem;
+}
+
+.mobileTabSelect {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #e1e8ed;
+  border-radius: 0.25rem;
+  background-color: white;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  margin-right: 0.5rem;
+}
+
+.previewToggleButton {
+  padding: 0.5rem 0.75rem;
+  background-color: #e3f2fd;
+  color: #3498db;
+  border: 1px solid #3498db;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.activePreviewButton {
+  background-color: #3498db;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .tabList,
+  .tabContent {
+    flex: none;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    border-right: none;
+    padding: 1rem;
+  }
+
+  .tabList {
+    border-bottom: 1px solid #e1e8ed;
+  }
+
+  .tabsContainer {
+    overflow-x: auto;
+    padding: 0 0.5rem;
+  }
+
+  .tabButton {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .markdownPreview {
+    max-height: 400px;
+  }
+
+  .buttonContainer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .saveButton,
+  .resetButton {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .optionCard {
+    padding: 0.75rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.2rem;
+  }
+
+  .sectionDescription {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.1rem;
+  }
+
+  .markdownPreview {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}

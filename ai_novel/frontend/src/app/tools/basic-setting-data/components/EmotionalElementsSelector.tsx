@@ -16,11 +16,11 @@ interface ElementCategory {
 }
 
 interface EmotionalElementsSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  data: any;
+  onChange: (data: any) => void;
 }
 
-export default function EmotionalElementsSelector({ selectedData, setSelectedData }: EmotionalElementsSelectorProps) {
+export default function EmotionalElementsSelector({ data, onChange }: EmotionalElementsSelectorProps) {
   const [categories, setCategories] = useState<ElementCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,10 +28,10 @@ export default function EmotionalElementsSelector({ selectedData, setSelectedDat
 
   // 初期化時に選択済み要素を設定
   useEffect(() => {
-    if (selectedData.emotionalElements?.selectedElements) {
-      setSelectedElements(selectedData.emotionalElements.selectedElements);
+    if (data?.selectedElements) {
+      setSelectedElements(data.selectedElements);
     }
-  }, []);
+  }, [data]);
 
   // 情緒的要素データの取得
   useEffect(() => {
@@ -111,8 +111,8 @@ export default function EmotionalElementsSelector({ selectedData, setSelectedDat
       effectiveScenes: cat.effectiveScenes
     }));
     
-    setSelectedData({
-      ...selectedData,
+    onChange({
+      ...data,
       emotionalElements: {
         categories: categoriesData,
         selectedElements: elements

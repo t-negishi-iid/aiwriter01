@@ -16,11 +16,11 @@ interface Category {
 }
 
 interface WorldSettingSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  data: any;
+  onChange: (data: any) => void;
 }
 
-export default function WorldSettingSelector({ selectedData, setSelectedData }: WorldSettingSelectorProps) {
+export default function WorldSettingSelector({ data, onChange }: WorldSettingSelectorProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
         const initialExpandedState: { [key: string]: boolean } = {};
 
         data.forEach((category: Category) => {
-          initialExpandedState[category.title] = selectedData.worldSetting?.category === category.title;
+          initialExpandedState[category.title] = data?.category === category.title;
         });
 
         setExpandedCategories(initialExpandedState);
@@ -54,15 +54,12 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
     };
 
     fetchWorldSettings();
-  }, [selectedData.worldSetting?.category]);
+  }, [data?.category]);
 
   const handleSelectWorldSetting = (category: string, setting: WorldSetting) => {
-    setSelectedData({
-      ...selectedData,
-      worldSetting: {
-        ...setting,
-        category
-      }
+    onChange({
+      ...setting,
+      category
     });
   };
 
@@ -106,7 +103,7 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
                 {category.settings.map((setting, settingIndex) => (
                   <div
                     key={settingIndex}
-                    className={`${styles.optionCard} ${selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
+                    className={`${styles.optionCard} ${data?.title === setting.title ? styles.selectedOption : ''
                       }`}
                     onClick={() => handleSelectWorldSetting(category.title, setting)}
                   >

@@ -1,4 +1,4 @@
-import { storyApi as storyApiClient, basicSettingDataApi, basicSettingApi as basicSettingApiClient, characterApi as characterApiClient, plotApi as plotApiClient, episodeApi as episodeApiClient, titleApi as titleApiClient, integratedSettingCreatorApi as integratedSettingCreatorApiClient } from "./api-client"
+import { storyApi as storyApiClient, basicSettingDataApi as basicSettingDataApiClient, basicSettingApi as basicSettingApiClient, characterApi as characterApiClient, plotApi as plotApiClient, episodeApi as episodeApiClient, titleApi as titleApiClient } from "./api-client"
 
 // 小説関連のAPI
 export const storyApi = {
@@ -21,10 +21,10 @@ export const storyApi = {
 // 基本設定関連のAPI
 export const basicSettingApi = {
   // 基本設定作成用データを生成
-  createBasicSettingData: (storyId: string, data: any) => basicSettingDataApi.createBasicSettingData(storyId, data),
+  createBasicSettingData: (storyId: string, data: any) => basicSettingDataApiClient.createBasicSettingData(storyId, data),
 
   // 基本設定作成用データの詳細を取得
-  getBasicSettingData: (storyId: string) => basicSettingDataApi.getBasicSettingData(storyId),
+  getBasicSettingData: (storyId: string) => basicSettingDataApiClient.getBasicSettingData(storyId),
 
   // 基本設定を生成
   generateBasicSetting: (storyId: string, basicSettingDataId: number) =>
@@ -82,19 +82,19 @@ export const titleApi = {
   getTitle: (storyId: string) => titleApiClient.getTitle(storyId),
 }
 
-// 統合設定クリエイター関連のAPI
-export const integratedSettingCreatorApi = {
-  // 統合設定クリエイターデータを保存
-  saveIntegratedSettingData: (storyId: string, data: any): Promise<any> => {
-    console.log(`[TRACE] api.ts: saveIntegratedSettingData 呼び出し - storyId: ${storyId} - ${new Date().toISOString()}`);
-    return integratedSettingCreatorApiClient.saveIntegratedSettingData(storyId, data);
+// 基本設定データ関連のAPI
+export const basicSettingDataApi = {
+  // 基本設定データを保存
+  saveBasicSettingData: (storyId: string, data: any): Promise<any> => {
+    console.log(`[TRACE] api.ts: saveBasicSettingData 呼び出し - storyId: ${storyId} - ${new Date().toISOString()}`);
+    return basicSettingDataApiClient.saveBasicSettingData(storyId, data);
   },
 
-  // 統合設定クリエイターデータを取得
-  getIntegratedSettingData: (storyId: string): Promise<any> => {
-    console.log(`[TRACE] api.ts: getIntegratedSettingData 呼び出し - storyId: ${storyId} - ${new Date().toISOString()}`);
-    console.log('統合設定クリエイターデータを取得中... ストーリーID:', storyId);
-    return integratedSettingCreatorApiClient.getIntegratedSettingData(storyId);
+  // 基本設定データを取得
+  getBasicSettingData: (storyId: string): Promise<any> => {
+    console.log(`[TRACE] api.ts: getBasicSettingData 呼び出し - storyId: ${storyId} - ${new Date().toISOString()}`);
+    console.log('基本設定データを取得中... ストーリーID:', storyId);
+    return basicSettingDataApiClient.getBasicSettingData(storyId);
   }
 }
 

@@ -11,11 +11,11 @@ interface PastMysteryData {
 }
 
 interface PastMysterySelectorProps {
-  selectedData: { pastMystery: PastMysteryData | undefined };
-  setSelectedData: (data: { pastMystery: PastMysteryData | undefined }) => void;
+  data: any;
+  onChange: (data: any) => void;
 }
 
-export default function PastMysterySelector({ selectedData, setSelectedData }: PastMysterySelectorProps) {
+export default function PastMysterySelector({ data, onChange }: PastMysterySelectorProps) {
   const [pastMysteries, setPastMysteries] = useState<PastMysteryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +28,13 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
         if (!response.ok) {
           throw new Error('過去の謎データの取得に失敗しました');
         }
-        const data = await response.json();
-        setPastMysteries(data.results);
+        const fetchedData = await response.json();
+        setPastMysteries(fetchedData.results);
 
         // 初期状態では選択されている謎のみを展開
         const initialExpandedState: { [key: string]: boolean } = {};
-        data.results.forEach((mystery: PastMysteryData) => {
-          initialExpandedState[mystery.title] = selectedData.pastMystery?.title === mystery.title;
+        fetchedData.results.forEach((mystery: PastMysteryData) => {
+          initialExpandedState[mystery.title] = data?.title === mystery.title;
         });
         setExpandedMysteries(initialExpandedState);
 
@@ -47,21 +47,15 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
     };
 
     fetchPastMysteries();
-  }, [selectedData.pastMystery?.title]);
+  }, [data?.title]);
 
   const handleSelectPastMystery = (pastMystery: PastMysteryData) => {
     // 既に選択されている謎が再度クリックされた場合は選択を解除
-    if (selectedData.pastMystery?.title === pastMystery.title) {
-      setSelectedData({
-        ...selectedData,
-        pastMystery: undefined
-      });
+    if (data?.title === pastMystery.title) {
+      onChange(undefined);
     } else {
       // 新しい謎を選択
-      setSelectedData({
-        ...selectedData,
-        pastMystery
-      });
+      onChange(pastMystery);
     }
 
     // 選択状態に関わらず、クリックした謎は展開状態を維持
@@ -106,9 +100,9 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
               <h3 className={styles.categoryTitle}>「{mystery.title}」</h3>
             </div>
 
-            {(expandedMysteries[mystery.title] || selectedData.pastMystery?.title === mystery.title) && (
+            {(expandedMysteries[mystery.title] || data?.title === mystery.title) && (
               <div
-                className={`${styles.optionCard} ${selectedData.pastMystery?.title === mystery.title ? styles.selectedOption : ''}`}
+                className={`${styles.optionCard} ${data?.title === mystery.title ? styles.selectedOption : ''}`}
                 onClick={() => handleSelectPastMystery(mystery)}
               >
                 <p className={styles.optionDescription}>{mystery.description}</p>

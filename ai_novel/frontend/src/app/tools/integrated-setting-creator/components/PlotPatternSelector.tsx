@@ -68,17 +68,36 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
     fetchPlotPatterns();
   }, [selectedData.plotPattern?.title]);
 
-  const handleSelectPlotPattern = (plotPattern: PlotPattern) => {
-    setSelectedData({
-      ...selectedData,
-      plotPattern
-    });
+  // 選択されたプロットパターンかどうかをチェック
+  const isPatternSelected = (plotPattern: PlotPattern): boolean => {
+    if (!selectedData.plotPattern) return false;
+    return selectedData.plotPattern.title === plotPattern.title;
+  };
 
-    // 選択したパターンを展開
-    setExpandedPatterns(prev => ({
-      ...prev,
-      [plotPattern.title]: true
-    }));
+  // プロットパターンのトグル選択処理
+  const handleTogglePlotPattern = (plotPattern: PlotPattern) => {
+    // すでに選択されているかチェック
+    const isAlreadySelected = isPatternSelected(plotPattern);
+    
+    if (isAlreadySelected) {
+      // すでに選択されている場合は、選択を解除
+      setSelectedData({
+        ...selectedData,
+        plotPattern: undefined
+      });
+    } else {
+      // 選択されていない場合は、選択する
+      setSelectedData({
+        ...selectedData,
+        plotPattern
+      });
+
+      // 選択したパターンを展開
+      setExpandedPatterns(prev => ({
+        ...prev,
+        [plotPattern.title]: true
+      }));
+    }
   };
 
   const togglePattern = (patternTitle: string) => {
@@ -200,7 +219,7 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
     <div>
       <h2 className={styles.sectionTitle}>プロットパターンを選択</h2>
       <p className={styles.sectionDescription}>
-        物語の基本的な展開パターンを選択してください。これにより物語の構造と展開が決まります。
+        物語の基本的な展開パターンを選択してください。同じ項目を再度クリックすると選択を解除できます。
       </p>
 
       <div className={styles.controlButtons}>
@@ -264,8 +283,8 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
 
               {expandedPatterns[pattern.title] && (
                 <div
-                  className={`${styles.optionCard} ${selectedData.plotPattern?.title === pattern.title ? styles.selectedOption : ''}`}
-                  onClick={() => handleSelectPlotPattern(pattern)}
+                  className={`${styles.optionCard} ${isPatternSelected(pattern) ? styles.selectedOption : ''}`}
+                  onClick={() => handleTogglePlotPattern(pattern)}
                 >
                   <div className={styles.plotSection}>
                     <strong>概要:</strong>

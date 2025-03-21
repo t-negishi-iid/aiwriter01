@@ -57,17 +57,36 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
     fetchWritingStyles();
   }, [selectedData.writingStyle?.author]);
 
-  const handleSelectWritingStyle = (writingStyle: WritingStyle) => {
-    setSelectedData({
-      ...selectedData,
-      writingStyle
-    });
+  // 選択された作風かどうかをチェック
+  const isStyleSelected = (writingStyle: WritingStyle): boolean => {
+    if (!selectedData.writingStyle) return false;
+    return selectedData.writingStyle.author === writingStyle.author;
+  };
 
-    // 選択したスタイルを展開
-    setExpandedStyles(prev => ({
-      ...prev,
-      [writingStyle.author]: true
-    }));
+  // 作風のトグル選択処理
+  const handleToggleWritingStyle = (writingStyle: WritingStyle) => {
+    // すでに選択されているかチェック
+    const isAlreadySelected = isStyleSelected(writingStyle);
+    
+    if (isAlreadySelected) {
+      // すでに選択されている場合は、選択を解除
+      setSelectedData({
+        ...selectedData,
+        writingStyle: undefined
+      });
+    } else {
+      // 選択されていない場合は、選択する
+      setSelectedData({
+        ...selectedData,
+        writingStyle
+      });
+
+      // 選択したスタイルを展開
+      setExpandedStyles(prev => ({
+        ...prev,
+        [writingStyle.author]: true
+      }));
+    }
   };
 
   const toggleStyle = (author: string) => {
@@ -157,7 +176,7 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
     <div>
       <h2 className={styles.sectionTitle}>参考とする作風を選択</h2>
       <p className={styles.sectionDescription}>
-        物語の構成や展開の参考となる作家の作風を選択してください。文体を似せるためのものではありません。
+        物語の構成や展開の参考となる作家の作風を選択してください。同じ項目を再度クリックすると選択を解除できます。
       </p>
 
       <div className={styles.controlButtons}>
@@ -221,8 +240,8 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
 
               {expandedStyles[style.author] && (
                 <div
-                  className={`${styles.optionCard} ${selectedData.writingStyle?.author === style.author ? styles.selectedOption : ''}`}
-                  onClick={() => handleSelectWritingStyle(style)}
+                  className={`${styles.optionCard} ${isStyleSelected(style) ? styles.selectedOption : ''}`}
+                  onClick={() => handleToggleWritingStyle(style)}
                 >
                   {style.structure && (
                     <div className={styles.featuresList}>

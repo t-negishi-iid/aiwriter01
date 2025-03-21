@@ -183,7 +183,7 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
     <div>
       <h2 className={styles.sectionTitle}>物語の背景となる過去の謎を選択</h2>
       <p className={styles.sectionDescription}>
-        物語の背景となる過去の謎を選択してください。これにより物語に深みと謎解き要素が加わります。
+        物語の背景となる過去の謎を選択してください。同じ項目を再度クリックすると選択を解除できます。
       </p>
 
       <div className={styles.controlButtons}>

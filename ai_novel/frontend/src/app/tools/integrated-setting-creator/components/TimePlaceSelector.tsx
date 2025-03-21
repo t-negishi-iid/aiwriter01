@@ -66,16 +66,36 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     fetchTimePlaceSettings();
   }, []);
 
-  const handleSelectTimePlaceSetting = (category: string, setting: TimePlaceSetting) => {
-    setSelectedData({
-      ...selectedData,
-      timePlace: {
-        category,
-        title: setting.title,
-        examples: setting.examples,
-        content: setting.content || '' // コンテンツも保存
-      }
-    });
+  // 選択が既に存在するかチェック
+  const isSettingSelected = (category: string, setting: TimePlaceSetting): boolean => {
+    if (!selectedData.timePlace) return false;
+    
+    return selectedData.timePlace.category === category && selectedData.timePlace.title === setting.title;
+  };
+
+  // 時代と場所の設定をトグル選択
+  const handleToggleTimePlaceSetting = (category: string, setting: TimePlaceSetting) => {
+    // すでに選択されているかチェック
+    const isAlreadySelected = isSettingSelected(category, setting);
+    
+    if (isAlreadySelected) {
+      // すでに選択されている場合は、選択を解除
+      setSelectedData({
+        ...selectedData,
+        timePlace: undefined
+      });
+    } else {
+      // 選択されていない場合は、新しい選択に置き換え
+      setSelectedData({
+        ...selectedData,
+        timePlace: {
+          category,
+          title: setting.title,
+          examples: setting.examples,
+          content: setting.content || ''
+        }
+      });
+    }
   };
 
   const toggleCategory = (categoryTitle: string) => {
@@ -155,6 +175,29 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     return searchResults[settingKey] || false;
   };
 
+  // 選択された設定のプレビュー部分をレンダリング
+  const renderSelectedSetting = () => {
+    // selectedData.timePlaceが存在するか確認
+    if (!selectedData.timePlace) {
+      return null;
+    }
+    
+    return (
+      <div className={styles.previewContainer}>
+        <h3 className={styles.previewTitle}>選択された設定</h3>
+        <div className={styles.previewContent}>
+          <p><strong>カテゴリ:</strong> {selectedData.timePlace.category}</p>
+          <p><strong>設定:</strong> {selectedData.timePlace.title}</p>
+          {selectedData.timePlace.content && (
+            <div className={styles.contentPreview}>
+              <pre>{selectedData.timePlace.content}</pre>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return <div>時代と場所データを読み込み中...</div>;
   }
@@ -167,7 +210,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     <div>
       <h2 className={styles.sectionTitle}>時代と場所を選択</h2>
       <p className={styles.sectionDescription}>
-        物語の舞台となる時代と場所を選択してください。これにより物語の雰囲気や制約が大きく変わります。
+        物語の舞台となる時代と場所を選択してください。同じ項目を再度クリックすると選択を解除できます。
       </p>
 
       <div className={styles.controlButtons}>
@@ -228,9 +271,9 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
                 shouldShowSetting(category.title, setting) && (
                   <div
                     key={settingIndex}
-                    className={`${styles.optionCard} ${selectedData.timePlace?.title === setting.title ? styles.selectedOption : ''
+                    className={`${styles.optionCard} ${isSettingSelected(category.title, setting) ? styles.selectedOption : ''
                       }`}
-                    onClick={() => handleSelectTimePlaceSetting(category.title, setting)}
+                    onClick={() => handleToggleTimePlaceSetting(category.title, setting)}
                   >
                     <h4 className={styles.optionTitle}>{setting.title}</h4>
 
@@ -253,20 +296,7 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
       ))}
 
       {/* 選択された設定のプレビュー */}
-      {selectedData.timePlace && (
-        <div className={styles.previewContainer}>
-          <h3 className={styles.previewTitle}>選択された設定</h3>
-          <div className={styles.previewContent}>
-            <p><strong>カテゴリ:</strong> {selectedData.timePlace.category}</p>
-            <p><strong>設定:</strong> {selectedData.timePlace.title}</p>
-            {selectedData.timePlace.content && (
-              <div className={styles.contentPreview}>
-                <pre>{selectedData.timePlace.content}</pre>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {renderSelectedSetting()}
     </div>
   );
 }

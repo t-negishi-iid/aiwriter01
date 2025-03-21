@@ -70,14 +70,33 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
     fetchWorldSettings();
   }, [selectedData.worldSetting?.category]);
 
-  const handleSelectWorldSetting = (category: string, setting: WorldSetting) => {
-    setSelectedData({
-      ...selectedData,
-      worldSetting: {
-        ...setting,
-        category
-      }
-    });
+  // 既に選択されている項目かどうかをチェック
+  const isSettingSelected = (category: string, setting: WorldSetting): boolean => {
+    if (!selectedData.worldSetting) return false;
+    return selectedData.worldSetting.category === category && selectedData.worldSetting.title === setting.title;
+  };
+
+  // 世界観と舞台設定のトグル選択処理
+  const handleToggleWorldSetting = (category: string, setting: WorldSetting) => {
+    // すでに選択されているかチェック
+    const isAlreadySelected = isSettingSelected(category, setting);
+    
+    if (isAlreadySelected) {
+      // すでに選択されている場合は、選択を解除
+      setSelectedData({
+        ...selectedData,
+        worldSetting: undefined
+      });
+    } else {
+      // 選択されていない場合は、選択する
+      setSelectedData({
+        ...selectedData,
+        worldSetting: {
+          ...setting,
+          category
+        }
+      });
+    }
   };
 
   const toggleCategory = (categoryTitle: string) => {
@@ -171,7 +190,7 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
     <div>
       <h2 className={styles.sectionTitle}>作品世界と舞台設定を選択</h2>
       <p className={styles.sectionDescription}>
-        物語の舞台となる世界観と設定を選択してください。これにより物語の世界観や雰囲気が決まります。
+        物語の舞台となる世界観と設定を選択してください。同じ項目を再度クリックすると選択を解除できます。
       </p>
 
       <div className={styles.controlButtons}>
@@ -238,9 +257,9 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
                   shouldShowSetting(category.title, setting) && (
                     <div
                       key={settingIndex}
-                      className={`${styles.optionCard} ${selectedData.worldSetting?.title === setting.title ? styles.selectedOption : ''
+                      className={`${styles.optionCard} ${isSettingSelected(category.title, setting) ? styles.selectedOption : ''
                         }`}
-                      onClick={() => handleSelectWorldSetting(category.title, setting)}
+                      onClick={() => handleToggleWorldSetting(category.title, setting)}
                     >
                       <h3 className={styles.optionTitle}>{setting.title}</h3>
                       {setting.worldView && setting.worldView.length > 0 && (

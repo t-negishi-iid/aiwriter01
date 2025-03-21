@@ -42,6 +42,9 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
   const [expandedSubcategories, setExpandedSubcategories] = useState<{ [key: string]: boolean }>({});
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchThemes = async () => {
@@ -154,6 +157,80 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
     setExpandedSubcategories({});
   };
 
+  // キーワード検索機能
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  const performSearch = () => {
+    if (!searchKeyword.trim()) {
+      resetSearch();
+      return;
+    }
+
+    // 検索状態をアクティブに
+    setIsSearchActive(true);
+
+    // すべてのカテゴリを開く
+    expandAllCategories();
+
+    // 検索結果をリセット
+    const results: { [key: string]: boolean } = {};
+
+    // 検索ロジック
+    const keyword = searchKeyword.toLowerCase().trim();
+    
+    // すべてのカテゴリとテーマを検索
+    categories.forEach((category) => {
+      // カテゴリ直下のテーマ検索
+      if (category.themes) {
+        category.themes.forEach((theme) => {
+          const themeKey = `${category.title}|${theme.title}`;
+          // タイトル、説明、事例で検索
+          const matchesTitle = theme.title.toLowerCase().includes(keyword);
+          const matchesDescription = theme.description?.toLowerCase().includes(keyword) || false;
+          const matchesExamples = theme.examples?.some(ex => ex.toLowerCase().includes(keyword)) || false;
+
+          results[themeKey] = matchesTitle || matchesDescription || matchesExamples;
+        });
+      }
+
+      // サブカテゴリのテーマ検索
+      if (category.subcategories) {
+        category.subcategories.forEach((subcategory) => {
+          subcategory.themes.forEach((theme) => {
+            const themeKey = `${category.title}|${subcategory.title}|${theme.title}`;
+            // タイトル、説明、事例で検索
+            const matchesTitle = theme.title.toLowerCase().includes(keyword);
+            const matchesDescription = theme.description?.toLowerCase().includes(keyword) || false;
+            const matchesExamples = theme.examples?.some(ex => ex.toLowerCase().includes(keyword)) || false;
+
+            results[themeKey] = matchesTitle || matchesDescription || matchesExamples;
+          });
+        });
+      }
+    });
+
+    setSearchResults(results);
+  };
+
+  const resetSearch = () => {
+    setIsSearchActive(false);
+    setSearchKeyword('');
+    setSearchResults({});
+  };
+
+  // テーマカードの表示判定
+  const shouldShowTheme = (category: string, theme: Theme, subcategory?: string): boolean => {
+    if (!isSearchActive) return true;
+    
+    const themeKey = subcategory 
+      ? `${category}|${subcategory}|${theme.title}`
+      : `${category}|${theme.title}`;
+    
+    return searchResults[themeKey] || false;
+  };
+
   if (loading) {
     return <div>テーマデータを読み込み中...</div>;
   }
@@ -184,6 +261,29 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
         >
           すべて閉じる
         </button>
+        <input 
+          type="search" 
+          value={searchKeyword} 
+          onChange={handleSearchInputChange} 
+          placeholder="検索ワード" 
+          className={styles.searchInput}
+        />
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={performSearch}
+        >
+          検索
+        </button>
+        {isSearchActive && (
+          <button 
+            type="button"
+            className={styles.controlButton}
+            onClick={resetSearch}
+          >
+            検索をリセット
+          </button>
+        )}
       </div>
 
       <div>
@@ -219,27 +319,29 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                         {isSubcategoryExpanded(category.title, subcategory.title) && (
                           <div className={styles.themesGrid}>
                             {subcategory.themes.map((theme, themeIndex) => (
-                              <div
-                                key={themeIndex}
-                                className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
-                                  }`}
-                                onClick={() => handleSelectTheme(category.title, theme, subcategory.title)}
-                              >
-                                <h3 className={styles.optionTitle}>{theme.title}</h3>
-                                {theme.description && (
-                                  <p className={styles.optionDescription}>{theme.description}</p>
-                                )}
-                                {theme.examples && theme.examples.length > 0 && (
-                                  <div className={styles.examplesListContainer}>
-                                    <strong>代表作品:</strong>
-                                    <ul className={styles.examplesList}>
-                                      {theme.examples.map((example, i) => (
-                                        <li key={i} className={styles.exampleItem}>{example}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
+                              shouldShowTheme(category.title, theme, subcategory.title) && (
+                                <div
+                                  key={themeIndex}
+                                  className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
+                                    }`}
+                                  onClick={() => handleSelectTheme(category.title, theme, subcategory.title)}
+                                >
+                                  <h3 className={styles.optionTitle}>{theme.title}</h3>
+                                  {theme.description && (
+                                    <p className={styles.optionDescription}>{theme.description}</p>
+                                  )}
+                                  {theme.examples && theme.examples.length > 0 && (
+                                    <div className={styles.examplesListContainer}>
+                                      <strong>代表作品:</strong>
+                                      <ul className={styles.examplesList}>
+                                        {theme.examples.map((example, i) => (
+                                          <li key={i} className={styles.exampleItem}>{example}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              )
                             ))}
                           </div>
                         )}
@@ -252,27 +354,29 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                 {category.themes && category.themes.length > 0 && (
                   <div className={styles.themesGrid}>
                     {category.themes.map((theme, themeIndex) => (
-                      <div
-                        key={themeIndex}
-                        className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
-                          }`}
-                        onClick={() => handleSelectTheme(category.title, theme)}
-                      >
-                        <h3 className={styles.optionTitle}>{theme.title}</h3>
-                        {theme.description && (
-                          <p className={styles.optionDescription}>{theme.description}</p>
-                        )}
-                        {theme.examples && theme.examples.length > 0 && (
-                          <div className={styles.examplesListContainer}>
-                            <strong>代表作品:</strong>
-                            <ul className={styles.examplesList}>
-                              {theme.examples.map((example, i) => (
-                                <li key={i} className={styles.exampleItem}>{example}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
+                      shouldShowTheme(category.title, theme) && (
+                        <div
+                          key={themeIndex}
+                          className={`${styles.optionCard} ${selectedData.theme?.title === theme.title ? styles.selectedOption : ''
+                            }`}
+                          onClick={() => handleSelectTheme(category.title, theme)}
+                        >
+                          <h3 className={styles.optionTitle}>{theme.title}</h3>
+                          {theme.description && (
+                            <p className={styles.optionDescription}>{theme.description}</p>
+                          )}
+                          {theme.examples && theme.examples.length > 0 && (
+                            <div className={styles.examplesListContainer}>
+                              <strong>代表作品:</strong>
+                              <ul className={styles.examplesList}>
+                                {theme.examples.map((example, i) => (
+                                  <li key={i} className={styles.exampleItem}>{example}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )
                     ))}
                   </div>
                 )}

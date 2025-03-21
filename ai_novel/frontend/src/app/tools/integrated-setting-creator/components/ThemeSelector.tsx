@@ -73,14 +73,24 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
   }, [selectedData.theme?.category, selectedData.theme?.subcategory]);
 
   const handleSelectTheme = (category: string, theme: Theme, subcategory?: string) => {
-    setSelectedData({
-      ...selectedData,
-      theme: {
-        ...theme,
-        category,
-        subcategory
-      }
-    });
+    // 既に選択されているテーマがクリックされた場合は選択を解除する
+    if (selectedData.theme?.title === theme.title) {
+      // 選択を解除
+      setSelectedData({
+        ...selectedData,
+        theme: undefined
+      });
+    } else {
+      // 新しいテーマを選択
+      setSelectedData({
+        ...selectedData,
+        theme: {
+          ...theme,
+          category,
+          subcategory
+        }
+      });
+    }
   };
 
   const toggleCategory = (categoryTitle: string) => {

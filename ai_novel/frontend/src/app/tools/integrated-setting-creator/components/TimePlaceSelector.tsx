@@ -14,9 +14,19 @@ interface Category {
   settings: TimePlaceSetting[];
 }
 
+interface SelectedData {
+  timePlace?: {
+    category: string;
+    title: string;
+    examples: string[];
+    content?: string;
+  };
+  [key: string]: unknown;
+}
+
 interface TimePlaceSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function TimePlaceSelector({ selectedData, setSelectedData }: TimePlaceSelectorProps) {
@@ -72,6 +82,23 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
     }));
   };
 
+  // すべてのカテゴリを開閉する関数
+  const expandAllCategories = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    categories.forEach((category) => {
+      allExpanded[category.title] = true;
+    });
+    setExpandedCategories(allExpanded);
+  };
+
+  const collapseAllCategories = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    categories.forEach((category) => {
+      allCollapsed[category.title] = false;
+    });
+    setExpandedCategories(allCollapsed);
+  };
+
   if (loading) {
     return <div>時代と場所データを読み込み中...</div>;
   }
@@ -86,6 +113,23 @@ export default function TimePlaceSelector({ selectedData, setSelectedData }: Tim
       <p className={styles.sectionDescription}>
         物語の舞台となる時代と場所を選択してください。これにより物語の雰囲気や制約が大きく変わります。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllCategories}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllCategories}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       {categories.map((category, categoryIndex) => (
         <div key={categoryIndex} className={styles.categoryContainer}>

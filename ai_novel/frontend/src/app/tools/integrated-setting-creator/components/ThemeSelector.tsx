@@ -20,9 +20,20 @@ interface CategoryWithThemes {
   subcategories?: Subcategory[];
 }
 
+interface SelectedData {
+  theme?: {
+    title: string;
+    description?: string;
+    examples?: string[];
+    category?: string;
+    subcategory?: string;
+  };
+  [key: string]: unknown; // 他のプロパティも許可
+}
+
 interface ThemeSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSelectorProps) {
@@ -113,6 +124,36 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
     return expandedSubcategories[key] || false;
   };
 
+  // すべてのカテゴリを開閉する関数
+  const expandAllCategories = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    const allSubcategoriesExpanded: { [key: string]: boolean } = {};
+    
+    categories.forEach((category) => {
+      allExpanded[category.title] = true;
+
+      // サブカテゴリも全て展開
+      if (category.subcategories) {
+        category.subcategories.forEach((subcategory) => {
+          const key = `${category.title}-${subcategory.title}`;
+          allSubcategoriesExpanded[key] = true;
+        });
+      }
+    });
+    
+    setExpandedCategories(allExpanded);
+    setExpandedSubcategories(allSubcategoriesExpanded);
+  };
+
+  const collapseAllCategories = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    categories.forEach((category) => {
+      allCollapsed[category.title] = false;
+    });
+    setExpandedCategories(allCollapsed);
+    setExpandedSubcategories({});
+  };
+
   if (loading) {
     return <div>テーマデータを読み込み中...</div>;
   }
@@ -127,6 +168,23 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
       <p className={styles.sectionDescription}>
         物語のテーマを選択してください。テーマは物語の根底にある中心的なメッセージや概念です。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllCategories}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllCategories}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       <div>
         {categories.map((category, categoryIndex) => (
@@ -191,7 +249,7 @@ export default function ThemeSelector({ selectedData, setSelectedData }: ThemeSe
                 )}
 
                 {/* 直接のテーマ表示 */}
-                {category.themes.length > 0 && (
+                {category.themes && category.themes.length > 0 && (
                   <div className={styles.themesGrid}>
                     {category.themes.map((theme, themeIndex) => (
                       <div

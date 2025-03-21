@@ -10,9 +10,14 @@ interface WritingStyle {
   themes?: string;
 }
 
+interface SelectedData {
+  writingStyle?: WritingStyle;
+  [key: string]: unknown;
+}
+
 interface WritingStyleSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function WritingStyleSelector({ selectedData, setSelectedData }: WritingStyleSelectorProps) {
@@ -69,6 +74,23 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
     }));
   };
 
+  // すべてのスタイルを開閉する関数
+  const expandAllStyles = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    writingStyles.forEach((style) => {
+      allExpanded[style.author] = true;
+    });
+    setExpandedStyles(allExpanded);
+  };
+
+  const collapseAllStyles = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    writingStyles.forEach((style) => {
+      allCollapsed[style.author] = false;
+    });
+    setExpandedStyles(allCollapsed);
+  };
+
   if (loading) {
     return <div>作風データを読み込み中...</div>;
   }
@@ -83,6 +105,23 @@ export default function WritingStyleSelector({ selectedData, setSelectedData }: 
       <p className={styles.sectionDescription}>
         物語の構成や展開の参考となる作家の作風を選択してください。文体を似せるためのものではありません。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllStyles}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllStyles}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       <div>
         {writingStyles.map((style, index) => (

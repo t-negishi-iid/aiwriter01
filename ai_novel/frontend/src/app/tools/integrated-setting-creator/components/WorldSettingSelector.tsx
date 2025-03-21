@@ -15,9 +15,20 @@ interface Category {
   settings: WorldSetting[];
 }
 
+interface SelectedData {
+  worldSetting?: {
+    title: string;
+    category: string;
+    worldView?: string[];
+    features?: string[];
+    examples?: string[];
+  };
+  [key: string]: unknown;
+}
+
 interface WorldSettingSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function WorldSettingSelector({ selectedData, setSelectedData }: WorldSettingSelectorProps) {
@@ -73,6 +84,23 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
     }));
   };
 
+  // すべてのカテゴリを開閉する関数
+  const expandAllCategories = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    categories.forEach((category) => {
+      allExpanded[category.title] = true;
+    });
+    setExpandedCategories(allExpanded);
+  };
+
+  const collapseAllCategories = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    categories.forEach((category) => {
+      allCollapsed[category.title] = false;
+    });
+    setExpandedCategories(allCollapsed);
+  };
+
   if (loading) {
     return <div>作品世界と舞台設定データを読み込み中...</div>;
   }
@@ -87,6 +115,23 @@ export default function WorldSettingSelector({ selectedData, setSelectedData }: 
       <p className={styles.sectionDescription}>
         物語の舞台となる世界観と設定を選択してください。これにより物語の世界観や雰囲気が決まります。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllCategories}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllCategories}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       <div>
         {categories.map((category, categoryIndex) => (

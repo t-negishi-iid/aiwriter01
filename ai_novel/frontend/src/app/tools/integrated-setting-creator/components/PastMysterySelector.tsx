@@ -10,9 +10,14 @@ interface PastMysteryData {
   sections: { [sectionName: string]: string[] };
 }
 
+interface SelectedData {
+  pastMystery?: PastMysteryData;
+  [key: string]: unknown;
+}
+
 interface PastMysterySelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function PastMysterySelector({ selectedData, setSelectedData }: PastMysterySelectorProps) {
@@ -78,6 +83,23 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
     }));
   };
 
+  // すべての謎を開閉する関数
+  const expandAllMysteries = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    pastMysteries.forEach((mystery) => {
+      allExpanded[mystery.title] = true;
+    });
+    setExpandedMysteries(allExpanded);
+  };
+
+  const collapseAllMysteries = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    pastMysteries.forEach((mystery) => {
+      allCollapsed[mystery.title] = false;
+    });
+    setExpandedMysteries(allCollapsed);
+  };
+
   if (loading) {
     return <div>過去の謎データを読み込み中...</div>;
   }
@@ -92,6 +114,23 @@ export default function PastMysterySelector({ selectedData, setSelectedData }: P
       <p className={styles.sectionDescription}>
         物語の背景となる過去の謎を選択してください。これにより物語に深みと謎解き要素が加わります。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllMysteries}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllMysteries}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       <div>
         {pastMysteries.map((mystery, index) => (

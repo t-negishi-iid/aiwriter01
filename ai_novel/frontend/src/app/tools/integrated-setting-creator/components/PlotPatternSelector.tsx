@@ -21,9 +21,14 @@ interface PlotPattern {
   sections: PlotSection[];
 }
 
+interface SelectedData {
+  plotPattern?: PlotPattern;
+  [key: string]: unknown;
+}
+
 interface PlotPatternSelectorProps {
-  selectedData: any;
-  setSelectedData: (data: any) => void;
+  selectedData: SelectedData;
+  setSelectedData: (data: SelectedData) => void;
 }
 
 export default function PlotPatternSelector({ selectedData, setSelectedData }: PlotPatternSelectorProps) {
@@ -80,6 +85,23 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
     }));
   };
 
+  // すべてのパターンを開閉する関数
+  const expandAllPatterns = () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    plotPatterns.forEach((pattern) => {
+      allExpanded[pattern.title] = true;
+    });
+    setExpandedPatterns(allExpanded);
+  };
+
+  const collapseAllPatterns = () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    plotPatterns.forEach((pattern) => {
+      allCollapsed[pattern.title] = false;
+    });
+    setExpandedPatterns(allCollapsed);
+  };
+
   if (loading) {
     return <div>プロットパターンデータを読み込み中...</div>;
   }
@@ -94,6 +116,23 @@ export default function PlotPatternSelector({ selectedData, setSelectedData }: P
       <p className={styles.sectionDescription}>
         物語の基本的な展開パターンを選択してください。これにより物語の構造と展開が決まります。
       </p>
+
+      <div className={styles.controlButtons}>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={expandAllPatterns}
+        >
+          カテゴリをすべて開く
+        </button>
+        <button 
+          type="button"
+          className={styles.controlButton}
+          onClick={collapseAllPatterns}
+        >
+          すべて閉じる
+        </button>
+      </div>
 
       <div>
         {plotPatterns.map((pattern, index) => (

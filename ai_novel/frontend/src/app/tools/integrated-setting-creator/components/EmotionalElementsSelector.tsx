@@ -16,16 +16,16 @@ interface ElementCategory {
 }
 
 interface SelectedData {
-  emotionalElements?: {
-    categories: {
-      title: string;
-      usage: string;
-      effectiveScenes: string[];
-    }[];
+  emotional?: {
     selectedElements: {
       category: string;
       element: string;
-      description: string;
+      description?: string;
+    }[];
+    categories?: {
+      title: string;
+      usage?: string;
+      scenes?: string;
     }[];
   };
   [key: string]: unknown;
@@ -44,10 +44,15 @@ export default function EmotionalElementsSelector({ selectedData, setSelectedDat
 
   // 初期化時に選択済み要素を設定
   useEffect(() => {
-    if (selectedData.emotionalElements?.selectedElements) {
-      setSelectedElements(selectedData.emotionalElements.selectedElements);
+    if (selectedData.emotional?.selectedElements) {
+      // 既存の選択要素があれば、それを使用（description は内部状態として追加）
+      const existingElements = selectedData.emotional.selectedElements.map(el => ({
+        ...el,
+        description: el.description ?? '' // descriptionはローカル状態でのみ使用
+      }));
+      setSelectedElements(existingElements);
     }
-  }, [selectedData.emotionalElements?.selectedElements]);
+  }, [selectedData.emotional?.selectedElements]);
 
   // 情緒的要素データの取得
   useEffect(() => {
@@ -121,17 +126,30 @@ export default function EmotionalElementsSelector({ selectedData, setSelectedDat
   const updateSelectedData = (elements: {category: string; element: string; description: string}[]) => {
     // 選択された要素のカテゴリ情報を取得
     const selectedCategories = new Set(elements.map(el => el.category));
-    const categoriesData = categories.filter(cat => selectedCategories.has(cat.title)).map(cat => ({
-      title: cat.title,
-      usage: cat.usage,
-      effectiveScenes: cat.effectiveScenes
+    
+    // カテゴリ情報を準備
+    const categoriesData = categories
+      .filter(cat => selectedCategories.has(cat.title))
+      .map(cat => ({
+        title: cat.title,
+        usage: cat.usage,
+        scenes: Array.isArray(cat.effectiveScenes) && cat.effectiveScenes.length > 0 
+          ? cat.effectiveScenes.join('\n- ') 
+          : ''
+      }));
+    
+    // description を含めた形式で渡す
+    const cleanElements = elements.map(({ category, element, description }) => ({
+      category,
+      element,
+      description  // 説明文も含める
     }));
     
     setSelectedData({
       ...selectedData,
-      emotionalElements: {
-        categories: categoriesData,
-        selectedElements: elements
+      emotional: {
+        selectedElements: cleanElements,
+        categories: categoriesData
       }
     });
   };

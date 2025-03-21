@@ -92,6 +92,7 @@ interface WritingStyle {
 interface EmotionalElement {
   category: string;
   element: string;
+  description?: string;
 }
 
 interface EmotionalCategory {
@@ -557,36 +558,58 @@ const IntegratedSettingCreator: React.FC = () => {
 
     // 感情要素
     if (selectedData.emotional?.selectedElements && selectedData.emotional.selectedElements.length > 0) {
-      markdown += `## 感情要素\n`;
+      markdown += `## 情緒的・感覚的要素\n`;
       
       // カテゴリごとに要素をグループ化
-      const elementsByCategory: Record<string, string[]> = {};
+      const elementsByCategory: Record<string, Array<{element: string; description?: string}>> = {};
       selectedData.emotional.selectedElements.forEach(element => {
         if (!elementsByCategory[element.category]) {
           elementsByCategory[element.category] = [];
         }
-        elementsByCategory[element.category].push(element.element);
+        elementsByCategory[element.category].push({
+          element: element.element,
+          description: element.description
+        });
       });
       
       // カテゴリごとに表示
       Object.keys(elementsByCategory).forEach(category => {
         markdown += `### ${category}\n`;
-        elementsByCategory[category].forEach(element => {
-          markdown += `- ${element}\n`;
+        elementsByCategory[category].forEach(item => {
+          if (item.description) {
+            markdown += `- ${item.element}（${item.description}）\n`;
+          } else {
+            markdown += `- ${item.element}\n`;
+          }
         });
         markdown += '\n';
       });
       
-      // カテゴリの説明があれば追加
+      // 代表的な活用法と効果的な使用場面を表示（カテゴリごとに1つずつ）
       if (selectedData.emotional.categories && selectedData.emotional.categories.length > 0) {
-        markdown += `### カテゴリ詳細\n`;
+        markdown += `### 代表的な活用法と効果的な使用場面\n`;
+        
+        // カテゴリごとに1つだけ表示
+        const displayedCategories = new Set<string>();
+        
         selectedData.emotional.categories.forEach(category => {
-          markdown += `#### ${category.title}\n`;
-          if (category.usage) {
-            markdown += `##### 用途\n${category.usage}\n\n`;
+          // 既に同じカテゴリが表示されていたらスキップ
+          if (displayedCategories.has(category.title)) {
+            return;
           }
+          
+          displayedCategories.add(category.title);
+          
+          markdown += `#### ${category.title}\n`;
+          
+          // 代表的な活用法
+          if (category.usage) {
+            markdown += `##### 代表的な活用法\n${category.usage}\n\n`;
+          }
+          
+          // 効果的な使用場面
           if (category.scenes) {
-            markdown += `##### シーン例\n${category.scenes}\n\n`;
+            markdown += `##### 効果的な使用場面\n- ${category.scenes}\n\n`;
           }
         });
       }

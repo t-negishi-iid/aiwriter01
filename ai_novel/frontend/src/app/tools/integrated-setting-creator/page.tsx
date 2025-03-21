@@ -214,6 +214,24 @@ const IntegratedSettingCreator: React.FC = () => {
   const { toast } = useToast(); // useToastを使用
   // 初回ロード済みフラグを追加
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  // 小説のタイトルを保存するステート
+  const [novelTitle, setNovelTitle] = useState<string>('');
+
+  // 小説タイトルを取得する関数
+  const fetchNovelTitle = useCallback(async (storyId: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/`);
+      if (!response.ok) {
+        throw new Error('APIからのデータ取得に失敗しました');
+      }
+      const responseData = await response.json();
+      if (responseData && responseData.title) {
+        setNovelTitle(responseData.title);
+      }
+    } catch (error) {
+      console.error('[ERROR] 小説タイトルの取得に失敗しました:', error);
+    }
+  }, []);
 
   // マークダウンデータをパースして構造化データに変換する
   const parseMarkdownData = useCallback((markdown: string): SelectedData => {
@@ -432,6 +450,13 @@ const IntegratedSettingCreator: React.FC = () => {
       fetchData();
     }
   }, [searchParams, parseMarkdownData, loadFromLocalStorage, initialDataLoaded]);
+
+  useEffect(() => {
+    const storyId = searchParams.get('storyId');
+    if (storyId) {
+      fetchNovelTitle(storyId);
+    }
+  }, [searchParams, fetchNovelTitle]);
 
   // マークダウン出力を生成する関数
   const generateMarkdown = useCallback(() => {
@@ -911,7 +936,9 @@ const IntegratedSettingCreator: React.FC = () => {
       <CustomNavigation storyId={storyId} />
 
       <div className="px-4 py-6">
-        <h1 className="mt-6 mb-2 text-3xl font-bold">統合設定クリエイター</h1>
+        <h1 className="mt-6 mb-2 text-3xl font-bold">
+          {novelTitle ? `${novelTitle}：基本設定` : '統合設定クリエイター'}
+        </h1>
         <p className="mb-6 text-muted-foreground">
           小説の基本設定を統合的に作成するツールです。各カテゴリから要素を選択して、世界観やプロットの基盤を構築します。
         </p>

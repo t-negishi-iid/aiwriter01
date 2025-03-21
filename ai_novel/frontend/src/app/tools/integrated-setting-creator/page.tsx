@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast'; // useToastをインポート
 import styles from './page.module.css';
 import { unifiedStoryApi } from '@/lib/unified-api-client'; // 統一APIクライアントをインポート
+import { Save, Check, Loader2 } from 'lucide-react'; // アイコンをインポート
 
 // 各種セレクターコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
@@ -206,6 +207,7 @@ const IntegratedSettingCreator: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast(); // useToastを使用
   // 初回ロード済みフラグを追加
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
@@ -799,6 +801,11 @@ const IntegratedSettingCreator: React.FC = () => {
     }
 
     try {
+      // 保存中状態を設定
+      setSaveSuccess(false);
+      setError(null);
+      setIsSaving(true);
+
       // マークダウンを生成（再生成）
       generateMarkdown();
 
@@ -848,19 +855,21 @@ const IntegratedSettingCreator: React.FC = () => {
         console.error('[ERROR] 保存エラー:', responseData);
       }
     } catch (error) {
-      // 例外処理
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('[ERROR] 保存処理エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
       setError(errorMessage);
+      setSaveSuccess(false);
 
       toast({
-        title: "システムエラー",
-        description: `保存処理中に例外が発生しました: ${errorMessage}`,
+        title: "保存エラー",
+        description: errorMessage,
         variant: "destructive",
       });
-
-      console.error('[ERROR] 保存例外:', error);
+    } finally {
+      // 保存状態をリセット
+      setIsSaving(false);
     }
-  }, [searchParams, generateMarkdown, selectedData, markdownOutput, toast]);
+  }, [generateMarkdown, markdownOutput, searchParams, selectedData, toast]);
 
   // データの更新日時を表示
   const formatLastUpdated = () => {
@@ -875,13 +884,13 @@ const IntegratedSettingCreator: React.FC = () => {
 
   const storyId = searchParams.get('storyId');
 
-  // ローディング中の表示
+  // ローディング状態表示部分
   const renderLoadingState = () => {
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="ml-2">データを読み込み中...</p>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingSpinner}></div>
+          <p className={styles.loadingText}>データを読み込み中...</p>
         </div>
       );
     }
@@ -945,10 +954,10 @@ const IntegratedSettingCreator: React.FC = () => {
         )}
 
         {/* リセットボタン */}
-        <div className="flex justify-end mb-4">
+        <div className={styles.headerContainer}>
           <Button
             onClick={resetSettings}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            className={styles.resetButton}
           >
             すべての選択をリセット
           </Button>
@@ -1021,15 +1030,34 @@ const IntegratedSettingCreator: React.FC = () => {
         {/* 右側：プレビュー */}
         <div className={`${styles.previewPanel} ${!showPreview ? styles.hiddenOnMobile : ''}`}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">基本設定プレビュー</h3>
-            <div className="space-x-2">
-              <Button
-                onClick={saveIntegratedSettings}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
-                保存
-              </Button>
-            </div>
+            <h3 className="text-xl font-bold" style={{ display: 'inline-block', width: '50%' }}>
+              基本設定プレビュー
+            </h3>
+            <Button
+              onClick={saveIntegratedSettings}
+              disabled={isSaving}
+              size="sm"
+              variant="default"
+              className="gap-1 font-semibold transition-all duration-200 hover:scale-105"
+              style={{ display: 'inline-block', float: 'right', marginTop: '10px' }}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  保存中...
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <Check className="h-4 w-4 text-green-500" />
+                  保存済み
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  保存
+                </>
+              )}
+            </Button>
           </div>
           <div className={styles.markdownPreview}>
             <pre className="whitespace-pre-wrap text-sm font-mono">{markdownOutput}</pre>

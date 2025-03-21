@@ -71,6 +71,45 @@
   /* プレビューパネル自体はオーバーフローを隠す */
 }
 
+.headerContainer {
+  margin-bottom: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.headerTitle {
+  width: 50%;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.saveButton {
+  display: flex;
+  gap: 0.25rem;
+  font-weight: 600;
+  transition-property: all;
+  transition-duration: 200ms;
+}
+
+.saveButton:hover {
+  transform: scale(1.05);
+}
+
+.resetButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: rgb(220, 38, 38);
+  border-radius: 0.375rem;
+}
+
+.resetButton:hover {
+  background-color: rgb(185, 28, 28);
+}
+
 .markdownPreview {
   flex: 1;
   background-color: white;
@@ -516,6 +555,38 @@
 .activePreviewButton {
   background-color: #3498db;
   color: white;
+}
+
+/* ローディング表示 */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 8rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.loadingSpinner {
+  animation: spin 1s linear infinite;
+  height: 2rem;
+  width: 2rem;
+  border-bottom-width: 2px;
+  border-color: var(--color-primary);
+  border-radius: 9999px;
+}
+
+.loadingText {
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* レスポンシブデザイン用のメディアクエリ */

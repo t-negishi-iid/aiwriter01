@@ -93,7 +93,7 @@ export default function IntegratedSettingCreator() {
         console.error('保存データの解析エラー:', error);
       }
     }
-  }, []);
+  }, [searchParams]);
 
   // URLからタブとストーリーIDを取得し、既存のデータがあれば読み込む
   useEffect(() => {
@@ -237,10 +237,11 @@ export default function IntegratedSettingCreator() {
       if (storyId) {
         const storageKey = `integratedSettingData_${storyId}`;
         localStorage.setItem(storageKey, JSON.stringify(selectedData));
+        console.log(`[TRACE] storyId=${storyId}のデータをローカルストレージに保存 - キー: ${storageKey}`);
       }
       generateMarkdown();
     }
-  }, [selectedData]);
+  }, [selectedData, searchParams]);
 
   // 画面サイズの監視
   useEffect(() => {
@@ -262,7 +263,7 @@ export default function IntegratedSettingCreator() {
 
   // Markdownの生成
   const generateMarkdown = () => {
-    let markdown = '# 統合設定データ\n\n';
+    let markdown = '# 基本設定データ\n\n';
 
     // テーマ
     if (selectedData.theme) {
@@ -348,8 +349,10 @@ export default function IntegratedSettingCreator() {
     }
 
     // 情緒的・感覚的要素
-    if (selectedData.emotionalElements && selectedData.emotionalElements.selectedElements) {
-      markdown += '## 感情要素\n';
+    if (selectedData.emotionalElements && 
+        selectedData.emotionalElements.selectedElements && 
+        selectedData.emotionalElements.selectedElements.length > 0) {
+      markdown += '## 情緒的・感覚的要素\n';
 
       // カテゴリごとにグループ化
       const groupedElements: { [key: string]: any[] } = {};
@@ -368,6 +371,24 @@ export default function IntegratedSettingCreator() {
         });
       });
       markdown += '\n';
+      
+      // 各カテゴリの「代表的な活用法」と「効果的な使用場面」を追加
+      if (selectedData.emotionalElements.categories && selectedData.emotionalElements.categories.length > 0) {
+        selectedData.emotionalElements.categories.forEach((category: any) => {
+          if (category.usage) {
+            markdown += `### ${category.title}の代表的な活用法\n`;
+            markdown += `${category.usage}\n\n`;
+          }
+          
+          if (category.effectiveScenes && category.effectiveScenes.length > 0) {
+            markdown += `### ${category.title}の効果的な使用場面\n`;
+            category.effectiveScenes.forEach((scene: string) => {
+              markdown += `- ${scene}\n`;
+            });
+            markdown += '\n';
+          }
+        });
+      }
     }
 
     // 過去の謎

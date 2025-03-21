@@ -68,7 +68,7 @@ export default function BasicSettingDataPage() {
             <div className="space-y-6">
               <div>
                 <div className="flex justify-center mt-4 mb-4">
-                  <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+                  <Button onClick={() => router.push(`/tools/basic-setting-data?storyId=${storyId}`)}>
                     統合クリエイターで編集する
                   </Button>
                 </div>
@@ -104,7 +104,7 @@ export default function BasicSettingDataPage() {
               <p className="text-muted-foreground mb-6">
                 基本設定を作成して、小説の世界観や登場人物を定義しましょう
               </p>
-              <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
+              <Button onClick={() => router.push(`/tools/basic-setting-data?storyId=${storyId}`)}>
                 統合クリエイターで作成する
               </Button>
             </div>

@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+// 必要なパッケージのインポート
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import styles from './page.module.css';
+import ReactMarkdown from 'react-markdown';
+
+// 各種セレクターコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
-import WorldSettingSelector from './components/WorldSettingSelector';
 import TimePlaceSelector from './components/TimePlaceSelector';
+import WorldSettingSelector from './components/WorldSettingSelector';
 import WritingStyleSelector from './components/WritingStyleSelector';
 import EmotionalElementsSelector from './components/EmotionalElementsSelector';
 import PastMysterySelector from './components/PastMysterySelector';
 import PlotPatternSelector from './components/PlotPatternSelector';
-import { basicSettingDataApi } from '@/lib/api';
-import { toast } from '@/components/ui/use-toast';
 
 // 各セレクタのタブ
 const TABS = [
@@ -36,9 +40,6 @@ function CustomNavigation({ storyId }: { storyId: string | null }) {
               href={`/stories/basic-setting-data?id=${storyId}`}
               className="text-sm font-medium transition-colors hover:text-primary flex items-center"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
               小説：基本設定に戻る
             </Link>
           )}
@@ -48,205 +49,518 @@ function CustomNavigation({ storyId }: { storyId: string | null }) {
   );
 }
 
+// テーマの型定義
+interface SelectedTheme {
+  title: string;
+  description?: string;
+  examples?: string[];
+}
+
+// 時代と場所の型定義
+interface SelectedTimePlace {
+  category: string;
+  title: string;
+  description?: string;
+  examples: string[];
+  content?: string;
+}
+
+// 世界観の型定義
+interface SelectedWorldSetting {
+  category: string;
+  title: string;
+  description?: string;
+  worldView?: string[];
+  features?: string[];
+  examples?: string[];
+}
+
+// 文体の型定義
+interface WritingStyle {
+  author: string;
+  title?: string;
+  description?: string;
+  pointOfView?: string;
+  tense?: string;
+  tone?: string[];
+  narrative?: string[];
+}
+
+// 感情要素の型定義
+interface EmotionalElement {
+  category: string;
+  element: string;
+}
+
+interface EmotionalCategory {
+  title: string;
+  usage?: string;
+  scenes?: string;
+}
+
+interface SelectedEmotional {
+  selectedElements: EmotionalElement[];
+  categories?: EmotionalCategory[];
+}
+
+// 過去の謎の型定義
+interface PastMysteryData {
+  title: string;
+  description: string;
+  events: string[];
+  sections: Record<string, string[]>;
+}
+
+// プロットパターンのサブセクション
+interface PlotSubsection {
+  title: string;
+  content: string[];
+}
+
+// プロットパターンのセクション
+interface PlotSection {
+  title: string;
+  content: string[];
+  subsections: PlotSubsection[]; // 必須に変更
+}
+
+// プロットパターンの型定義
+interface PlotPattern {
+  title: string;
+  filename: string;
+  description?: string;
+  overview: string;
+  sections: PlotSection[];
+}
+
+// 選択データの総合型
+interface SelectedData {
+  theme?: SelectedTheme;
+  timePlace?: SelectedTimePlace;
+  worldSetting?: SelectedWorldSetting;
+  writingStyle?: WritingStyle;
+  emotional?: SelectedEmotional;
+  pastMystery?: PastMysteryData;
+  plotPattern?: PlotPattern;
+  [key: string]: unknown;
+}
+
+// APIレスポンスの型定義
+interface IntegratedSettingData {
+  id: number;
+  basic_setting_data: string;
+  integrated_data?: SelectedData;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data?: IntegratedSettingData;
+}
+
+// 日付文字列から安全にDateオブジェクトに変換する関数
+const safeParseDate = (dateString: string): Date | null => {
+  try {
+    return new Date(dateString);
+  } catch (e) {
+    console.error('日付の解析に失敗しました:', e);
+    return null;
+  }
+};
+
+// モデルの初期化関数
+const createInitialPlotPattern = (): PlotPattern => {
+  return {
+    title: '',
+    filename: '',
+    overview: '',
+    sections: []
+  };
+};
+
+const createInitialPastMystery = (): PastMysteryData => {
+  return {
+    title: '',
+    description: '',
+    events: [],
+    sections: {}
+  };
+};
+
+const createInitialTimePlace = (): SelectedTimePlace => {
+  return {
+    category: '',
+    title: '',
+    examples: []
+  };
+};
+
 export default function IntegratedSettingCreator() {
   const [activeTab, setActiveTab] = useState('theme');
-  const [selectedData, setSelectedData] = useState<any>({});
-  const [markdownOutput, setMarkdownOutput] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const [selectedData, setSelectedData] = useState<SelectedData>({});
+  const [markdownOutput, setMarkdownOutput] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [integratedSettingData, setIntegratedSettingData] = useState<any>({});
+  const [integratedSettingData, setIntegratedSettingData] = useState<IntegratedSettingData | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // マークダウンデータをパースして構造化データに変換する
+  const parseMarkdownData = useCallback((markdown: string): SelectedData => {
+    // 初期化
+    const result: SelectedData = {};
+
+    try {
+      console.log('Markdownデータを解析します:', markdown.substring(0, 100) + '...');
+      // マークダウンの各セクションを処理
+      const sections = markdown.split(/^##\s+/m);
+
+      console.log('セクション数:', sections.length);
+      
+      // セクションがない場合は初期値を設定
+      if (sections.length <= 1) {
+        result.theme = { title: '未設定' };
+        result.timePlace = { title: '未設定', category: '未設定', examples: [] };
+        result.worldSetting = { title: '未設定', category: '未設定' };
+        result.plotPattern = createInitialPlotPattern();
+        return result;
+      }
+
+      for (const section of sections) {
+        const lines = section.trim().split('\n');
+        const sectionTitle = lines[0];
+
+        // テーマセクション
+        if (sectionTitle.includes('テーマ')) {
+          if (!result.theme) result.theme = { title: '' };
+          result.theme.title = lines.length > 1 ? lines[1].trim() : '';
+        }
+
+        // 時代と場所
+        else if (sectionTitle.includes('時代と場所')) {
+          if (!result.timePlace) result.timePlace = { title: '', category: '', examples: [] };
+          result.timePlace.title = lines.length > 1 ? lines[1].trim() : '';
+        }
+
+        // 世界観
+        else if (sectionTitle.includes('世界観')) {
+          if (!result.worldSetting) result.worldSetting = { title: '', category: '' };
+          result.worldSetting.title = lines.length > 1 ? lines[1].trim() : '';
+        }
+
+        // プロットパターン
+        else if (sectionTitle.includes('プロットパターン')) {
+          if (!result.plotPattern) result.plotPattern = createInitialPlotPattern();
+          result.plotPattern.title = lines.length > 1 ? lines[1].trim() : '';
+        }
+
+        // 感情要素
+        else if (sectionTitle.includes('感情要素')) {
+          if (!result.emotional) result.emotional = { selectedElements: [] };
+
+          const elements = lines.slice(1).filter(line => line.startsWith('- '));
+          if (result.emotional.selectedElements) {
+            result.emotional.selectedElements = elements.map(element => {
+              const parts = element.replace('- ', '').split(': ');
+              return {
+                category: parts[0],
+                element: parts[1] || '',
+              };
+            });
+          }
+        }
+
+        // 過去の謎
+        else if (sectionTitle.includes('過去の謎') || sectionTitle.includes('過去の秘密')) {
+          if (!result.pastMystery) result.pastMystery = createInitialPastMystery();
+
+          // イベント部分を解析
+          const events: string[] = [];
+          let captureEvents = false;
+
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('###')) {
+              captureEvents = false;
+              continue;
+            }
+
+            if (captureEvents && line.startsWith('-') && line.length > 1) {
+              events.push(line.substring(1).trim());
+            }
+
+            if (line.includes('謎の要素') || line.includes('イベント')) {
+              captureEvents = true;
+            }
+          }
+
+          if (events.length > 0) {
+            result.pastMystery.events = events;
+          }
+        }
+      }
+
+      console.log('解析結果:', result);
+      return result;
+    } catch (error) {
+      console.error('Markdownの解析に失敗しました:', error);
+      return {};
+    }
+  }, []);
+
+  // ローカルストレージからデータを読み込む関数
+  const loadFromLocalStorage = useCallback(() => {
+    try {
+      const storyId = searchParams.get('storyId');
+      if (!storyId) return null;
+
+      const storageKey = `integratedSettingData_${storyId}`;
+      const storedData = localStorage.getItem(storageKey);
+      if (storedData) {
+        const parsedData: SelectedData = JSON.parse(storedData);
+        setSelectedData(parsedData);
+        return parsedData;
+      }
+    } catch (error) {
+      console.error('ローカルストレージからの読み込みに失敗しました:', error);
+    }
+    return null;
+  }, [searchParams, setSelectedData]);
+
+  // ローカルストレージにデータを保存する関数
+  const saveToLocalStorage = useCallback((data: SelectedData) => {
+    try {
+      const storyId = searchParams.get('storyId');
+      if (!storyId) return;
+
+      const storageKey = `integratedSettingData_${storyId}`;
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (error) {
+      console.error('ローカルストレージへの保存に失敗しました:', error);
+    }
+  }, [searchParams]);
 
   // タブを変更し、URLを更新する関数
   const changeTab = useCallback((tabId: string) => {
     setActiveTab(tabId);
-    
+
     const storyId = searchParams.get('storyId');
     if (storyId) {
       // 現在のURLパラメータを取得
       const params = new URLSearchParams(searchParams.toString());
       // tabパラメータを更新
       params.set('tab', tabId);
-      
+
       // URLを更新（履歴に残す）
       router.push(`/tools/integrated-setting-creator?${params.toString()}`);
     }
   }, [searchParams, router]);
 
-  // 選択データをローカルストレージから読み込む
-  useEffect(() => {
-    const storyId = searchParams.get('storyId');
-    if (!storyId) return;
-
-    const storageKey = `integratedSettingData_${storyId}`;
-    const savedData = localStorage.getItem(storageKey);
-    if (savedData) {
-      try {
-        setSelectedData(JSON.parse(savedData));
-      } catch (error) {
-        console.error('保存データの解析エラー:', error);
-      }
-    }
-  }, [searchParams]);
-
   // URLからタブとストーリーIDを取得し、既存のデータがあれば読み込む
   useEffect(() => {
     const storyId = searchParams.get('storyId');
-    // URLからタブパラメータを取得し、存在すれば対応するタブをアクティブにする
-    const tabParam = searchParams.get('tab');
-    if (tabParam && TABS.some(tab => tab.id === tabParam)) {
-      setActiveTab(tabParam);
+    const tabId = searchParams.get('tab');
+
+    if (tabId) {
+      setActiveTab(tabId);
     }
 
-    if (!storyId) return;
+    if (storyId) {
+      // API呼び出しを行う
+      const fetchData = async () => {
+        try {
+          setIsLoading(true);
 
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        console.log(`[TRACE] 統合設定データ取得開始: storyId=${storyId} - ${new Date().toISOString()}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/integrated-setting-creator/detail/`);
 
-        // 統合設定データを取得
-        const response = await basicSettingDataApi.getBasicSettingData(storyId);
-        console.log(`[TRACE] 統合設定データ取得完了 - ${new Date().toISOString()}`);
-        console.log(`[TRACE] レスポンスデータ:`, JSON.stringify(response).substring(0, 200) + '...');
+          if (!response.ok) {
+            throw new Error('APIからのデータ取得に失敗しました');
+          }
 
-        if (response.success) {
-          // データが存在する場合は設定
-          if (response.data && response.data.basic_setting_data) {
-            setIntegratedSettingData(response.data);
-            setSelectedData(parseMarkdownData(response.data.basic_setting_data));
-            console.log(`[TRACE] データをステートに設定 - ${new Date().toISOString()}`);
-            toast({
-              title: "データを読み込みました",
-              description: "既存の設定データを読み込みました。",
-            });
+          const responseData: ApiResponse = await response.json();
+
+          console.log('APIレスポンス:', responseData);
+
+          if (responseData && responseData.data) {
+            setIntegratedSettingData(responseData.data);
+
+            if (responseData.data.integrated_data) {
+              // データベースに保存された選択状態を読み込む
+              console.log('[TRACE] データベースから選択状態を読み込みました', responseData.data.integrated_data);
+
+              // 型安全な変換
+              if (responseData.data.integrated_data) {
+                setSelectedData(responseData.data.integrated_data);
+              }
+            } else {
+              // 選択状態がない場合はMarkdownから解析
+              if (responseData.data.basic_setting_data) {
+                console.log('[TRACE] Markdownデータから解析します', responseData.data.basic_setting_data.substring(0, 100));
+                const parsedData = parseMarkdownData(responseData.data.basic_setting_data);
+                console.log('[TRACE] 解析結果:', parsedData);
+                setSelectedData(parsedData);
+              }
+            }
           } else {
-            console.log(`[TRACE] 基本設定データが空です - ${new Date().toISOString()}`);
-            toast({
-              title: "新規作成モード",
-              description: "データが見つからないため、新規作成モードで開始します。",
+            // APIからの取得失敗時はローカルストレージを試す
+            loadFromLocalStorage();
+          }
+        } catch (error) {
+          console.error('[ERROR] データ取得エラー:', error);
+          setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
+
+          // API取得失敗時はローカルストレージからの読み込みを試みる
+          loadFromLocalStorage();
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [searchParams, parseMarkdownData, loadFromLocalStorage]);
+
+  // マークダウン出力を生成する関数
+  const generateMarkdown = useCallback(() => {
+    let markdown = '';
+
+    // テーマセクション
+    if (selectedData.theme?.title) {
+      markdown += `## テーマ\n${selectedData.theme.title}\n\n`;
+    }
+
+    // 時代と場所
+    if (selectedData.timePlace?.title) {
+      markdown += `## 時代と場所\n${selectedData.timePlace.title}\n\n`;
+    }
+
+    // 世界観
+    if (selectedData.worldSetting?.title) {
+      markdown += `## 世界観\n${selectedData.worldSetting.title}\n\n`;
+    }
+
+    // プロットパターン
+    if (selectedData.plotPattern?.title) {
+      markdown += `## プロットパターン\n${selectedData.plotPattern.title}\n\n`;
+
+      // プロットパターンの概要と構成
+      if (selectedData.plotPattern.overview) {
+        markdown += `### 概要\n${selectedData.plotPattern.overview}\n\n`;
+      }
+
+      if (selectedData.plotPattern.sections && selectedData.plotPattern.sections.length > 0) {
+        markdown += `### 構成\n`;
+        selectedData.plotPattern.sections.forEach(section => {
+          markdown += `#### ${section.title}\n`;
+          if (section.content) {
+            section.content.forEach(line => {
+              markdown += `- ${line}\n`;
             });
           }
-        } else {
-          console.log(`[TRACE] データ取得失敗: ${response.message} - ${new Date().toISOString()}`);
-          toast({
-            title: "エラーが発生しました",
-            description: response.message || "データの取得に失敗しました。",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error(`[TRACE] データ取得エラー: ${error} - ${new Date().toISOString()}`);
-        setError('データの取得に失敗しました');
-        toast({
-          title: "エラーが発生しました",
-          description: "データの取得に失敗しました。ローカルデータを使用します。",
-          variant: "destructive",
+          markdown += '\n';
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchData();
-  }, [searchParams, toast]);
-
-  // Markdownデータを解析して構造化データに変換する関数
-  const parseMarkdownData = (markdown: string) => {
-    // 既存のデータ構造をコピー
-    const parsedData = { ...selectedData };
-
-    try {
-      console.log('Markdownデータを解析します:', markdown.substring(0, 100) + '...');
-
-      // 各セクションを抽出
-      const sections = markdown.split('## ').filter(Boolean);
-
-      for (const section of sections) {
-        const lines = section.split('\n').filter(Boolean);
-        const sectionTitle = lines[0].trim();
-
-        // テーマセクション
-        if (sectionTitle.includes('テーマ')) {
-          if (!parsedData.theme) parsedData.theme = {};
-          parsedData.theme.selectedTheme = lines.length > 1 ? lines[1].trim() : '';
-        }
-
-        // 時代と場所
-        else if (sectionTitle.includes('時代と場所')) {
-          if (!parsedData.timePlace) parsedData.timePlace = {};
-          parsedData.timePlace.selectedTimePlace = lines.length > 1 ? lines[1].trim() : '';
-        }
-
-        // 世界観
-        else if (sectionTitle.includes('世界観')) {
-          if (!parsedData.worldSetting) parsedData.worldSetting = {};
-          parsedData.worldSetting.selectedWorldSetting = lines.length > 1 ? lines[1].trim() : '';
-        }
-
-        // プロットパターン
-        else if (sectionTitle.includes('プロットパターン')) {
-          if (!parsedData.plotPattern) parsedData.plotPattern = {};
-          parsedData.plotPattern.title = lines.length > 1 ? lines[1].trim() : '';
-        }
-
-        // 感情要素
-        else if (sectionTitle.includes('感情要素')) {
-          if (!parsedData.emotionalElements) parsedData.emotionalElements = { selectedElements: [] };
-
-          const elements = lines.slice(1).filter(line => line.startsWith('- '));
-          parsedData.emotionalElements.selectedElements = elements.map(element => {
-            const parts = element.replace('- ', '').split(': ');
-            return {
-              category: parts[0],
-              element: parts.length > 1 ? parts[1] : '',
-              description: parts.length > 2 ? parts[2] : ''
-            };
-          });
-        }
-
-        // 過去の謎
-        else if (sectionTitle.includes('過去の謎')) {
-          if (!parsedData.pastMystery) parsedData.pastMystery = { events: [] };
-
-          const events = lines.slice(1).filter(line => /^\d+\./.test(line));
-          parsedData.pastMystery.events = events.map(event =>
-            event.replace(/^\d+\.\s*/, '').trim()
-          );
-        }
-      }
-
-      console.log('解析完了:', Object.keys(parsedData));
-      return parsedData;
-    } catch (error) {
-      console.error('Markdownデータの解析エラー:', error);
-      return parsedData;
     }
-  };
+
+    // 感情要素
+    if (selectedData.emotional?.selectedElements && selectedData.emotional.selectedElements.length > 0) {
+      markdown += `## 感情要素\n`;
+      selectedData.emotional.selectedElements.forEach(element => {
+        markdown += `- ${element.category}: ${element.element}\n`;
+      });
+      markdown += '\n';
+    }
+
+    // 過去の謎
+    if (selectedData.pastMystery?.events && selectedData.pastMystery.events.length > 0) {
+      markdown += `## 過去の謎\n`;
+      selectedData.pastMystery.events.forEach(event => {
+        markdown += `- ${event}\n`;
+      });
+      markdown += '\n';
+    }
+
+    // スタイル
+    if (selectedData.writingStyle) {
+      markdown += `## 文体と語り\n`;
+      if (selectedData.writingStyle.pointOfView) {
+        markdown += `### 視点\n${selectedData.writingStyle.pointOfView}\n\n`;
+      }
+      if (selectedData.writingStyle.tense) {
+        markdown += `### 時制\n${selectedData.writingStyle.tense}\n\n`;
+      }
+      if (selectedData.writingStyle.tone && selectedData.writingStyle.tone.length > 0) {
+        markdown += `### トーン\n`;
+        selectedData.writingStyle.tone.forEach(tone => {
+          markdown += `- ${tone}\n`;
+        });
+        markdown += '\n';
+      }
+    }
+
+    // マークダウン出力をセット
+    setMarkdownOutput(markdown);
+
+    return markdown;
+  }, [selectedData]);
 
   // 選択データが変更されたらローカルストレージに保存
   useEffect(() => {
     if (Object.keys(selectedData).length > 0) {
-      const storyId = searchParams.get('storyId');
-      if (storyId) {
-        const storageKey = `integratedSettingData_${storyId}`;
-        localStorage.setItem(storageKey, JSON.stringify(selectedData));
-        console.log(`[TRACE] storyId=${storyId}のデータをローカルストレージに保存 - キー: ${storageKey}`);
-      }
+      saveToLocalStorage(selectedData);
       generateMarkdown();
     }
-  }, [selectedData, searchParams]);
+  }, [selectedData, generateMarkdown, saveToLocalStorage]);
+
+  // 統合設定データをリセットする関数
+  const resetSettings = useCallback(() => {
+    // 確認ダイアログを表示
+    if (window.confirm('設定をリセットしますか？この操作は元に戻せません。')) {
+      try {
+        // ローカルストレージをクリア
+        const storyId = searchParams.get('storyId');
+        if (storyId) {
+          localStorage.removeItem(`integratedSettingData_${storyId}`);
+        }
+        
+        // 状態をリセット
+        setSelectedData({
+          theme: undefined,
+          timePlace: createInitialTimePlace(),
+          worldSetting: undefined,
+          writingStyle: undefined,
+          emotional: undefined,
+          pastMystery: createInitialPastMystery(),
+          plotPattern: createInitialPlotPattern()
+        });
+        setMarkdownOutput('');
+        setIntegratedSettingData(null);
+        setSaveSuccess(false);
+        
+        toast({
+          title: "リセット完了",
+          description: "すべての設定がリセットされました。",
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        toast({
+          title: "リセットエラー",
+          description: `設定のリセット中にエラーが発生しました: ${errorMessage}`,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [searchParams]);
 
   // 画面サイズの監視
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobileView(window.innerWidth <= 768);
+      const isMobileView = window.innerWidth <= 768;
+      setShowPreview(isMobileView);
     };
 
     // 初期チェック
@@ -261,392 +575,270 @@ export default function IntegratedSettingCreator() {
     };
   }, []);
 
-  // Markdownの生成
-  const generateMarkdown = () => {
-    let markdown = '# 基本設定データ\n\n';
-
-    // テーマ
-    if (selectedData.theme) {
-      markdown += '## テーマ\n';
-      markdown += `${selectedData.theme.title}\n\n`;
-      if (selectedData.theme.description) {
-        markdown += `${selectedData.theme.description}\n\n`;
-      }
-      if (selectedData.theme.examples && selectedData.theme.examples.length > 0) {
-        markdown += '### 代表作品\n';
-        selectedData.theme.examples.forEach((example: string) => {
-          markdown += `- ${example}\n`;
-        });
-        markdown += '\n';
-      }
-    }
-
-    // 時代と場所
-    if (selectedData.timePlace) {
-      markdown += '## 時代と場所\n';
-      markdown += `${selectedData.timePlace.title}\n\n`;
-      if (selectedData.timePlace.examples && selectedData.timePlace.examples.length > 0) {
-        markdown += '### 代表作品\n';
-        selectedData.timePlace.examples.forEach((example: string) => {
-          markdown += `- ${example}\n`;
-        });
-        markdown += '\n';
-      }
-    }
-
-    // 作品世界と舞台設定
-    if (selectedData.worldSetting) {
-      markdown += '## 世界観\n';
-      markdown += `${selectedData.worldSetting.title}\n\n`;
-
-      if (selectedData.worldSetting.worldView && selectedData.worldSetting.worldView.length > 0) {
-        markdown += '### 基本的な世界観\n';
-        selectedData.worldSetting.worldView.forEach((item: string) => {
-          markdown += `- ${item}\n`;
-        });
-        markdown += '\n';
-      }
-
-      if (selectedData.worldSetting.features && selectedData.worldSetting.features.length > 0) {
-        markdown += '### 特徴的な要素\n';
-        selectedData.worldSetting.features.forEach((item: string) => {
-          markdown += `- ${item}\n`;
-        });
-        markdown += '\n';
-      }
-
-      if (selectedData.worldSetting.examples && selectedData.worldSetting.examples.length > 0) {
-        markdown += '### 代表作品\n';
-        selectedData.worldSetting.examples.forEach((example: string) => {
-          markdown += `- ${example}\n`;
-        });
-        markdown += '\n';
-      }
-    }
-
-    // 参考とする作風
-    if (selectedData.writingStyle) {
-      markdown += '## 参考とする作風\n';
-      markdown += `### ${selectedData.writingStyle.author}\n`;
-
-      if (selectedData.writingStyle.structure) {
-        markdown += '#### 文体と構造的特徴\n';
-        markdown += `${selectedData.writingStyle.structure}\n\n`;
-      }
-
-      if (selectedData.writingStyle.techniques && selectedData.writingStyle.techniques.length > 0) {
-        markdown += '#### 表現技法\n';
-        selectedData.writingStyle.techniques.forEach((technique: string) => {
-          markdown += `- ${technique}\n`;
-        });
-        markdown += '\n';
-      }
-
-      if (selectedData.writingStyle.themes) {
-        markdown += '#### テーマと主題\n';
-        markdown += `${selectedData.writingStyle.themes}\n\n`;
-      }
-    }
-
-    // 情緒的・感覚的要素
-    if (selectedData.emotionalElements && 
-        selectedData.emotionalElements.selectedElements && 
-        selectedData.emotionalElements.selectedElements.length > 0) {
-      markdown += '## 情緒的・感覚的要素\n';
-
-      // カテゴリごとにグループ化
-      const groupedElements: { [key: string]: any[] } = {};
-      selectedData.emotionalElements.selectedElements.forEach((item: any) => {
-        if (!groupedElements[item.category]) {
-          groupedElements[item.category] = [];
-        }
-        groupedElements[item.category].push(item);
-      });
-
-      // カテゴリごとに出力
-      Object.keys(groupedElements).forEach(category => {
-        groupedElements[category].forEach((element: any) => {
-          const description = element.description ? `: ${element.description}` : '';
-          markdown += `- ${category}: ${element.element}${description}\n`;
-        });
-      });
-      markdown += '\n';
-      
-      // 各カテゴリの「代表的な活用法」と「効果的な使用場面」を追加
-      if (selectedData.emotionalElements.categories && selectedData.emotionalElements.categories.length > 0) {
-        selectedData.emotionalElements.categories.forEach((category: any) => {
-          if (category.usage) {
-            markdown += `### ${category.title}の代表的な活用法\n`;
-            markdown += `${category.usage}\n\n`;
-          }
-          
-          if (category.effectiveScenes && category.effectiveScenes.length > 0) {
-            markdown += `### ${category.title}の効果的な使用場面\n`;
-            category.effectiveScenes.forEach((scene: string) => {
-              markdown += `- ${scene}\n`;
-            });
-            markdown += '\n';
-          }
-        });
-      }
-    }
-
-    // 過去の謎
-    if (selectedData.pastMystery) {
-      markdown += '## 過去の謎\n';
-      
-      if (selectedData.pastMystery.title) {
-        markdown += `「${selectedData.pastMystery.title}」\n\n`;
-      }
-      
-      if (selectedData.pastMystery.description) {
-        markdown += `${selectedData.pastMystery.description}\n\n`;
-      }
-      
-      // sectionsが存在する場合（新しい形式）
-      if (selectedData.pastMystery.sections) {
-        Object.entries(selectedData.pastMystery.sections).forEach(([sectionName, items]) => {
-          markdown += `### ${sectionName}\n`;
-          
-          if (Array.isArray(items)) {
-            items.forEach((item, index) => {
-              markdown += `${index + 1}. ${item}\n`;
-            });
-          }
-          
-          markdown += '\n';
-        });
-      }
-      // 後方互換性のため、eventsがある場合は従来通り表示
-      else if (selectedData.pastMystery.events && selectedData.pastMystery.events.length > 0) {
-        markdown += '### 過去の出来事\n';
-        selectedData.pastMystery.events.forEach((event: string, index: number) => {
-          markdown += `${index + 1}. ${event}\n`;
-        });
-        markdown += '\n';
-      }
-    }
-
-    // プロットパターン
-    if (selectedData.plotPattern) {
-      markdown += '## プロットパターン\n';
-      markdown += `${selectedData.plotPattern.title}\n\n`;
-
-      if (selectedData.plotPattern.description) {
-        markdown += `${selectedData.plotPattern.description}\n\n`;
-      }
-
-      if (selectedData.plotPattern.sections && selectedData.plotPattern.sections.length > 0) {
-        selectedData.plotPattern.sections.forEach((section: any) => {
-          markdown += `### ${section.title}\n\n`;
-
-          // セクションの内容を追加
-          if (section.content && section.content.length > 0) {
-            section.content.forEach((contentLine: string) => {
-              markdown += `${contentLine}\n`;
-            });
-            markdown += '\n';
-          }
-
-          // サブセクションを追加
-          if (section.subsections && section.subsections.length > 0) {
-            section.subsections.forEach((subsection: any) => {
-              markdown += `#### ${subsection.title}\n\n`;
-
-              if (subsection.content && subsection.content.length > 0) {
-                subsection.content.forEach((contentLine: string) => {
-                  markdown += `${contentLine}\n`;
-                });
-                markdown += '\n';
-              }
-            });
-          }
-        });
-      }
-    }
-
-    setMarkdownOutput(markdown);
-  };
-
   // 設定データを保存する関数
   const saveSettings = async () => {
-    setIsSaving(true);
-    setSaveError('');
-    setSaveSuccess(false);
-
     const storyId = searchParams.get('storyId');
     if (!storyId) {
-      setSaveError('ストーリーIDが見つかりません。URLパラメータを確認してください。');
-      setIsSaving(false);
+      toast({
+        title: "エラー",
+        description: "ストーリーIDが指定されていません。URLにstoryIdパラメータが必要です。",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
-      // バックエンドAPIを呼び出してデータを保存
-      console.log(`[TRACE] 統合設定データ保存開始: storyId=${storyId} - ${new Date().toISOString()}`);
-      console.log(`[TRACE] 統合設定クリエイターAPI呼び出し前 - ${new Date().toISOString()}`);
-      
-      // バックエンドAPIを直接呼び出す
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/stories/${storyId}/integrated-setting-creator/`, {
+      // マークダウンを生成（再生成）
+      generateMarkdown();
+
+      console.log('[TRACE] 保存処理開始:', {
+        storyId,
+        markdownLength: markdownOutput.length,
+        selectedDataKeys: Object.keys(selectedData)
+      });
+
+      // 型安全のために深いコピーを作成
+      const safeSelectedData: SelectedData = JSON.parse(JSON.stringify(selectedData));
+
+      // APIリクエストを送信
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:8001'}/api/settings/integrated/store/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          basic_setting_data: markdownOutput
+          story_id: storyId,
+          basic_setting_data: markdownOutput,
+          integrated_data: safeSelectedData
         }),
-        credentials: 'include', // Cookie（セッション）を含める
       });
 
-      console.log(`[TRACE] 統合設定クリエイターAPI呼び出し後 - ${new Date().toISOString()}`);
-      
-      // レスポンスが正常でない場合はエラーを投げる
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('APIエラー:', response.status, errorText);
-        throw new Error(`APIエラー: ${response.status} ${errorText}`);
-      }
-      
       // レスポンスをJSON形式に変換
-      const responseData = await response.json();
-      console.log('[TRACE] 保存レスポンス:', JSON.stringify(responseData).substring(0, 500)); // デバッグ用
+      const responseData: ApiResponse = await response.json();
+      console.log('[TRACE] 保存レスポンス:', JSON.stringify(responseData).substring(0, 500));
 
       // レスポンス処理
-      if (!responseData || responseData.success === false) {
-        // エラーメッセージの取得
-        const errorMessage = responseData?.message || 
-          (responseData?.error ? responseData.error : '保存に失敗しました');
-        throw new Error(errorMessage);
+      if (response.ok && responseData.success) {
+        // 保存成功の処理
+        if (responseData.data) {
+          setIntegratedSettingData(responseData.data);
+          setSaveSuccess(true);
+        }
+
+        toast({
+          title: "保存しました",
+          description: "基本設定が正常に保存されました。",
+        });
+        console.log('[TRACE] 保存成功');
+      } else {
+        // エラー処理
+        const errorMessage = responseData.message || "不明なエラーが発生しました";
+        setError(errorMessage);
+        setSaveSuccess(false);
+
+        toast({
+          title: "保存エラー",
+          description: errorMessage,
+          variant: "destructive",
+        });
+
+        console.error('[ERROR] 保存エラー:', responseData);
       }
-
-      toast({
-        title: "基本設定を保存しました",
-        description: "変更が正常に保存されました",
-      });
-
-      // 保存完了の通知
-      setSaveSuccess(true);
-      setSaveError(null);
-      setIsSaving(false);
     } catch (error) {
-      console.error('保存エラー:', error);
-      setSaveError(`保存中にエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      // 例外処理
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setError(errorMessage);
+
       toast({
-        title: "エラーが発生しました",
-        description: "基本設定の保存に失敗しました。もう一度お試しください。",
+        title: "システムエラー",
+        description: `保存処理中に例外が発生しました: ${errorMessage}`,
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
+
+      console.error('[ERROR] 保存例外:', error);
     }
   };
 
-  // データのリセット
-  const resetData = () => {
-    if (window.confirm('すべての選択をリセットしてもよろしいですか？')) {
-      const storyId = searchParams.get('storyId');
-      if (storyId) {
-        const storageKey = `integratedSettingData_${storyId}`;
-        localStorage.removeItem(storageKey);
+  // データの更新日時を表示
+  const formatLastUpdated = () => {
+    if (integratedSettingData?.updated_at) {
+      const updatedAt = safeParseDate(integratedSettingData.updated_at);
+      if (updatedAt) {
+        return `最終更新: ${updatedAt.toLocaleDateString()} ${updatedAt.toLocaleTimeString()}`;
       }
-      setSelectedData({});
-      setSaveSuccess(false);
     }
+    return '';
   };
 
   const storyId = searchParams.get('storyId');
+
+  // ローディング中の表示
+  const renderLoadingState = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="ml-2">データを読み込み中...</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // エラー表示
+  const renderErrorState = () => {
+    if (error) {
+      return (
+        <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
+          <h3 className="font-bold">エラーが発生しました</h3>
+          <p>{error}</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const regenerateMarkdown = () => {
+    generateMarkdown();
+  };
+
+  const saveIntegratedSettings = () => {
+    saveSettings();
+  };
 
   return (
     <div className={styles.container}>
       {/* カスタムナビゲーションを追加 */}
       <CustomNavigation storyId={storyId} />
 
-      {/* タブナビゲーション */}
-      {isMobileView ? (
-        <div className={styles.mobileTabsContainer}>
-          <select
-            className={styles.mobileTabSelect}
-            value={activeTab}
-            onChange={(e) => changeTab(e.target.value)}
-            aria-label="タブを選択"
-            title="タブを選択"
-          >
-            {TABS.map((tab) => (
-              <option key={tab.id} value={tab.id}>
-                {tab.label}
-              </option>
-            ))}
-          </select>
+      <div className="px-4 py-6">
+        <h1 className="mt-6 mb-2 text-3xl font-bold">統合設定クリエイター</h1>
+        <p className="mb-6 text-muted-foreground">
+          小説の基本設定を統合的に作成するツールです。各カテゴリから要素を選択して、世界観やプロットの基盤を構築します。
+        </p>
 
-          <button
-            className={`${styles.previewToggleButton} ${showPreview ? styles.activePreviewButton : ''}`}
-            onClick={() => setShowPreview(!showPreview)}
+        {/* デバッグ情報 - 開発時のみ表示 */}
+        {/* <div className="p-4 mb-4 border border-gray-300 bg-gray-50 text-gray-700 rounded">
+          <p className="font-semibold">デバッグ情報</p>
+          <p>isLoading: {isLoading ? 'true' : 'false'}</p>
+          <p>error: {error || 'なし'}</p>
+          <p>storyId: {storyId || 'なし'}</p>
+          <p>activeTab: {activeTab}</p>
+          <p>selectedData: {Object.keys(selectedData).length > 0 ? 'あり' : 'なし'}</p>
+        </div> */}
+
+        {/* エラー表示 */}
+        {error && (
+          <div className="p-4 mb-4 border border-red-500 bg-red-50 text-red-700 rounded">
+            <p className="font-semibold">エラーが発生しました</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* セーブステータス表示 */}
+        {saveSuccess && integratedSettingData && (
+          <div className="p-4 mb-4 border border-green-500 bg-green-50 text-green-700 rounded">
+            <p>設定が保存されました。{formatLastUpdated()}</p>
+          </div>
+        )}
+
+        {/* リセットボタン */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={resetSettings}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
-            {showPreview ? '編集に戻る' : 'プレビュー表示'}
-          </button>
+            すべての選択をリセット
+          </Button>
         </div>
-      ) : (
-        <div className={styles.tabsContainer}>
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
-              onClick={() => changeTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
+
+        {renderLoadingState()}
+        {renderErrorState()}
+      </div>
+
+      {/* タブナビゲーション */}
+      <div className={styles.tabsContainer}>
+        {TABS.map((tab) => (
+          <Button
+            key={tab.id}
+            className={`${styles.tabButton} ${activeTab === tab.id ? styles.activeTab : ''}`}
+            onClick={() => changeTab(tab.id)}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
 
       <div className={styles.contentContainer}>
         {/* 左側：セレクタ内容 */}
-        {(!isMobileView || (isMobileView && !showPreview)) && (
-          <div className={styles.selectorPanel}>
-            {activeTab === 'theme' && <ThemeSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'timePlace' && <TimePlaceSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'worldSetting' && <WorldSettingSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'style' && <WritingStyleSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'emotional' && <EmotionalElementsSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'mystery' && <PastMysterySelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-            {activeTab === 'plot' && <PlotPatternSelector selectedData={selectedData} setSelectedData={setSelectedData} />}
-          </div>
-        )}
+        <div className={styles.selectorPanel}>
+          {activeTab === 'theme' && (
+            <ThemeSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'timePlace' && (
+            <TimePlaceSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'worldSetting' && (
+            <WorldSettingSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'style' && (
+            <WritingStyleSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'emotional' && (
+            <EmotionalElementsSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'mystery' && (
+            <PastMysterySelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+          {activeTab === 'plot' && (
+            <PlotPatternSelector
+              selectedData={selectedData}
+              setSelectedData={setSelectedData}
+            />
+          )}
+        </div>
 
-        {/* 右側：プレビュー */}
-        {(!isMobileView || (isMobileView && showPreview)) && (
-          <div className={styles.previewPanel}>
-            <h2 className={styles.sectionTitle}>基本設定プレビュー</h2>
-            <div className={styles.markdownPreview}>
-              <div>{markdownOutput}</div>
-            </div>
-            <div className={styles.buttonContainer}>
-              <button
-                className={styles.resetButton}
-                onClick={resetData}
+        {/* 右側：プレビュー内容 */}
+        <div className={styles.previewPanel}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold">マークダウンプレビュー</h3>
+            <div className="space-x-2">
+              <Button
+                onClick={regenerateMarkdown}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                リセット
-              </button>
-              <button
-                className={styles.saveButton}
-                onClick={saveSettings}
-                disabled={isSaving || Object.keys(selectedData).length === 0}
+                再生成
+              </Button>
+              <Button
+                onClick={saveIntegratedSettings}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
-                {isSaving ? '保存中...' : '保存'}
-              </button>
+                保存
+              </Button>
             </div>
-            {saveSuccess && (
-              <div className={styles.successMessage}>
-                基本設定が正常に保存されました！
-              </div>
-            )}
-            {saveError && (
-              <div className={styles.errorMessage}>
-                {saveError}
-              </div>
-            )}
           </div>
-        )}
+          <div className={styles.markdownPreview}>
+            <ReactMarkdown>{markdownOutput}</ReactMarkdown>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1073,10 +1073,11 @@ const IntegratedSettingCreator: React.FC = () => {
               <div className="flex flex-col items-end" style={{ width: '50%' }}>
                 <Button
                   onClick={saveIntegratedSettings}
-                  disabled={isSaving}
+                  disabled={isSaving || !markdownOutput.trim()}
                   size="sm"
                   variant="default"
                   className="gap-1 font-semibold transition-all duration-200 hover:scale-105"
+                  title={!markdownOutput.trim() ? "基本設定が空のため保存できません" : "設定を保存します"}
                 >
                   {isSaving ? (
                     <>

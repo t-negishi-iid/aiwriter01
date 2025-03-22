@@ -72,7 +72,7 @@ export default function Summary({ selectedData }: SummaryProps) {
 
         <li className="border-b pb-2 y-m-10">
           <span className="font-semibold">時代と場所：</span>
-          {selectedData.timePlace ? (
+          {selectedData.timePlace && selectedData.timePlace.title ? (
             <>
               {selectedData.timePlace.title}
               {selectedData.timePlace.category && (
@@ -135,7 +135,7 @@ export default function Summary({ selectedData }: SummaryProps) {
 
         <li className="border-b pb-2 y-m-10">
           <span className="font-semibold">物語の背景となる過去の謎：</span>
-          {selectedData.pastMystery ? (
+          {selectedData.pastMystery && selectedData.pastMystery.title ? (
             selectedData.pastMystery.title
           ) : (
             <span className="text-red-300 ml-1">未選択</span>
@@ -144,7 +144,7 @@ export default function Summary({ selectedData }: SummaryProps) {
 
         <li className="border-b pb-2 y-m-10">
           <span className="font-semibold">プロットパターン：</span>
-          {selectedData.plotPattern ? (
+          {selectedData.plotPattern && selectedData.plotPattern.title ? (
             selectedData.plotPattern.title
           ) : (
             <span className="text-red-300 ml-1">未選択</span>

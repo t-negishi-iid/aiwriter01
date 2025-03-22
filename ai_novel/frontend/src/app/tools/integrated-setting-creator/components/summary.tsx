@@ -69,7 +69,7 @@ export default function Summary({ selectedData }: SummaryProps) {
                 )}
               </>
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -85,7 +85,7 @@ export default function Summary({ selectedData }: SummaryProps) {
                 )}
               </>
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -101,7 +101,7 @@ export default function Summary({ selectedData }: SummaryProps) {
                 )}
               </>
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -117,7 +117,7 @@ export default function Summary({ selectedData }: SummaryProps) {
                 )}
               </>
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -132,7 +132,7 @@ export default function Summary({ selectedData }: SummaryProps) {
                 ))}
               </div>
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -141,7 +141,7 @@ export default function Summary({ selectedData }: SummaryProps) {
             {selectedData.pastMystery ? (
               selectedData.pastMystery.title
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
 
@@ -150,7 +150,7 @@ export default function Summary({ selectedData }: SummaryProps) {
             {selectedData.plotPattern ? (
               selectedData.plotPattern.title
             ) : (
-              <span className="text-gray-500 ml-1">未選択</span>
+              <span className="text-red-300 ml-1">未選択</span>
             )}
           </li>
         </ul>

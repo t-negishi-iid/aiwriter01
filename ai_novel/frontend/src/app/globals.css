@@ -182,6 +182,10 @@
   min-height: 1200px;
 }
 
+.y-m-10 {
+  margin: 10px 0;
+}
+
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {
   background-color: white !important;

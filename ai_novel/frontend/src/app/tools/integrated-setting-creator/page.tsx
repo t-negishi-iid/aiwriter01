@@ -5,13 +5,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/components/ui/use-toast";
-import styles from './page.module.css';
-import { unifiedStoryApi } from '@/lib/unified-api-client';
 import { Save, Check, Loader2 } from 'lucide-react';
+import styles from './page.module.css';
+import { useToast } from "@/components/ui/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
-// 各種セレクターコンポーネントのインポート
+// APIクライアントのインポート
+import { unifiedStoryApi } from '@/lib/unified-api-client';
+
+// カスタムコンポーネントのインポート
 import ThemeSelector from './components/ThemeSelector';
 import TimePlaceSelector from './components/TimePlaceSelector';
 import WorldSettingSelector from './components/WorldSettingSelector';
@@ -19,16 +21,18 @@ import WritingStyleSelector from './components/WritingStyleSelector';
 import EmotionalElementsSelector from './components/EmotionalElementsSelector';
 import PastMysterySelector from './components/PastMysterySelector';
 import PlotPatternSelector from './components/PlotPatternSelector';
+import Summary from './components/summary';
 
 // 各セレクタのタブ
 const TABS = [
-  { id: 'theme', label: 'テーマ（主題）' },
+  { id: 'summary', label: '概要' },
+  { id: 'theme', label: 'テーマ' },
   { id: 'timePlace', label: '時代と場所' },
-  { id: 'worldSetting', label: '作品世界と舞台設定' },
-  { id: 'style', label: '参考とする作風' },
-  { id: 'emotional', label: '情緒的・感覚的要素' },
-  { id: 'mystery', label: '物語の背景となる過去の謎' },
-  { id: 'plot', label: 'プロットパターン' },
+  { id: 'worldSetting', label: '世界と舞台' },
+  { id: 'style', label: '参考作風' },
+  { id: 'emotional', label: '情緒・雰囲気' },
+  { id: 'mystery', label: '過去の謎' },
+  { id: 'plot', label: 'プロット' },
 ];
 
 // カスタムナビゲーションコンポーネント
@@ -820,30 +824,30 @@ const IntegratedSettingCreator: React.FC = () => {
     setIsSaving(true);
     setError(null);
     setSaveSuccess(false);
-    
+
     try {
       // マークダウンを生成（再生成）
       generateMarkdown();
-      
+
       // APIリクエスト用のデータを準備
       const requestData = {
         basic_setting_data: markdownOutput,
         integrated_data: selectedData
       };
-      
+
       console.log('[DEBUG] 保存リクエスト:', requestData);
-      
+
       // unifiedStoryApiを使用して保存
       const responseData = await unifiedStoryApi.saveIntegratedSettingCreatorData(storyId, requestData);
-      
+
       console.log('[DEBUG] 保存レスポンス:', responseData);
-      
+
       if (responseData && responseData.success) {
         // 成功した場合の処理
         const savedData = responseData.data as IntegratedSettingData;
         setIntegratedSettingData(savedData);
         setSaveSuccess(true);
-        
+
         // 成功通知とともに最終更新日時を表示
         toast({
           title: "保存しました",
@@ -852,10 +856,10 @@ const IntegratedSettingCreator: React.FC = () => {
         });
       } else {
         // エラー処理
-        const errorMessage = responseData && responseData.message 
-          ? String(responseData.message) 
+        const errorMessage = responseData && responseData.message
+          ? String(responseData.message)
           : "不明なエラーが発生しました";
-        
+
         setError(errorMessage);
         setSaveSuccess(false);
 
@@ -1010,6 +1014,9 @@ const IntegratedSettingCreator: React.FC = () => {
         <div className={styles.contentContainer}>
           {/* 左側：セレクタ内容 */}
           <div className={`${styles.selectorPanel} ${showPreview ? styles.hiddenOnMobile : ''}`}>
+            {activeTab === 'summary' && (
+              <Summary selectedData={selectedData} />
+            )}
             {activeTab === 'theme' && (
               <ThemeSelector
                 selectedData={selectedData}

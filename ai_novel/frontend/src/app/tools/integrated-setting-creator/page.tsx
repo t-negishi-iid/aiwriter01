@@ -334,6 +334,8 @@ const IntegratedSettingCreator: React.FC = () => {
     }
   }, []);
 
+  // ローカルストレージ関連機能はDB保存が有効なため一時的に無効化
+  /*
   // ローカルストレージからデータを読み込む関数
   const loadFromLocalStorage = useCallback(() => {
     try {
@@ -365,6 +367,7 @@ const IntegratedSettingCreator: React.FC = () => {
       console.error('ローカルストレージへの保存に失敗しました:', error);
     }
   }, [searchParams]);
+  */
 
   // タブを変更し、URLを更新する関数
   const changeTab = useCallback((tabId: string) => {
@@ -423,14 +426,14 @@ const IntegratedSettingCreator: React.FC = () => {
             }
           } else {
             // APIからの取得失敗時はローカルストレージを試す
-            loadFromLocalStorage();
+            // loadFromLocalStorage();
           }
         } catch (error) {
           console.error('[ERROR] データ取得エラー:', error);
           setError(error instanceof Error ? error.message : '不明なエラーが発生しました');
 
           // API取得失敗時はローカルストレージからの読み込みを試みる
-          loadFromLocalStorage();
+          // loadFromLocalStorage();
         } finally {
           setIsLoading(false);
           // データロード完了フラグを設定
@@ -440,7 +443,7 @@ const IntegratedSettingCreator: React.FC = () => {
 
       fetchData();
     }
-  }, [searchParams, parseMarkdownData, loadFromLocalStorage, initialDataLoaded]);
+  }, [searchParams, parseMarkdownData, initialDataLoaded]);
 
   useEffect(() => {
     const storyId = searchParams.get('storyId');
@@ -741,21 +744,23 @@ const IntegratedSettingCreator: React.FC = () => {
   // 選択データが変更されたらローカルストレージに保存
   useEffect(() => {
     if (Object.keys(selectedData).length > 0) {
-      saveToLocalStorage(selectedData);
+      // saveToLocalStorage(selectedData);
       generateMarkdown();
     }
-  }, [selectedData, generateMarkdown, saveToLocalStorage]);
+  }, [selectedData, generateMarkdown]);
 
   // 統合設定データをリセットする関数
   const resetSettings = useCallback(() => {
-    // 確認ダイアログを表示
+    // ユーザーに確認
     if (window.confirm('設定をリセットしますか？この操作は元に戻せません。')) {
       try {
-        // ローカルストレージをクリア
+        // ローカルストレージをクリアする処理はDB保存が有効なため無効化
+        /*
         const storyId = searchParams.get('storyId');
         if (storyId) {
           localStorage.removeItem(`integratedSettingData_${storyId}`);
         }
+        */
 
         // 状態をリセット
         setSelectedData({
@@ -767,26 +772,24 @@ const IntegratedSettingCreator: React.FC = () => {
           pastMystery: createInitialPastMystery(),
           plotPattern: createInitialPlotPattern()
         });
-        setMarkdownOutput('');
-        setIntegratedSettingData(null);
-        setSaveSuccess(false);
 
+        setMarkdownOutput('');
+        setError(null);
         toast({
-          title: "リセット完了",
-          description: "すべての設定がリセットされました。",
-          className: "save-button-toast",
+          description: "設定がリセットされました。",
+          variant: "default",
         });
+
+        setActiveTab('theme');
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('設定のリセットに失敗しました:', error);
         toast({
-          title: "リセットエラー",
-          description: `設定のリセット中にエラーが発生しました: ${errorMessage}`,
+          description: "設定のリセットに失敗しました。",
           variant: "destructive",
-          className: "save-button-toast",
         });
       }
     }
-  }, [toast, searchParams]);
+  }, [toast]); // toastを依存配列に追加
 
   // 画面サイズを監視して表示状態を調整
   useEffect(() => {

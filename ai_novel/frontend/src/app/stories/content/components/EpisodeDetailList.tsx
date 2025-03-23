@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { ActDetail, EpisodeDetail } from '@/lib/unified-api-client';
 import { ActDetailApi, episodeApi } from '@/lib/unified-api-client';
 import { toast } from "@/components/ui/use-toast";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface EpisodeDetailListProps {
   storyId: string;
@@ -28,6 +29,7 @@ export default function EpisodeDetailList({
   const [error, setError] = useState<string | null>(null);
   const [acts, setActs] = useState<ActDetail[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeDetail[]>([]);
+  const [selectedActNumber, setSelectedActNumber] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +46,7 @@ export default function EpisodeDetailList({
           setActs(actsResponse.results);
           const firstAct = actsResponse.results[0];
           setSelectedAct(firstAct);
+          setSelectedActNumber(firstAct.act_number.toString());
 
           // 選択された幕のエピソード一覧を取得
           try {
@@ -75,6 +78,7 @@ export default function EpisodeDetailList({
   // 幕選択ハンドラ
   const handleSelectAct = async (act: ActDetail) => {
     setSelectedAct(act);
+    setSelectedActNumber(act.act_number.toString());
     setSelectedEpisode(null);
     setEditedContent('');
 
@@ -104,6 +108,19 @@ export default function EpisodeDetailList({
     }
   };
 
+  // タブでの幕選択ハンドラ
+  const handleTabChange = (value: string) => {
+    if (!acts.length) return;
+    
+    // 選択された幕の番号に対応する幕を検索
+    const actNumber = parseInt(value, 10);
+    const selectedAct = acts.find(act => act.act_number === actNumber);
+    
+    if (selectedAct) {
+      handleSelectAct(selectedAct);
+    }
+  };
+
   // エピソード選択ハンドラ
   const handleSelectEpisode = (episode: EpisodeDetail) => {
     setSelectedEpisode(episode);
@@ -127,36 +144,45 @@ export default function EpisodeDetailList({
           </div>
         ) : acts.length > 0 ? (
           <div>
-            {/* 幕一覧 */}
-            <div className="mb-4">
-              <h3 className="font-medium mb-2">幕</h3>
-              <div className="space-y-2">
+            {/* 幕タブ */}
+            <Tabs
+              value={selectedActNumber}
+              onValueChange={handleTabChange}
+              className="mb-6"
+            >
+              <TabsList className="grid grid-cols-3 w-full">
                 {acts.map((act) => (
-                  <div
+                  <TabsTrigger
                     key={act.id}
-                    className={`p-3 border rounded-md cursor-pointer ${selectedAct?.id === act.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                      }`}
-                    onClick={() => handleSelectAct(act)}
+                    value={act.act_number.toString()}
                   >
-                    <div className="font-medium y-m-10">
-                      第{act.act_number}幕: {act.title}
+                    第{act.act_number}幕
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {acts.map((act) => (
+                <TabsContent
+                  key={act.id}
+                  value={act.act_number.toString()}
+                  className="mt-2"
+                >
+                  <div className="p-3 border rounded-md mb-4">
+                    <div className="font-medium text-lg mb-2">
+                      {act.title}
                     </div>
-                    <div className="text-sm mt-1">
-                      {act.description && act.description.length > 100
-                        ? act.description.substring(0, 100) + "..."
-                        : act.description || 'あらすじなし'}
+                    <div className="text-sm">
+                      {act.overview || 'あらすじなし'}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </TabsContent>
+              ))}
+            </Tabs>
 
             {/* エピソード一覧 */}
             {selectedAct && (
               <div>
-                <h3 className="font-medium mb-2">エピソード</h3>
+                <h3 className="font-medium mb-2">エピソード一覧</h3>
                 {episodes.length > 0 ? (
                   <div className="space-y-2">
                     {episodes.map((episode) => (
@@ -173,7 +199,9 @@ export default function EpisodeDetailList({
                         </div>
                         <textarea
                           className="text-sm mt-1 w-full h-16 resize-none bg-transparent border-none p-0 focus:ring-0 focus:outline-none story-textarea th-200"
-                          value={episode.content.substring(0, 100) + "..."}
+                          value={episode.content && episode.content.length > 100 
+                            ? episode.content.substring(0, 100) + "..." 
+                            : episode.content || ''}
                           readOnly
                           aria-label={`${episode.episode_number}話: ${episode.title}のプレビュー`}
                         />

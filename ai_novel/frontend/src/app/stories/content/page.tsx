@@ -140,25 +140,26 @@ export default function ContentPage() {
 
                   {selectedAct && (
                     <div className="mt-4">
-                      <h3 className="text-lg font-medium mb-2">エピソード一覧</h3>
                       {episodes.length > 0 ? (
                         <div className="space-y-2">
                           {episodes.map((episode) => (
                             <div
                               key={episode.id}
-                              className={`p-3 border rounded-md cursor-pointer ${
-                                selectedEpisode?.id === episode.id
+                              className={`p-3 border rounded-md cursor-pointer ${selectedEpisode?.id === episode.id
                                   ? 'bg-primary text-primary-foreground'
                                   : 'hover:bg-muted'
-                              }`}
+                                }`}
                               onClick={() => handleSelectEpisode(episode)}
                             >
                               <div className="font-medium">
                                 {episode.episode_number}話: {episode.title}
                               </div>
-                              <div className="text-sm mt-1 line-clamp-2">
-                                {episode.content.substring(0, 100)}...
-                              </div>
+                              <textarea 
+                                className="text-sm mt-1 w-full h-16 resize-none bg-transparent border-none p-0 focus:ring-0 focus:outline-none"
+                                value={episode.content.substring(0, 100) + "..."}
+                                readOnly
+                                aria-label={`${episode.episode_number}話: ${episode.title}のプレビュー`}
+                              />
                             </div>
                           ))}
                         </div>
@@ -184,7 +185,7 @@ export default function ContentPage() {
           <Card className="w-full h-[calc(100vh-200px)]">
             <CardHeader>
               <CardTitle>
-                {selectedEpisode 
+                {selectedEpisode
                   ? `${selectedEpisode.episode_number}話: ${selectedEpisode.title}`
                   : 'エピソード内容'}
               </CardTitle>

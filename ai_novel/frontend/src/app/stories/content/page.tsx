@@ -11,10 +11,30 @@ import { ActDetailApi, episodeApi, contentApi } from '@/lib/unified-api-client';
 import { ActDetail, EpisodeDetail } from '@/lib/unified-api-client';
 import { useSearchParams } from 'next/navigation';
 
+// 外側のコンポーネント：StoryProviderを提供する
 export default function ContentPage() {
   const searchParams = useSearchParams();
   const storyId = searchParams.get('id');
 
+  if (!storyId) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center py-10">
+          <p className="text-red-500 font-medium">小説IDが指定されていません。</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StoryProvider storyId={storyId}>
+      <ContentPageInner storyId={storyId} />
+    </StoryProvider>
+  );
+}
+
+// 内側のコンポーネント：コンテキストを使用する
+function ContentPageInner({ storyId }: { storyId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acts, setActs] = useState<ActDetail[]>([]);
@@ -26,20 +46,9 @@ export default function ContentPage() {
   const [generatedContent, setGeneratedContent] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wordCount, setWordCount] = useState<number>(1000);
-  const [basicSettingId, setBasicSettingId] = useState<number | null>(null);
 
+  // ここでコンテキストを使用（プロバイダの内側で）
   const { basicSetting } = useStoryContext();
-
-  // 基本設定IDを取得
-  useEffect(() => {
-    if (basicSetting && basicSetting.id) {
-      console.log(`基本設定IDを設定: ${basicSetting.id}`);
-      setBasicSettingId(basicSetting.id);
-    } else {
-      console.log('基本設定IDが見つかりません');
-      setBasicSettingId(null);
-    }
-  }, [basicSetting]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -111,21 +120,19 @@ export default function ContentPage() {
         description: "エピソード一覧の取得に失敗しました。",
         variant: "destructive"
       });
-      setEpisodes([]);
-      setSelectedEpisode(null);
-      setEditedContent('');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // エピソード選択時のハンドラ
+  // エピソード選択ハンドラ
   const handleSelectEpisode = (episode: EpisodeDetail) => {
     setSelectedEpisode(episode);
     setEditedContent(episode.content || '');
+    setGeneratedContent('');
   };
 
-  // エピソード内容の変更ハンドラ
+  // エピソード内容変更ハンドラ
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditedContent(e.target.value);
   };
@@ -135,31 +142,28 @@ export default function ContentPage() {
     setGeneratedContent(e.target.value);
   };
 
-  // 生成内容をエピソードに適用するハンドラ
+  // 生成内容を適用するハンドラ
   const handleApplyGeneratedContent = () => {
-    if (!generatedContent) {
+    if (generatedContent) {
+      setEditedContent(generatedContent);
+    }
+  };
+
+  // エピソード内容保存ハンドラ
+  const handleSaveContent = async () => {
+    if (!storyId || !selectedAct || !selectedEpisode) {
       toast({
         title: "エラー",
-        description: "適用する生成内容がありません。",
+        description: "必要な情報が不足しています。",
         variant: "destructive"
       });
       return;
     }
 
-    setEditedContent(generatedContent);
-    toast({
-      title: "適用完了",
-      description: "生成された内容をエピソードに適用しました。変更を保存するには「保存」ボタンをクリックしてください。",
-    });
-  };
-
-  // エピソード内容の保存ハンドラ
-  const handleSaveContent = async () => {
-    if (!selectedEpisode || !selectedAct || !storyId) return;
+    setIsSaving(true);
 
     try {
-      setIsSaving(true);
-      // APIを呼び出してエピソード内容を更新
+      // エピソード内容を更新
       await episodeApi.updateEpisodeContent(
         storyId as string,
         selectedAct.act_number,
@@ -194,8 +198,8 @@ export default function ContentPage() {
 
   // エピソード本文を生成するハンドラ
   const handleGenerateContent = async () => {
-    if (!selectedEpisode || !selectedAct || !storyId) {
-      console.error("エラー: 必要な情報が不足しています", { selectedEpisode, selectedAct, storyId });
+    // 必要な情報が揃っているか確認
+    if (!storyId || !selectedAct || !selectedEpisode) {
       toast({
         title: "エラー",
         description: "必要な情報が不足しています。",
@@ -205,8 +209,8 @@ export default function ContentPage() {
     }
 
     // 基本設定IDの確認
-    if (!basicSettingId) {
-      console.error("エラー: 基本設定IDが取得できません");
+    if (!basicSetting || !basicSetting.id) {
+      console.error("エラー: 基本設定IDが取得できません", basicSetting);
       toast({
         title: "エラー",
         description: "基本設定IDが取得できません。作品の基本設定が正しく設定されているか確認してください。",
@@ -215,49 +219,33 @@ export default function ContentPage() {
       return;
     }
 
+    setIsGenerating(true);
+    setGeneratedContent("");
+
     try {
-      setIsGenerating(true);
-      console.log(`エピソード本文生成開始: ストーリーID=${storyId}, 幕番号=${selectedAct.act_number}, エピソード番号=${selectedEpisode.episode_number}, 基本設定ID=${basicSettingId}, 文字数=${wordCount}`);
-
-      // APIリクエストパラメータのログ出力
-      const params = {
-        storyId: storyId as string,
-        actNumber: selectedAct.act_number,
-        episodeNumber: selectedEpisode.episode_number,
-        basicSettingId: basicSettingId,
-        wordCount: wordCount
-      };
-      console.log("APIリクエストパラメータ:", JSON.stringify(params));
-
-      // APIを呼び出してエピソード本文を生成
-      const response = await contentApi.createEpisodeContent(
-        storyId as string,
-        selectedAct.act_number,
-        selectedEpisode.episode_number,
-        {
-          basic_setting_id: basicSettingId,
-          word_count: wordCount
-        }
-      );
-
-      console.log("APIレスポンス:", response);
+      const response = await contentApi.generateEpisodeContent({
+        story_id: parseInt(storyId),
+        basic_setting_id: basicSetting.id,
+        act_number: selectedAct.act_number,
+        episode_number: selectedEpisode.episode_number,
+        word_count: wordCount,
+      });
 
       if (response && response.content) {
-        setGeneratedContent(response.content as string);
+        setGeneratedContent(response.content);
         toast({
           title: "生成完了",
-          description: "エピソード本文が生成されました。",
+          description: "エピソード本文を生成しました。",
         });
       } else {
-        console.error("エラー: レスポンスの形式が不正", response);
         toast({
           title: "警告",
-          description: "本文生成レスポンスの形式が不正です。",
-          variant: "destructive"
+          description: "生成結果が空でした。別の設定で再試行してください。",
+          variant: "warning"
         });
       }
     } catch (err) {
-      console.error("エピソード生成エラー:", err);
+      console.error("本文生成エラー:", err);
       toast({
         title: "エラー",
         description: "エピソード本文の生成に失敗しました。",
@@ -268,46 +256,60 @@ export default function ContentPage() {
     }
   };
 
-  if (!storyId) {
-    return <div>小説IDが指定されていません</div>;
-  }
-
   return (
-    <StoryProvider storyId={storyId as string}>
-      <StoryTabs storyId={storyId as string} activeTab="content" />
+    <div className="container mx-auto p-4">
+      {/* タブナビゲーション */}
+      <StoryTabs activeTab="content" storyId={storyId} />
 
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', marginTop: '24px' }}>
-        {/* 左側：エピソード一覧 */}
-        <div style={{ width: '40%', position: 'relative' }}>
-          <Card className="w-full h-[calc(100vh-200px)]">
+      <div className="flex gap-4 mt-4">
+        {/* 左側：幕・エピソード一覧 */}
+        <div style={{ width: '40%' }}>
+          <Card className="w-full">
             <CardHeader>
-              <CardTitle>エピソード一覧</CardTitle>
+              <CardTitle>幕とエピソード</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-y-auto">
+            <CardContent>
               {isLoading ? (
                 <div className="flex justify-center items-center py-10">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <span className="ml-2">読み込み中...</span>
                 </div>
               ) : error ? (
-                <div className="text-center text-red-500">{error}</div>
+                <div className="text-center py-4">
+                  <p className="text-red-500">{error}</p>
+                </div>
               ) : acts.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-3 gap-2">
-                    {acts.map((act) => (
-                      <Button
-                        key={act.id}
-                        variant={selectedAct?.id === act.id ? "default" : "outline"}
-                        className="w-full"
-                        onClick={() => handleSelectAct(act)}
-                      >
-                        {act.act_number}幕
-                      </Button>
-                    ))}
+                <div>
+                  {/* 幕一覧 */}
+                  <div className="mb-4">
+                    <h3 className="font-medium mb-2">幕</h3>
+                    <div className="space-y-2">
+                      {acts.map((act) => (
+                        <div
+                          key={act.id}
+                          className={`p-3 border rounded-md cursor-pointer ${selectedAct?.id === act.id
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-muted'
+                            }`}
+                          onClick={() => handleSelectAct(act)}
+                        >
+                          <div className="font-medium y-m-10">
+                            第{act.act_number}幕: {act.title}
+                          </div>
+                          <div className="text-sm mt-1">
+                            {act.description && act.description.length > 100
+                              ? act.description.substring(0, 100) + "..."
+                              : act.description || 'あらすじなし'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* エピソード一覧 */}
                   {selectedAct && (
-                    <div className="mt-4">
+                    <div>
+                      <h3 className="font-medium mb-2">エピソード</h3>
                       {episodes.length > 0 ? (
                         <div className="space-y-2">
                           {episodes.map((episode) => (
@@ -446,6 +448,6 @@ export default function ContentPage() {
           )}
         </div>
       </div>
-    </StoryProvider>
+    </div>
   );
 }

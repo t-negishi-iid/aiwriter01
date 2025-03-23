@@ -6,6 +6,8 @@ import { unifiedFetchApi, ActDetail, ApiError } from '@/lib/unified-api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useStoryContext } from '@/components/story/StoryProvider';
 
 interface ActDetailListProps {
   storyId: number;
@@ -15,6 +17,7 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
   const [acts, setActs] = useState<ActDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  const { setSelectedAct } = useStoryContext();
 
   useEffect(() => {
     const fetchActDetails = async () => {
@@ -28,7 +31,7 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
           previous: string | null;
           results: ActDetail[];
         }>(`/stories/${storyId}/acts/`);
-        
+
         // DRFのページネーションレスポンスからresultsを取得
         if (response && response.results) {
           setActs(response.results);
@@ -81,23 +84,21 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-xl font-bold">
               {act.act_number}幕: {act.title}
+              {/* 幕を選択するボタンを付ける。押すとそのActでsetSelectedActtする。 */}
+              <Button
+                onClick={() => setSelectedAct(act)}
+                className="ml-2"
+              >
+                選択
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-500 mb-1">概要</h4>
-              <Textarea
-                value={act.overview || ''}
-                readOnly
-                className="w-full h-24 resize-none bg-gray-50"
-              />
-            </div>
             <div>
-              <h4 className="text-sm font-semibold text-gray-500 mb-1">詳細</h4>
               <Textarea
-                value={act.detail || ''}
+                value={act.raw_content || ''}
                 readOnly
-                className="w-full h-48 resize-none bg-gray-50"
+                className="w-full h-48 resize-none bg-gray-50 form-container th-200"
               />
             </div>
           </CardContent>

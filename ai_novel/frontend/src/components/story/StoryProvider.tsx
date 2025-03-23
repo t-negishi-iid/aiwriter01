@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { storyApi, integratedSettingCreatorApi, basicSettingApi, characterApi, plotApi } from '@/lib/api-client';
 import { Story } from '@/types/story';
+import { ActDetail } from '@/lib/unified-api-client';
 
 // コンテキスト用の型定義
 interface StoryContextType {
@@ -17,6 +18,8 @@ interface StoryContextType {
   plot: any;
   isLoading: boolean;
   error: string | null;
+  selectedAct: ActDetail | null;
+  setSelectedAct: (act: ActDetail | null) => void;
 }
 
 // デフォルト値を持つコンテキストを作成
@@ -27,7 +30,9 @@ const StoryContext = createContext<StoryContextType>({
   characters: [],
   plot: null,
   isLoading: true,
-  error: null
+  error: null,
+  selectedAct: null,
+  setSelectedAct: () => {}
 });
 
 interface StoryProviderProps {
@@ -43,6 +48,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
   const [plot, setPlot] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAct, setSelectedAct] = useState<ActDetail | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -139,7 +145,9 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
     characters,
     plot,
     isLoading,
-    error
+    error,
+    selectedAct,
+    setSelectedAct
   };
 
   if (isLoading) {

@@ -115,6 +115,7 @@ export interface ActDetail {
   title: string;
   overview: string;
   detail: string;
+  raw_content: string;
   created_at: string;
   updated_at: string;
 }

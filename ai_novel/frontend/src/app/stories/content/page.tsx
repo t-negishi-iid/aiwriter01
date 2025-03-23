@@ -11,35 +11,9 @@ import { ActDetailApi, episodeApi, contentApi } from '@/lib/unified-api-client';
 import { ActDetail, EpisodeDetail } from '@/lib/unified-api-client';
 import { useSearchParams } from 'next/navigation';
 
-// Storyコンテキストに基本設定IDを含む拡張インターフェース
-interface StoryWithBasicSetting {
-  id: number;
-  title: string;
-  description: string;
-  basic_setting?: {
-    id: number;
-  };
-  [key: string]: any;
-}
-
 export default function ContentPage() {
   const searchParams = useSearchParams();
-  const storyIdFromQuery = searchParams.get('id');
-  
-  // 最終的に使用するストーリーID
-  const [storyId, setStoryId] = useState<string | null>(storyIdFromQuery);
-
-  // クライアントサイドでパスパラメータからIDを取得
-  useEffect(() => {
-    // クライアントサイドでのみ実行
-    const pathname = window.location.pathname;
-    const pathSegments = pathname.split('/');
-    // パスパラメータからのID取得（/stories/content/123 の形式を想定）
-    const idFromPath = pathSegments.length > 3 ? pathSegments[3] : null;
-    
-    // クエリパラメータかパスパラメータのどちらかからIDを使用
-    setStoryId(storyIdFromQuery || idFromPath);
-  }, [storyIdFromQuery]);
+  const storyId = searchParams.get('id');
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,11 +26,20 @@ export default function ContentPage() {
   const [generatedContent, setGeneratedContent] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wordCount, setWordCount] = useState<number>(1000);
+  const [basicSettingId, setBasicSettingId] = useState<number | null>(null);
 
-  // StoryContextから基本設定情報を取得
-  const { story } = useStoryContext();
+  const { basicSetting } = useStoryContext();
+
   // 基本設定IDを取得
-  const basicSettingId = story ? (story as StoryWithBasicSetting).basic_setting?.id || 1 : 1;
+  useEffect(() => {
+    if (basicSetting && basicSetting.id) {
+      console.log(`基本設定IDを設定: ${basicSetting.id}`);
+      setBasicSettingId(basicSetting.id);
+    } else {
+      console.log('基本設定IDが見つかりません');
+      setBasicSettingId(null);
+    }
+  }, [basicSetting]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,7 +89,7 @@ export default function ContentPage() {
     setSelectedAct(act);
     setSelectedEpisode(null);
     setEditedContent('');
-    
+
     try {
       setIsLoading(true);
       // 選択された幕のエピソード一覧を取得
@@ -184,7 +167,6 @@ export default function ContentPage() {
         {
           title: selectedEpisode.title,
           content: editedContent,
-          raw_data: editedContent // ユーザーが直接編集した内容はraw_dataも同じ
         }
       );
 
@@ -212,10 +194,41 @@ export default function ContentPage() {
 
   // エピソード本文を生成するハンドラ
   const handleGenerateContent = async () => {
-    if (!selectedEpisode || !selectedAct || !basicSettingId || !storyId) return;
+    if (!selectedEpisode || !selectedAct || !storyId) {
+      console.error("エラー: 必要な情報が不足しています", { selectedEpisode, selectedAct, storyId });
+      toast({
+        title: "エラー",
+        description: "必要な情報が不足しています。",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // 基本設定IDの確認
+    if (!basicSettingId) {
+      console.error("エラー: 基本設定IDが取得できません");
+      toast({
+        title: "エラー",
+        description: "基本設定IDが取得できません。作品の基本設定が正しく設定されているか確認してください。",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       setIsGenerating(true);
+      console.log(`エピソード本文生成開始: ストーリーID=${storyId}, 幕番号=${selectedAct.act_number}, エピソード番号=${selectedEpisode.episode_number}, 基本設定ID=${basicSettingId}, 文字数=${wordCount}`);
+
+      // APIリクエストパラメータのログ出力
+      const params = {
+        storyId: storyId as string,
+        actNumber: selectedAct.act_number,
+        episodeNumber: selectedEpisode.episode_number,
+        basicSettingId: basicSettingId,
+        wordCount: wordCount
+      };
+      console.log("APIリクエストパラメータ:", JSON.stringify(params));
+
       // APIを呼び出してエピソード本文を生成
       const response = await contentApi.createEpisodeContent(
         storyId as string,
@@ -227,6 +240,8 @@ export default function ContentPage() {
         }
       );
 
+      console.log("APIレスポンス:", response);
+
       if (response && response.content) {
         setGeneratedContent(response.content as string);
         toast({
@@ -234,6 +249,7 @@ export default function ContentPage() {
           description: "エピソード本文が生成されました。",
         });
       } else {
+        console.error("エラー: レスポンスの形式が不正", response);
         toast({
           title: "警告",
           description: "本文生成レスポンスの形式が不正です。",
@@ -356,7 +372,7 @@ export default function ContentPage() {
                     ) : '保存'}
                   </Button>
 
-                  <Button 
+                  <Button
                     className="w-full"
                     disabled={isGenerating || !selectedEpisode}
                     onClick={handleGenerateContent}

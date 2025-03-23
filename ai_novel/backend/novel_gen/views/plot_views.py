@@ -103,7 +103,7 @@ class CreatePlotDetailView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 基本設定の取得
+        # 作品設定の取得
         try:
             basic_setting = BasicSetting.objects.get(id=basic_setting_id)
         except BasicSetting.DoesNotExist:

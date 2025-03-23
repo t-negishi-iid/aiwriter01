@@ -174,9 +174,9 @@ class CreateEpisodesView(views.APIView):
             # レスポンスを各エピソードにパースする
             import re
 
-            # エピソードのパターンを定義
-            episode_pattern = r'### エピソード(\d+)「([^」]+)」\s+(.*?)(?=---|$)'
-
+            # エピソードのパターンを定義 - 「---」区切りと次のエピソードヘッダーの両方に対応
+            episode_pattern = r'### エピソード(\d+)「([^」]+)」\s+(.*?)(?=### エピソード\d+「|---|$)'
+            
             # 生のテキストデータ
             raw_text = response['result']
 

@@ -167,21 +167,21 @@ class DifyNovelAPI:
             logger.debug(f"DEBUG - _process_response - response_data type: {type(response_data)}")
             logger.debug(f"DEBUG - _process_response - response_data keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Not a dict'}")
             logger.debug(f"DEBUG - _process_response - full response_data: {json.dumps(response_data)[:1000]}")
-            
+
             # エラーチェック
-            if (isinstance(response_data, dict) and 
-                "data" in response_data and 
-                "error" in response_data["data"] and 
+            if (isinstance(response_data, dict) and
+                "data" in response_data and
+                "error" in response_data["data"] and
                 response_data["data"]["error"]):
                 # APIから返されたエラーをそのまま返す
                 error_message = response_data["data"]["error"]
                 logger.error(f"API returned error: {error_message}")
                 return {"error": f"APIエラー: {error_message}"}
-            
+
             # レート制限エラーチェック
-            if (isinstance(response_data, dict) and 
-                "data" in response_data and 
-                "status" in response_data["data"] and 
+            if (isinstance(response_data, dict) and
+                "data" in response_data and
+                "status" in response_data["data"] and
                 response_data["data"]["status"] == "failed"):
                 # 失敗ステータスの場合は詳細なエラーメッセージを返す
                 error_message = "APIリクエストが失敗しました"
@@ -189,16 +189,16 @@ class DifyNovelAPI:
                     error_message = response_data["data"]["error"]
                 logger.error(f"DEBUG - _process_response - API request failed: {error_message}")
                 return {"error": f"API実行失敗: {error_message}"}
-            
+
             # ワークフローAPIのレスポンス形式に対応
-            if (isinstance(response_data, dict) and 
-                "data" in response_data and 
+            if (isinstance(response_data, dict) and
+                "data" in response_data and
                 "outputs" in response_data["data"]):
                 # outputsがNoneの場合はエラーとして扱う
                 if response_data["data"]["outputs"] is None:
                     logger.error("DEBUG - _process_response - outputs is None")
                     return {"error": "APIレスポンスのoutputsがNullです"}
-                
+
                 result = response_data["data"]["outputs"].get("result", "")
                 logger.debug(f"DEBUG - _process_response - extracted result (first 200 chars): {result[:200]}")
                 return {"result": result}
@@ -294,8 +294,8 @@ class DifyNovelAPI:
         self,
         basic_setting: str,
         all_characters_list: List[Dict[str, Any]],
-        plot_details: List[Dict[str, Any]],
-        target_plot: Dict[str, Any],
+        all_act_details_list: List[Dict[str, Any]],
+        target_act_detail: Dict[str, Any],
         episode_count: int,
         user_id: str,
         blocking: bool = True
@@ -306,9 +306,9 @@ class DifyNovelAPI:
         Args:
             basic_setting: 基本設定 : str
             all_characters_list: キャラクター詳細リスト
-            plot_details: あらすじ詳細リスト
-            target_plot: ターゲットとなるあらすじ詳細
-            episode_count: エピソード数
+            all_act_details: 幕詳細リスト
+            target_act_detail: ターゲットとなる幕詳細
+            episode_count: 分割するエピソード数
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
 
@@ -317,14 +317,14 @@ class DifyNovelAPI:
         """
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
-        plot_details_str = json.dumps(plot_details, ensure_ascii=False)
-        target_plot_str = json.dumps(target_plot, ensure_ascii=False)
+        all_act_details_str = json.dumps(all_act_details_list, ensure_ascii=False)
+        target_act_detail_str = json.dumps(target_act_detail, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
             "all_characters": all_characters_str,
-            "plot_details": plot_details_str,
-            "target_plot": target_plot_str,
+            "all_act_details": all_act_details_str,
+            "target_act_detail": target_act_detail_str,
             "episode_count": str(episode_count)
         }
 

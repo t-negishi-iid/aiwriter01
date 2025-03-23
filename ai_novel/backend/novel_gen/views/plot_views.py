@@ -161,8 +161,8 @@ class CreatePlotDetailView(views.APIView):
 
         try:
             # デバッグ用のログ出力
-            logger.error(f"DEBUG - CreatePlotDetailView - basic_setting.raw_content: {basic_setting.raw_content[:200]}")
-            logger.error(f"DEBUG - CreatePlotDetailView - all_characters (first 200 chars): {all_characters[:200]}")
+            logger.debug(f"DEBUG - CreatePlotDetailView - basic_setting.raw_content: {basic_setting.raw_content[:200]}")
+            logger.debug(f"DEBUG - CreatePlotDetailView - all_characters (first 200 chars): {all_characters[:200]}")
 
             # 同期APIリクエスト
             response = api.create_plot_detail(
@@ -173,7 +173,7 @@ class CreatePlotDetailView(views.APIView):
             )
 
             # レスポンスの検証
-            logger.error(f"DEBUG - CreatePlotDetailView - API response: {response}")
+            logger.debug(f"DEBUG - CreatePlotDetailView - API response: {response}")
 
             if 'error' in response:
                 api_log.is_success = False
@@ -189,14 +189,14 @@ class CreatePlotDetailView(views.APIView):
                 api_log.response_data = {'error': 'APIレスポンスに結果が含まれていません'}
                 api_log.save()
                 return Response(
-                    {'error': 'あらすじ詳細の生成に失敗しました', 'details': 'APIレスポンスに結果が含まれていません'},
+                    {'error': 'CreatePlotDetailView  - あらすじ詳細の生成に失敗しました', 'details': 'APIレスポンスにresultキーが含まれていません'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
             content = response['result']
 
             # デバッグ用にコンテンツの先頭部分をログに出力
-            logger.error(f"DEBUG - CreatePlotDetailView - content (first 200 chars): {content[:200]}")
+            logger.debug(f"DEBUG - CreatePlotDetailView - content (first 200 chars): {content[:200]}")
 
             # 3幕に分割するロジック
             import re
@@ -210,7 +210,7 @@ class CreatePlotDetailView(views.APIView):
 
             # 見つからない場合は、デフォルトの3幕構成を作成
             if not act_positions:
-                logger.error("DEBUG - CreatePlotDetailView - No act headers found, creating default acts")
+                logger.debug("DEBUG - CreatePlotDetailView - No act headers found, creating default acts")
                 # 既存の第1幕があるか確認
                 act_detail, created = ActDetail.objects.update_or_create(
                     ai_story=story,

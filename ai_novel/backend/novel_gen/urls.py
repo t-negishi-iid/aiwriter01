@@ -27,6 +27,11 @@ def api_root(request, format=None):
         'stories': reverse('novel_gen:story-list', request=request, format=format),
         'is_live': reverse('novel_gen:is-live', request=request, format=format),
         'create-plot-detail': reverse('novel_gen:create-plot-detail', args=[1], request=request, format=format),
+        'basic-setting-create': reverse('novel_gen:basic-setting-create', args=[1], request=request, format=format),
+        'character-create': reverse('novel_gen:character-create', args=[1], request=request, format=format),
+        'act-create': reverse('novel_gen:act-create', args=[1], request=request, format=format),
+        'episodes-create': reverse('novel_gen:episodes-create', args=[1, 1], request=request,format=format),
+
     })
 
 urlpatterns = [
@@ -66,10 +71,10 @@ urlpatterns = [
          views.BasicSettingDetailView.as_view(), name='basic-setting-detail'),
     # ストーリーの最新の作品設定を取得する（Old）
     path('stories/<int:story_id>/latest-basic-setting/',
-         LatestBasicSettingView.as_view(), name='latest-basic-setting'),
+         LatestBasicSettingView.as_view(), name='latest-basic-setting-old'),
     # ストーリーの最新の作品設定を取得する（New）
     path('stories/<int:story_id>/basic-setting/latest/',
-         LatestBasicSettingView.as_view(), name='latest-basic-setting-new'),
+         LatestBasicSettingView.as_view(), name='latest-basic-setting'),
     # BasicSetting.act(1-3)_overview 更新専用（Old）
     path('stories/<int:story_id>/basic-setting-act/<int:act_number>/',
          BasicSettingActUpdateView.as_view(), name='basic-setting-act-update'),
@@ -89,7 +94,7 @@ urlpatterns = [
          views.CreateCharacterDetailView.as_view(), name='create-character-detail'),
      # Dify API新規キャラクター詳細を作成する（New）
     path('stories/<int:story_id>/characters/create',
-         views.CreateCharacterDetailView.as_view(), name='create-character'),
+         views.CreateCharacterDetailView.as_view(), name='character-create'),
 
     # あらすじ詳細関連
     # 指定されたストーリーの幕詳細一覧を取得、または新規幕詳細を作成する
@@ -102,28 +107,25 @@ urlpatterns = [
     path('stories/<int:story_id>/create-plot-detail/',
          views.CreatePlotDetailView.as_view(), name='create-plot-detail'),
     # Dify API新規幕詳細を作成する（New）
-    path('stories/<int:story_id>/acts/create',
+    path('stories/<int:story_id>/acts/create/',
          views.CreatePlotDetailView.as_view(), name='act-create'),
 
     # エピソード詳細関連
     # Dify APIでActDetailから分割されたエピソード群を生成する
-    path('stories/<int:story_id>/acts/<int:act_id>/create-episodes/',
-         views.CreateEpisodesView.as_view(), name='create-episodes'),
-    # 指定されたストーリーの指定された幕のエピソード一覧を取得
-    path('stories/<int:story_id>/acts/<int:act_id>/episodes/',
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/create/',
+         views.CreateEpisodesView.as_view(), name='episodes-create'),
+    # 指定されたストーリーの指定された幕のエピソード一覧を取得または新規エピソードを作成する
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/',
          views.ActEpisodesListView.as_view(), name='act-episodes-list'),
     # 指定されたストーリーの指定された幕の指定されたエピソードを取得、更新、削除する
-    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/',
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/',
          views.EpisodeDetailView.as_view(), name='episode-detail'),
-    # 新規エピソードの作成
-    path('stories/<int:story_id>/acts/<int:act_id>/episodes/new/',
-         views.CreateEpisodeView.as_view(), name='create-episode'),
 
     # エピソード本文関連
-    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/content/',
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/content/',
          views.EpisodeContentView.as_view(), name='episode-content'),
-    path('stories/<int:story_id>/acts/<int:act_id>/episodes/<int:pk>/create-episode-content/',
-         views.CreateEpisodeContentView.as_view(), name='create-episode-content'),
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/create-episode-content/',
+         views.CreateEpisodeContentView.as_view(), name='episode-content-create'),
 
     # タイトル生成関連
     path('stories/<int:story_id>/generate-title/',

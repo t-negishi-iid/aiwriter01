@@ -11,7 +11,7 @@ from .character_views import (
 from .plot_views import ActDetailListView, ActDetailView, CreatePlotDetailView
 from .episode_views import (
     ActEpisodesListView, EpisodeDetailView,
-    CreateEpisodesView, CreateEpisodeView
+    CreateEpisodesView
 )
 from .content_views import EpisodeContentView, CreateEpisodeContentView
 from .title_views import GenerateTitleView

@@ -186,6 +186,14 @@
   margin: 10px 0;
 }
 
+.y-m-15 {
+  margin: 15px 0;
+}
+
+.y-m-20 {
+  margin: 20px 0;
+}
+
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {
   background-color: white !important;

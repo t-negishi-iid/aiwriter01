@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction, models
 import logging
 
+logger = logging.getLogger(__name__)
+
 from ..models import (
     AIStory, BasicSetting, CharacterDetail, ActDetail,
     EpisodeDetail, APIRequestLog
@@ -90,14 +92,23 @@ class CreateEpisodesView(views.APIView):
         serializer.is_valid(raise_exception=True)
         episode_count = serializer.validated_data['episode_count']
 
-        # 基本設定の取得
-        try:
-            basic_setting = BasicSetting.objects.get(ai_story=story)
-        except BasicSetting.DoesNotExist:
+        # basic_setting_idを取得
+        basic_setting_id = serializer.validated_data.get('basic_setting_id')
+        if not basic_setting_id:
             return Response(
-                {'error': '基本設定が存在しません。先に基本設定を作成してください。'},
+                {'error': '作品設定IDが指定されていません。'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # 作品設定の取得
+        try:
+            basic_setting = BasicSetting.objects.get(id=basic_setting_id)
+        except BasicSetting.DoesNotExist:
+            return Response(
+                {'error': '指定された作品設定が存在しません。'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
         # キャラクター詳細の取得
         character_details = CharacterDetail.objects.filter(ai_story=story)

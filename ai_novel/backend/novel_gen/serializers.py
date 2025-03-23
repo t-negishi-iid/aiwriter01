@@ -224,6 +224,7 @@ class PlotDetailRequestSerializer(serializers.Serializer):
 class EpisodeDetailRequestSerializer(serializers.Serializer):
     """エピソード詳細リクエストシリアライザ"""
     episode_count = serializers.IntegerField(required=True, min_value=1, max_value=10)
+    basic_setting_id = serializers.IntegerField(required=True)
 
 
 class EpisodeNumberUpdateSerializer(serializers.Serializer):

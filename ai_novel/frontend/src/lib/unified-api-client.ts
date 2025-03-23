@@ -215,7 +215,7 @@ export const unifiedFetchApi = async <T>(endpoint: string, options: RequestInit 
           : String(errorData[firstField]);
         errorMessage = `${firstField}: ${firstError}`;
       }
-    } catch (jsonError) {
+    } catch {
       // JSONではない場合はテキストとして読み込む
       try {
         errorMessage = await response.text();

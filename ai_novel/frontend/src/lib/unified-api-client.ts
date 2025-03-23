@@ -240,7 +240,7 @@ export const episodeApi = {
    * - GET /stories/{story_id}/acts/{act_id}/episodes/
    * - 戻り値: {count, next, previous, results}
    */
-  getActEpisodes: (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+  getActEpisodes: (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
     unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(`/stories/${storyId}/acts/${actId}/episodes/`),
 
   /**
@@ -254,12 +254,12 @@ export const episodeApi = {
    * - 戻り値: {count, next, previous, results, status}
    */
   createEpisodes: (
-    storyId: string | number, 
-    actId: string | number, 
+    storyId: string | number,
+    actId: string | number,
     episodeCount: number
-  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+  ): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
     unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
-      `/stories/${storyId}/acts/${actId}/create-episodes/`, 
+      `/stories/${storyId}/acts/${actId}/create-episodes/`,
       {
         method: 'POST',
         headers: {
@@ -280,10 +280,10 @@ export const episodeApi = {
    * - 戻り値: エピソード情報
    */
   getEpisode: (
-    storyId: string | number, 
-    actId: string | number, 
+    storyId: string | number,
+    actId: string | number,
     episodeId: string | number
-  ): Promise<EpisodeDetail> => 
+  ): Promise<EpisodeDetail> =>
     unifiedFetchApi<EpisodeDetail>(`/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`),
 
   /**
@@ -298,13 +298,13 @@ export const episodeApi = {
    * - 戻り値: 更新されたエピソード情報
    */
   updateEpisodeContent: (
-    storyId: string | number, 
-    actId: string | number, 
-    episodeId: string | number, 
+    storyId: string | number,
+    actId: string | number,
+    episodeId: string | number,
     data: EpisodeCreateRequest
-  ): Promise<EpisodeDetail> => 
+  ): Promise<EpisodeDetail> =>
     unifiedFetchApi<EpisodeDetail>(
-      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
+      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`,
       {
         method: 'PUT',
         headers: {
@@ -326,13 +326,13 @@ export const episodeApi = {
    * - 戻り値: {count, next, previous, results, status}
    */
   updateEpisodeNumber: (
-    storyId: string | number, 
-    actId: string | number, 
-    episodeId: string | number, 
+    storyId: string | number,
+    actId: string | number,
+    episodeId: string | number,
     episodeNumber: number
-  ): Promise<DRFPaginatedResponse<EpisodeDetail>> => 
+  ): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
     unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
-      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
+      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`,
       {
         method: 'PUT',
         headers: {
@@ -353,12 +353,12 @@ export const episodeApi = {
    * - 戻り値: null
    */
   deleteEpisode: (
-    storyId: string | number, 
-    actId: string | number, 
+    storyId: string | number,
+    actId: string | number,
     episodeId: string | number
-  ): Promise<null> => 
+  ): Promise<null> =>
     unifiedFetchApi<null>(
-      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`, 
+      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`,
       {
         method: 'DELETE',
       }
@@ -375,12 +375,12 @@ export const episodeApi = {
    * - 戻り値: 作成されたエピソード情報
    */
   createNewEpisode: (
-    storyId: string | number, 
-    actId: string | number, 
+    storyId: string | number,
+    actId: string | number,
     data: EpisodeCreateRequest
-  ): Promise<EpisodeDetail> => 
+  ): Promise<EpisodeDetail> =>
     unifiedFetchApi<EpisodeDetail>(
-      `/stories/${storyId}/acts/${actId}/episodes/new/`, 
+      `/stories/${storyId}/acts/${actId}/episodes/new/`,
       {
         method: 'POST',
         headers: {
@@ -492,7 +492,7 @@ export const unifiedStoryApi = {
    * - POST /stories/{story_id}/integrated-setting-creator/
    * - 戻り値: {success: true, message: string, data: Record<string, unknown>}
    */
-  saveIntegratedSettingCreatorData: (storyId: string | number, data: Record<string, unknown>) => 
+  saveIntegratedSettingCreatorData: (storyId: string | number, data: Record<string, unknown>) =>
     unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/integrated-setting-creator/`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -506,9 +506,39 @@ export const unifiedStoryApi = {
    * - GET /stories/{story_id}/integrated-setting-creator/detail/
    * - 戻り値: {success: true, message: string, data: Record<string, unknown>}
    */
-  getIntegratedSettingCreatorData: (storyId: string | number) => 
+  getIntegratedSettingCreatorData: (storyId: string | number) =>
     unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/integrated-setting-creator/detail/`, {
       method: 'GET',
+    }),
+
+  /**
+   * キャラクター詳細を生成
+   *
+   * @param storyId - 小説ID
+   * @param characterId - キャラクターID
+   * @returns 生成されたキャラクター詳細情報
+   * - POST /stories/{story_id}/characters/create
+   * - 戻り値: キャラクター詳細情報
+   */
+  createCharacterDetail: (storyId: string | number, characterId: number) =>
+    unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/characters/create/`, {
+      method: 'POST',
+      body: JSON.stringify({ character_id: characterId }),
+    }),
+
+  /**
+   * あらすじ詳細を生成
+   *
+   * @param storyId - 小説ID
+   * @param basicSettingId - 基本設定ID
+   * @returns 生成されたあらすじ詳細情報（3幕構成）
+   * - POST /stories/{story_id}/plot/create
+   * - 戻り値: 3幕のあらすじ詳細情報
+   */
+  createPlotDetail: (storyId: string | number, basicSettingId: number) =>
+    unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/create-plot-detail/`, {
+      method: 'POST',
+      body: JSON.stringify({ basic_setting_id: basicSettingId }),
     }),
 };
 

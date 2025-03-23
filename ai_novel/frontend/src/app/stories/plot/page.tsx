@@ -60,11 +60,22 @@ export default function PlotPage() {
 
   // ページ読み込み時に、あらすじが選択されていない場合は最初のあらすじを選択
   useEffect(() => {
-    if (!isLoading && !selectedPlot && plots.length > 0) {
-      // 既存のあらすじがある場合は、最初のあらすじを選択
-      setSelectedPlot(plots[0]);
+    if (!isLoading && !selectedPlot && plots.length > 0 && basicSetting) {
+      // 最初のプロットを選択する前に、基本設定のact_overviewを適用
+      const firstPlot = {...plots[0]};
+      
+      // 幕に応じた基本あらすじを設定
+      if (firstPlot.act_number === 1) {
+        firstPlot.content = basicSetting.act1_overview || '';
+      } else if (firstPlot.act_number === 2) {
+        firstPlot.content = basicSetting.act2_overview || '';
+      } else if (firstPlot.act_number === 3) {
+        firstPlot.content = basicSetting.act3_overview || '';
+      }
+      
+      setSelectedPlot(firstPlot);
     }
-  }, [isLoading, plots, selectedPlot, setSelectedPlot]);
+  }, [isLoading, plots, selectedPlot, setSelectedPlot, basicSetting]);
 
   if (!storyId) {
     return (

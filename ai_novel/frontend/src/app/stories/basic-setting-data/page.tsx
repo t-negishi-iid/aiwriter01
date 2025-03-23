@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { StoryProvider } from '@/components/story/StoryProvider';
 import { StoryTabs } from '@/components/story/StoryTabs';
-import { integratedSettingCreatorApi } from '@/lib/api-client';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 
 export default function BasicSettingDataPage() {
   const searchParams = useSearchParams();
@@ -29,12 +29,17 @@ export default function BasicSettingDataPage() {
       setError(null);
 
       try {
-        const response = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
+        const response = await unifiedStoryApi.getIntegratedSettingCreatorData(storyId);
         console.log("統合設定クリエイターデータの取得結果:", response);
 
-        if (response && response.results && response.results.basic_setting_data) {
-          // resultsとstatusのみ返ってくる
-          setBasicSettingData(response.results.basic_setting_data);
+        if (
+          response && 
+          response.success && 
+          response.data && 
+          typeof response.data === 'object' && 
+          'basic_setting_data' in response.data
+        ) {
+          setBasicSettingData(response.data.basic_setting_data as string);
         } else {
           setBasicSettingData("基本設定データはまだ作成されていません。");
         }
@@ -69,7 +74,7 @@ export default function BasicSettingDataPage() {
               <div>
                 <div className="flex justify-center mt-4 mb-4">
                   <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
-                    統合クリエイターで編集する
+                    基本設定を作成／編集する
                   </Button>
                 </div>
 

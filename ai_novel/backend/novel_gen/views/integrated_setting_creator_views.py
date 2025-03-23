@@ -135,9 +135,10 @@ class IntegratedSettingCreatorDetailView(views.APIView):
                 'data': serialized_data
             })
         except BasicSettingData.DoesNotExist:
-            # データが存在しない場合
+            # データが存在しない場合 - HTTP 204 はコンテンツが空を意味するためJSONパースエラーの原因になる
+            # 代わりに HTTP 200 でデータがnullであることを示す
             return Response({
-                'success': False,
-                'message': '基本設定データが見つかりません',
+                'success': True,
+                'message': '基本設定データは存在しませんが、新規作成可能です',
                 'data': None
-            }, status=status.HTTP_204_NO_CONTENT)
+            }, status=status.HTTP_200_OK)

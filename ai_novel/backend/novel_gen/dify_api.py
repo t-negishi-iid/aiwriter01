@@ -117,8 +117,8 @@ class DifyNovelAPI:
         }
 
         # デバッグ用にリクエストデータの内容をログに出力
-        logger.error(f"DEBUG - _make_api_request - api_type: {api_type}")
-        logger.error(f"DEBUG - _make_api_request - request_data: {json.dumps(request_data)[:500]}")
+        logger.debug(f"DEBUG - _make_api_request - api_type: {api_type}")
+        logger.debug(f"DEBUG - _make_api_request - request_data: {json.dumps(request_data)[:500]}")
 
         retries = 0
         last_error = None
@@ -164,9 +164,9 @@ class DifyNovelAPI:
         """
         try:
             # デバッグ用にレスポンスデータの内容を詳細にログ出力
-            logger.error(f"DEBUG - _process_response - response_data type: {type(response_data)}")
-            logger.error(f"DEBUG - _process_response - response_data keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Not a dict'}")
-            logger.error(f"DEBUG - _process_response - full response_data: {json.dumps(response_data)[:1000]}")
+            logger.debug(f"DEBUG - _process_response - response_data type: {type(response_data)}")
+            logger.debug(f"DEBUG - _process_response - response_data keys: {list(response_data.keys()) if isinstance(response_data, dict) else 'Not a dict'}")
+            logger.debug(f"DEBUG - _process_response - full response_data: {json.dumps(response_data)[:1000]}")
             
             # エラーチェック
             if (isinstance(response_data, dict) and 
@@ -175,7 +175,7 @@ class DifyNovelAPI:
                 response_data["data"]["error"]):
                 # APIから返されたエラーをそのまま返す
                 error_message = response_data["data"]["error"]
-                logger.error(f"DEBUG - _process_response - API returned error: {error_message}")
+                logger.error(f"API returned error: {error_message}")
                 return {"error": f"APIエラー: {error_message}"}
             
             # レート制限エラーチェック
@@ -200,11 +200,11 @@ class DifyNovelAPI:
                     return {"error": "APIレスポンスのoutputsがNullです"}
                 
                 result = response_data["data"]["outputs"].get("result", "")
-                logger.error(f"DEBUG - _process_response - extracted result (first 200 chars): {result[:200]}")
+                logger.debug(f"DEBUG - _process_response - extracted result (first 200 chars): {result[:200]}")
                 return {"result": result}
 
             # その他の形式
-            logger.error(f"DEBUG - _process_response - using original response format")
+            logger.debug(f"DEBUG - _process_response - using original response format")
             return response_data
         except Exception as e:
             logger.error(f"Failed to process response: {str(e)}")
@@ -285,8 +285,8 @@ class DifyNovelAPI:
         }
 
         # デバッグ用にパラメータの先頭200文字をログに出力
-        logger.error(f"DEBUG - create_plot_detail - basic_setting (first 200 chars): {basic_setting[:200]}")
-        logger.error(f"DEBUG - create_plot_detail - all_characters (first 200 chars): {all_characters[:200]}")
+        logger.debug(f"DEBUG - create_plot_detail - basic_setting (first 200 chars): {basic_setting[:200]}")
+        logger.debug(f"DEBUG - create_plot_detail - all_characters (first 200 chars): {all_characters[:200]}")
 
         return self._make_api_request("plot_detail", inputs, user_id, blocking)
 

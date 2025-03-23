@@ -20,7 +20,7 @@ interface CategoryWithThemes {
   subcategories?: Subcategory[];
 }
 
-interface SelectedData {
+export interface SelectedData {
   theme?: {
     title: string;
     description?: string;

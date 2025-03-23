@@ -105,7 +105,13 @@ export function PlotForm({
     if (generatedPlot) {
       console.log('PlotForm - 生成後のPlot:', generatedPlot);
       console.log('PlotForm - 生成後のraw_content:', generatedPlot.raw_content ? '存在します' : 'なし');
-      setFormData(generatedPlot);
+      
+      // 基本あらすじを保持したまま、詳細あらすじ（raw_content）だけを更新
+      setFormData(prev => ({
+        ...prev,
+        raw_content: generatedPlot.raw_content,
+        // contentは更新しない（現在の値を保持）
+      }));
     }
   };
 

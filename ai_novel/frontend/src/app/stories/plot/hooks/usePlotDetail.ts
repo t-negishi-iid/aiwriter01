@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchApi } from '@/lib/api-client';
 import { PlotData, BasicSetting } from '../lib/types';
 import { toast } from '@/components/ui/use-toast';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 
 export function usePlotDetail(storyId: string | null) {
   const [plots, setPlots] = useState<PlotData[]>([]);
@@ -319,32 +320,33 @@ export function usePlotDetail(storyId: string | null) {
 
   // 詳細あらすじを生成
   const handleGenerateDetailedPlot = async (plot: PlotData): Promise<PlotData | null> => {
-    if (!storyId) return null;
+    if (!storyId || !basicSetting || !basicSetting.id) return null;
 
     setIsGenerating(true);
     try {
-      // APIを使用して詳細あらすじを生成
-      const response = await fetch(`/api/stories/${storyId}/create-plot-detail/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          basic_setting_id: plot.storyId
-        }),
-      });
+      console.log(`詳細あらすじ生成リクエスト: storyId=${storyId}, basic_setting_id=${basicSetting.id}`);
+      // 統合APIクライアントを使用してあらすじ詳細を生成
+      const response = await unifiedStoryApi.createPlotDetail(
+        storyId, 
+        basicSetting.id
+      );
 
-      if (!response.ok) {
+      // レスポンスがnullの場合のみエラー扱いに変更
+      if (!response) {
         throw new Error('詳細あらすじの生成に失敗しました');
       }
 
-      const generatedPlot = await response.json();
+      console.log('生成されたレスポンス:', response);
+      // レスポンスをPlotData形式に変換
+      const generatedPlot = Array.isArray(response) && response.length > 0 
+        ? response[0] 
+        : response as unknown as PlotData;
       console.log('生成された詳細あらすじ:', generatedPlot);
       console.log('生成された詳細あらすじのraw_content:', generatedPlot.raw_content ? '存在します' : 'なし');
 
       // 生成された詳細あらすじで状態を更新
       setPlots(prevPlots =>
-        prevPlots.map(p => p.id === plot.id ? generatedPlot : p)
+        prevPlots.map(p => p.id === plot.id ? generatedPlot : p) as PlotData[]
       );
 
       toast({

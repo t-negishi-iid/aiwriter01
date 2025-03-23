@@ -9,9 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { StoryProvider } from '@/components/story/StoryProvider';
 import { StoryTabs } from '@/components/story/StoryTabs';
-import { integratedSettingCreatorApi, basicSettingApi } from '@/lib/api-client';
+import { basicSettingApi } from '@/lib/api-client';
+import { unifiedStoryApi } from '@/lib/unified-api-client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
+
+// 統合設定データの型定義
+interface IntegratedSettingData {
+  id: number;
+  basic_setting_data: string;
+  integrated_data?: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
 
 // 作品設定データの型定義
 interface WorkSettingData {
@@ -81,16 +91,19 @@ export default function BasicSettingPage() {
 
       try {
         // 統合設定クリエイターデータを取得
-        const response = await integratedSettingCreatorApi.getIntegratedSettingData(storyId);
+        const response = await unifiedStoryApi.getIntegratedSettingCreatorData(storyId);
         console.log("統合設定クリエイターデータの取得結果:", response);
 
-        if (response && response.results) {
+        if (response && response.success && response.data) {
+          // データを適切な型にキャスト
+          const settingData = response.data as IntegratedSettingData;
+          
           // basic_setting_dataを設定
-          setBasicSettingData(response.results.basic_setting_data || null);
+          setBasicSettingData(settingData.basic_setting_data || null);
 
           // basic_setting_data_idを保存
-          if (response.results.id) {
-            const id = response.results.id;
+          if (settingData.id) {
+            const id = settingData.id;
             setBasicSettingDataId(id);
             setWorkSettingData(prev => ({
               ...prev,
@@ -137,7 +150,7 @@ export default function BasicSettingPage() {
     };
 
     fetchBasicSettingData();
-  }, [storyId]);
+  }, [storyId, basicSettingDataId]);
 
   // 作品設定生成ボタンのクリックハンドラ
   const handleGenerateWorkSetting = async () => {
@@ -262,8 +275,9 @@ export default function BasicSettingPage() {
   const BasicSettingContent = () => (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>基本設定</CardTitle>
-        <CardDescription>小説の基本的な設定情報</CardDescription>
+        <CardTitle>作品設定</CardTitle>
+        <CardDescription>「基本設定」を元に作品のオリジナルな設定を生成／編集します。
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {isLoading ? (
@@ -292,10 +306,10 @@ export default function BasicSettingPage() {
             <Book className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">基本設定がまだ作成されていません</h3>
             <p className="text-muted-foreground mb-6">
-              基本設定データタブで基本設定を作成してください
+              基本設定ページで基本設定を作成してください
             </p>
             <Button onClick={() => router.push(`/stories/basic-setting-data?id=${storyId}`)}>
-              基本設定データページへ移動
+              基本設定ページへ移動
             </Button>
           </div>
         )}

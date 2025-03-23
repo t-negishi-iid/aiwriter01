@@ -167,14 +167,7 @@ export default function EpisodeDetailList({
                   value={act.act_number.toString()}
                   className="mt-2"
                 >
-                  <div className="p-3 border rounded-md mb-4">
-                    <div className="font-medium text-lg mb-2">
-                      {act.title}
-                    </div>
-                    <div className="text-sm">
-                      {act.overview || 'あらすじなし'}
-                    </div>
-                  </div>
+
                 </TabsContent>
               ))}
             </Tabs>
@@ -182,7 +175,7 @@ export default function EpisodeDetailList({
             {/* エピソード一覧 */}
             {selectedAct && (
               <div>
-                <h3 className="font-medium mb-2">エピソード一覧</h3>
+                <h3 className="font-medium mb-2">{selectedAct.title}</h3>
                 {episodes.length > 0 ? (
                   <div className="space-y-2">
                     {episodes.map((episode) => (
@@ -236,8 +229,9 @@ export default function EpisodeDetailList({
           <div className="text-center py-4">
             <p className="text-muted-foreground">あらすじデータがありません</p>
           </div>
-        )}
-      </CardContent>
+        )
+        }
+      </CardContent >
     </Card >
   );
 }

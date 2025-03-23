@@ -13,6 +13,6 @@ from .episode_views import (
     ActEpisodesListView, EpisodeDetailView,
     CreateEpisodesView
 )
-from .content_views import EpisodeContentView, CreateEpisodeContentView
+from .content_views import EpisodeContentDetailView, EpisodeContentListView, CreateEpisodeContentView
 from .title_views import GenerateTitleView
 from .log_views import APIRequestLogListView

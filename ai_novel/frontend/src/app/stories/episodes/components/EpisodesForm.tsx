@@ -7,11 +7,24 @@ import { episodeApi, EpisodeDetail } from '@/lib/unified-api-client';
 import { Loader2 } from 'lucide-react';
 
 export default function EpisodesForm() {
-  const { selectedAct, story } = useStoryContext();
+  const { selectedAct, story, basicSetting } = useStoryContext();
   const [episodeCount, setEpisodeCount] = useState(10);
   const [episodes, setEpisodes] = useState<EpisodeDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [basicSettingId, setBasicSettingId] = useState<number | null>(null);
+
+  // 基本設定IDの取得
+  useEffect(() => {
+    if (basicSetting && basicSetting.id) {
+      console.log(`基本設定IDを設定: ${basicSetting.id}`);
+      setBasicSettingId(basicSetting.id);
+    } else {
+      console.log('基本設定IDが見つかりません');
+      setBasicSettingId(null);
+    }
+  }, [basicSetting]);
 
   const handleEpisodeCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
@@ -49,6 +62,35 @@ export default function EpisodesForm() {
     }
   }, [selectedAct, story?.id]);
 
+  // エピソード生成処理
+  const handleCreateEpisodes = () => {
+    if (!selectedAct || !story?.id) return;
+    
+    // 基本設定IDのバリデーション
+    if (basicSettingId === null) {
+      setError('基本設定IDが取得できません。作品の基本設定が正しく設定されているか確認してください。');
+      return;
+    }
+
+    console.log(`エピソード生成開始: ストーリーID=${story.id}, 幕番号=${selectedAct.act_number}, 基本設定ID=${basicSettingId}, エピソード数=${episodeCount}`);
+
+    setIsCreating(true);
+    setError('');
+
+    episodeApi.createEpisodes(story.id, selectedAct.act_number, basicSettingId, episodeCount)
+      .then(response => {
+        console.log(`エピソード生成成功: ${response.results.length}件のエピソードを生成しました`);
+        setEpisodes(response.results);
+      })
+      .catch(err => {
+        console.error('エピソード生成エラー:', err);
+        setError(`エピソードの生成に失敗しました: ${err.message || '未知のエラー'}`);
+      })
+      .finally(() => {
+        setIsCreating(false);
+      });
+  };
+
   return (
     <Card className={selectedAct ? 'border-primary' : 'border-gray-200'}>
       <CardHeader className="bg-gray-50">
@@ -67,11 +109,18 @@ export default function EpisodesForm() {
         <div className="w-full">
           <div className="w-full flex items-center mt-2 mb-4">
             <button
-              onClick={() => { }}
+              onClick={handleCreateEpisodes}
               className="px-3 py-1.5 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
-              disabled={!selectedAct}
+              disabled={!selectedAct || isCreating}
             >
-              幕をエピソードに分割する
+              {isCreating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
+                  生成中...
+                </>
+              ) : (
+                '幕をエピソードに分割する'
+              )}
             </button>
             <label className="ml-4">エピソード数（1-30）</label>
             <input
@@ -82,7 +131,7 @@ export default function EpisodesForm() {
               onChange={handleEpisodeCountChange}
               min={1}
               max={30}
-              disabled={!selectedAct}
+              disabled={!selectedAct || isCreating}
             />
           </div>
           {selectedAct ? (

@@ -84,7 +84,7 @@ export default function EpisodeContentForm({
 
     try {
       setIsGenerating(true);
-      
+
       // エピソード本文生成APIを呼び出し
       const generationResponse = await contentApi.generateEpisodeContent(
         basicSetting.id.toString(),
@@ -93,7 +93,7 @@ export default function EpisodeContentForm({
         selectedEpisode.episode_number,
         { word_count: wordCount }
       );
-      
+
       if (generationResponse && generationResponse.content) {
         setGeneratedContent(generationResponse.content);
       } else {
@@ -143,7 +143,7 @@ export default function EpisodeContentForm({
             <div>
               <h3 className="font-medium mb-2">エピソード本文</h3>
               <textarea
-                className="w-full h-96 p-3 border rounded-md"
+                className="w-full h-96 p-3 border rounded-md story-textarea th-200"
                 value={editedContent}
                 onChange={handleContentChange}
                 placeholder="エピソードの本文を入力..."

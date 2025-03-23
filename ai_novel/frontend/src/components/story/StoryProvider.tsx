@@ -90,6 +90,10 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
         // 作品設定（BasicSetting）の取得結果を処理
         if (basicSettingData.status === 'fulfilled') {
           console.log('作品設定(BasicSetting):', basicSettingData.value);
+          console.log('作品設定の詳細構造:', JSON.stringify(basicSettingData.value, null, 2));
+          if (basicSettingData.value) {
+            console.log('基本設定ID:', basicSettingData.value.id);
+          }
           setBasicSetting(basicSettingData.value || null);
         } else {
           console.error("作品設定取得エラー:", basicSettingData.reason);

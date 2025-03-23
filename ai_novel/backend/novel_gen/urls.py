@@ -12,6 +12,7 @@ from .views.connectivity import is_live
 from .views.is_live_views import StoryIsLiveView
 from .views.integrated_setting_creator_views import IntegratedSettingCreatorView, IntegratedSettingCreatorDetailView
 from .views.basic_setting_views import LatestBasicSettingView, BasicSettingActUpdateView
+from .views.content_views import CreateEpisodeContentView, EpisodeContentListView, EpisodeContentDetailView
 
 app_name = 'novel_gen'
 
@@ -31,6 +32,9 @@ def api_root(request, format=None):
         'character-create': reverse('novel_gen:character-create', args=[1], request=request, format=format),
         'act-create': reverse('novel_gen:act-create', args=[1], request=request, format=format),
         'episodes-create': reverse('novel_gen:episodes-create', args=[1, 1], request=request,format=format),
+        'content-create': reverse('novel_gen:content-create', args=[1, 1, 1], request=request,format=format),
+        'title-generate': reverse('novel_gen:title-generate', args=[1], request=request,format=format),
+        'api-log-list': reverse('novel_gen:api-log-list', args=[1], request=request,format=format),
 
     })
 
@@ -122,14 +126,19 @@ urlpatterns = [
          views.EpisodeDetailView.as_view(), name='episode-detail'),
 
     # エピソード本文関連
-    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/content/',
-         views.EpisodeContentView.as_view(), name='episode-content'),
-    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/create-episode-content/',
-         views.CreateEpisodeContentView.as_view(), name='episode-content-create'),
+    # 特定のエピソードのコンテンツを生成する
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:episode_number>/content/create/',
+         CreateEpisodeContentView.as_view(), name='content-create'),
+    # 特定の幕に属するすべてのエピソードコンテンツを一覧表示、もしくは新規エピソードコンテンツを作成する
+    path('stories/<int:story_id>/acts/<int:act_number>/content/',
+         EpisodeContentListView.as_view(), name='episode-content-list'),
+    # 特定のエピソードのコンテンツを取得、更新、削除する
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:episode_number>/content/',
+         EpisodeContentDetailView.as_view(), name='episode-content-detail'),
 
     # タイトル生成関連
     path('stories/<int:story_id>/generate-title/',
-         views.GenerateTitleView.as_view(), name='generate-title'),
+         views.GenerateTitleView.as_view(), name='title-generate'),
 
     # API履歴
     path('stories/<int:story_id>/api-logs/',

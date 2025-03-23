@@ -111,11 +111,11 @@ export default function EpisodeDetailList({
   // タブでの幕選択ハンドラ
   const handleTabChange = (value: string) => {
     if (!acts.length) return;
-    
+
     // 選択された幕の番号に対応する幕を検索
     const actNumber = parseInt(value, 10);
     const selectedAct = acts.find(act => act.act_number === actNumber);
-    
+
     if (selectedAct) {
       handleSelectAct(selectedAct);
     }
@@ -196,11 +196,27 @@ export default function EpisodeDetailList({
                       >
                         <div className="font-medium y-m-15">
                           {episode.episode_number}話: {episode.title}
+                          {/* TODO: エピソード選択ボタンを配置 */}
+                          <button
+                            className="ml-2"
+                            style={{
+                              float: 'right',
+                              marginRight: '10px',
+                              backgroundColor: 'transparent',
+                              border: '1px solid #ccc',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => handleSelectEpisode(episode)}
+                          >
+                            選択
+                          </button>
                         </div>
                         <textarea
                           className="text-sm mt-1 w-full h-16 resize-none bg-transparent border-none p-0 focus:ring-0 focus:outline-none story-textarea th-200"
-                          value={episode.content && episode.content.length > 100 
-                            ? episode.content.substring(0, 100) + "..." 
+                          value={episode.content && episode.content.length > 100
+                            ? episode.content.substring(0, 100) + "..."
                             : episode.content || ''}
                           readOnly
                           aria-label={`${episode.episode_number}話: ${episode.title}のプレビュー`}
@@ -222,6 +238,6 @@ export default function EpisodeDetailList({
           </div>
         )}
       </CardContent>
-    </Card>
+    </Card >
   );
 }

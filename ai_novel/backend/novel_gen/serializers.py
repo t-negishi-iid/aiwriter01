@@ -240,7 +240,8 @@ class EpisodeCreateSerializer(serializers.Serializer):
 
 class EpisodeContentRequestSerializer(serializers.Serializer):
     """エピソード本文リクエストシリアライザ"""
-    episode_id = serializers.IntegerField(required=True)
+    basic_setting_id = serializers.IntegerField(required=True)
+    word_count = serializers.IntegerField(required=True, min_value=500, max_value=5000)
 
 
 class TitleGenerateRequestSerializer(serializers.Serializer):

@@ -334,8 +334,10 @@ class DifyNovelAPI:
         self,
         basic_setting: str,
         all_characters_list: List[Dict[str, Any]],
-        plot_details: List[Dict[str, Any]],
-        episode_detail: str,
+        all_episode_details_list: List[Dict[str, Any]],
+        target_episode_detail: Dict[str, Any],
+        act_number: int,
+        episode_number: int,
         word_count: int,
         user_id: str,
         blocking: bool = True
@@ -346,8 +348,10 @@ class DifyNovelAPI:
         Args:
             basic_setting: 基本設定
             all_characters_list: キャラクター詳細リスト
-            plot_details: あらすじ詳細リスト
-            episode_detail: エピソード詳細
+            all_episode_details_list: エピソード詳細リスト
+            target_episode_detail: ターゲットとなるエピソード詳細
+            act_number: 幕番号
+            episode_number: エピソード番号
             word_count: 文字数
             user_id: ユーザーID
             blocking: ブロッキングモード（同期処理）
@@ -357,13 +361,15 @@ class DifyNovelAPI:
         """
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
-        plot_details_str = json.dumps(plot_details, ensure_ascii=False)
+        all_episode_details_str = json.dumps(all_episode_details_list, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
             "all_characters": all_characters_str,
-            "plot_details": plot_details_str,
-            "episode_detail": episode_detail,
+            "all_episode_details": all_episode_details_str,
+            "target_episode_detail": target_episode_detail,
+            "act_number": str(act_number),
+            "episode_number": str(episode_number),
             "word_count": str(word_count)
         }
 

@@ -125,6 +125,7 @@ export interface ActDetail {
  */
 export interface ActDetailUpdateRequest {
   title?: string;
+  act_number: number;
   overview?: string;
   detail?: string;
 }
@@ -267,13 +268,13 @@ export const episodeApi = {
    * 幕に属する全エピソードの一覧を取得
    *
    * @param storyId - 小説ID
-   * @param actId - 幕番号
+   * @param actNumber - 幕番号
    * @returns ページネーション形式のエピソード一覧
    * - GET /stories/{story_id}/acts/{act_number}/episodes/
    * - 戻り値: {count, next, previous, results}
    */
-  getActEpisodes: (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
-    unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(`/stories/${storyId}/acts/${actId}/episodes/`),
+  getActEpisodes: (storyId: string | number, actNumber: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
+    unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(`/stories/${storyId}/acts/${actNumber}/episodes/`),
 
   /**
    * ActDetailからエピソード群を生成

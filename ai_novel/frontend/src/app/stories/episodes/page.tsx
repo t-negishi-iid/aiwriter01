@@ -67,15 +67,17 @@ export default function EpisodesPage() {
         </Tabs>
       ) : (
         // デスクトップ表示：左右分割
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          {/* 左側：幕一覧 */}
-          <div className="md:pr-2 h-[calc(100vh-120px)] overflow-y-auto">
-            <ActDetailList storyId={storyIdNum} />
-          </div>
+        <div className="panel-container">
+          <div className="panel-row">
+            {/* 左側：幕一覧 */}
+            <div className="panel-half panel-scroll">
+              <ActDetailList storyId={storyIdNum} />
+            </div>
 
-          {/* 右側：エピソード詳細 */}
-          <div className="md:pl-2 mt-4 md:mt-0 h-[calc(100vh-120px)] overflow-y-auto">
-            <EpisodesForm />
+            {/* 右側：エピソード詳細 */}
+            <div className="panel-half panel-scroll">
+              <EpisodesForm />
+            </div>
           </div>
         </div>
       )}

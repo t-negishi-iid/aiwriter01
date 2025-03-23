@@ -527,7 +527,7 @@ export default function BasicSettingPage() {
         </Tabs>
       ) : (
         // PC表示：左右に並べる
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '24px' }}>
+        <div className="panel-container">
           <div className="flex space-x-4">
             <Button
               variant="outline"
@@ -558,14 +558,14 @@ export default function BasicSettingPage() {
             </Button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '24px' }}>
+          <div className="panel-row">
             {/* 基本設定データ（左側） */}
-            <div style={{ width: '50%', position: 'relative' }}>
+            <div className="panel-half">
               <BasicSettingContent />
             </div>
 
             {/* 作品設定（右側） */}
-            <div style={{ width: '50%', position: 'relative' }}>
+            <div className="panel-half">
               <WorkSettingContent />
             </div>
           </div>

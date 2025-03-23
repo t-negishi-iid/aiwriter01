@@ -93,12 +93,12 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
               </Button>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div>
+          <CardContent className="w-full px-4 pb-4">
+            <div className="w-full">
               <Textarea
                 value={act.raw_content || ''}
                 readOnly
-                className="w-full h-48 resize-none bg-gray-50 form-container th-200"
+                className="w-full resize-none story-textarea th-200"
               />
             </div>
           </CardContent>

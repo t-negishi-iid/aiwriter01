@@ -106,6 +106,37 @@ export interface EpisodeNumberUpdateRequest {
 }
 
 /**
+ * 幕詳細情報の型定義
+ */
+export interface ActDetail {
+  id: number;
+  story: number;
+  act_number: number;
+  title: string;
+  overview: string;
+  detail: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * 幕詳細更新リクエストの型定義
+ */
+export interface ActDetailUpdateRequest {
+  title?: string;
+  overview?: string;
+  detail?: string;
+}
+
+/**
+ * Dify APIで幕詳細生成リクエストの型定義
+ */
+export interface ActDetailDifyCreateRequest {
+  basic_setting_id: number;
+  plot_id: number;
+}
+
+/**
  * バックエンドAPIにリクエストを送信する統一関数
  * DRF標準のレスポンス形式に対応
  *
@@ -235,9 +266,9 @@ export const episodeApi = {
    * 幕に属する全エピソードの一覧を取得
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @returns ページネーション形式のエピソード一覧
-   * - GET /stories/{story_id}/acts/{act_id}/episodes/
+   * - GET /stories/{story_id}/acts/{act_number}/episodes/
    * - 戻り値: {count, next, previous, results}
    */
   getActEpisodes: (storyId: string | number, actId: string | number): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
@@ -247,10 +278,10 @@ export const episodeApi = {
    * ActDetailからエピソード群を生成
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param episodeCount - 分割するエピソードの数
    * @returns 生成されたエピソードの一覧
-   * - POST /stories/{story_id}/acts/{act_id}/create-episodes/
+   * - POST /stories/{story_id}/acts/{act_number}/episodes/create/
    * - 戻り値: {count, next, previous, results, status}
    */
   createEpisodes: (
@@ -259,7 +290,7 @@ export const episodeApi = {
     episodeCount: number
   ): Promise<DRFPaginatedResponse<EpisodeDetail>> =>
     unifiedFetchApi<DRFPaginatedResponse<EpisodeDetail>>(
-      `/stories/${storyId}/acts/${actId}/create-episodes/`,
+      `/stories/${storyId}/acts/${actId}/episodes/create/`,
       {
         method: 'POST',
         headers: {
@@ -273,10 +304,10 @@ export const episodeApi = {
    * 特定のエピソードを取得
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param episodeId - エピソードID
    * @returns エピソードの詳細情報
-   * - GET /stories/{story_id}/acts/{act_id}/episodes/{pk}/
+   * - GET /stories/{story_id}/acts/{act_number}/episodes/{pk}/
    * - 戻り値: エピソード情報
    */
   getEpisode: (
@@ -290,11 +321,11 @@ export const episodeApi = {
    * エピソードの内容を更新
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param episodeId - エピソードID
    * @param data - 更新するデータ（タイトルと内容）
    * @returns 更新されたエピソード情報
-   * - PUT /stories/{story_id}/acts/{act_id}/episodes/{pk}/
+   * - PUT /stories/{story_id}/acts/{act_number}/episodes/{pk}/
    * - 戻り値: 更新されたエピソード情報
    */
   updateEpisodeContent: (
@@ -318,11 +349,11 @@ export const episodeApi = {
    * エピソードの並び順を変更
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param episodeId - エピソードID
    * @param episodeNumber - 新しいエピソード番号
    * @returns 更新後の全エピソード一覧
-   * - PUT /stories/{story_id}/acts/{act_id}/episodes/{pk}/
+   * - PUT /stories/{story_id}/acts/{act_number}/episodes/{pk}/
    * - 戻り値: {count, next, previous, results, status}
    */
   updateEpisodeNumber: (
@@ -346,10 +377,10 @@ export const episodeApi = {
    * エピソードを削除
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param episodeId - エピソードID
    * @returns 削除結果
-   * - DELETE /stories/{story_id}/acts/{act_id}/episodes/{pk}/
+   * - DELETE /stories/{story_id}/acts/{act_number}/episodes/{pk}/
    * - 戻り値: null
    */
   deleteEpisode: (
@@ -368,10 +399,10 @@ export const episodeApi = {
    * 新しいエピソードを作成
    *
    * @param storyId - 小説ID
-   * @param actId - 幕ID
+   * @param actId - 幕番号
    * @param data - 作成するエピソードデータ
    * @returns 作成されたエピソード情報
-   * - POST /stories/{story_id}/acts/{act_id}/episodes/new/
+   * - POST /stories/{story_id}/acts/{act_number}/episodes/
    * - 戻り値: 作成されたエピソード情報
    */
   createNewEpisode: (
@@ -380,9 +411,88 @@ export const episodeApi = {
     data: EpisodeCreateRequest
   ): Promise<EpisodeDetail> =>
     unifiedFetchApi<EpisodeDetail>(
-      `/stories/${storyId}/acts/${actId}/episodes/new/`,
+      `/stories/${storyId}/acts/${actId}/episodes/`,
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }
+    ),
+};
+
+/**
+ * 統一されたあらすじ詳細API関数群
+ * あらすじ詳細の作成・取得・更新・削除などの操作を行うAPI関数を提供
+ */
+export const ActDetailApi = {
+  /**
+   * 幕詳細一覧を取得
+   *
+   * @param storyId - 小説ID
+   * @returns ページネーション形式の幕詳細一覧
+   * - GET /stories/{story_id}/acts/
+   * - 戻り値: {count, next, previous, results}
+   */
+  getActDetails: (storyId: string | number): Promise<DRFPaginatedResponse<ActDetail>> =>
+    unifiedFetchApi<DRFPaginatedResponse<ActDetail>>(`/stories/${storyId}/acts/`),
+
+  /**
+   * 特定の幕詳細を取得
+   *
+   * @param storyId - 小説ID
+   * @param actId - 幕ID
+   * @returns 幕詳細情報
+   * - GET /stories/{story_id}/acts/{pk}/
+   * - 戻り値: 幕詳細情報
+   */
+  getActDetail: (storyId: string | number, actId: string | number): Promise<ActDetail> =>
+    unifiedFetchApi<ActDetail>(`/stories/${storyId}/acts/${actId}/`),
+
+  /**
+   * Dify APIを使用して新しい幕詳細を生成
+   *
+   * @param storyId - 小説ID
+   * @param data - 生成に必要なデータ
+   * @returns 生成された幕詳細情報
+   * - POST /stories/{story_id}/acts/create/
+   * - 戻り値: 生成された幕詳細情報
+   */
+  createActDetailWithDify: (
+    storyId: string | number,
+    data: ActDetailDifyCreateRequest
+  ): Promise<ActDetail> =>
+    unifiedFetchApi<ActDetail>(
+      `/stories/${storyId}/acts/create/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }
+    ),
+
+  /**
+   * 幕詳細を更新
+   *
+   * @param storyId - 小説ID
+   * @param actId - 幕ID
+   * @param data - 更新するデータ
+   * @returns 更新された幕詳細情報
+   * - PUT /stories/{story_id}/acts/{pk}/
+   * - 戻り値: 更新された幕詳細情報
+   */
+  updateActDetail: (
+    storyId: string | number,
+    actId: string | number,
+    data: ActDetailUpdateRequest
+  ): Promise<ActDetail> =>
+    unifiedFetchApi<ActDetail>(
+      `/stories/${storyId}/acts/${actId}/`,
+      {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },

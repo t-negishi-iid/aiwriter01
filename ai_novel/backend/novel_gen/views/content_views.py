@@ -65,18 +65,11 @@ class CreateEpisodeContentView(views.APIView):
         # キャラクター詳細の取得
         character_details = CharacterDetail.objects.filter(ai_story=story)
 
-        # 既にコンテンツがあるかチェック
-        if EpisodeContent.objects.filter(episode=episode).exists():
-            return Response(
-                {'error': '既にこのエピソードのコンテンツが存在します。'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         # story_idから全キャラクターのCharacterDetail.raw_contentを取得して配列化
         all_characters_list = [char.raw_content for char in character_details]
 
-        # story_idから全ActのActDetail.raw_contentを取得して配列化
-        all_episode_details = EpisodeDetail.objects.filter(ai_story=story)
+        # story_idから全ActのEpisodeDetail.raw_contentを取得して配列化
+        all_episode_details = EpisodeDetail.objects.filter(act__ai_story=story)
         all_episode_details_list = [episode_detail.raw_content for episode_detail in all_episode_details]
 
         # APIログの作成
@@ -91,14 +84,12 @@ class CreateEpisodeContentView(views.APIView):
             credit_cost=4
         )
 
-        # APIリクエスト
-        api = DifyNovelAPI()
-
+        # APIを呼び出す
+        dify_api = DifyNovelAPI(timeout=1200)  # タイムアウトを10分に設定
         try:
-            # 同期APIリクエスト
-            response = api.create_episode_content(
+            response = dify_api.create_episode_content(
                 basic_setting=basic_setting.raw_content,
-                all_characters_list=all_characters_list ,
+                all_characters_list=all_characters_list,
                 all_episode_details_list=all_episode_details_list,
                 target_episode_detail=episode.raw_content,
                 act_number=act_number,
@@ -124,14 +115,14 @@ class CreateEpisodeContentView(views.APIView):
             # 取得したcontentからエピソードタイトルと本文を取得
             episode_title = episode.title  # デフォルトはエピソード詳細のタイトル
             episode_content = content
-            
+
             # タイトルのパターンを検出 (## エピソード数「タイトル」 の形式)
             import re
             title_match = re.search(r'##\s+エピソード\d+「([^」]+)」', content)
             if title_match:
                 # タイトルが見つかった場合
                 episode_title = title_match.group(1)
-                
+
                 # タイトル行を除いた本文を抽出
                 content_lines = content.split('\n')
                 for i, line in enumerate(content_lines):
@@ -285,14 +276,17 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
 
         # リクエストパラメータの取得
-        title = serializer.validated_data['title']
         content = serializer.validated_data['content']
+        raw_content = serializer.validated_data.get('raw_content', content)
+        
+        # オプショナルパラメータ（titleは必須ではない）
+        if 'title' in request.data:
+            instance.title = request.data['title']
 
         # エピソード本文の更新
-        instance.title = title
         instance.content = content
         instance.word_count = len(content)
-        instance.raw_content = content
+        instance.raw_content = raw_content
         instance.save()
 
         # レスポンスを返す

@@ -141,33 +141,40 @@ export default function EpisodeContentForm({
           <div className="space-y-4">
             {/* エピソード本文編集エリア */}
             <div>
-              <h3 className="font-medium mb-2">エピソード本文</h3>
+              <h3 className="font-medium mb-2">エピソード概要</h3>
               <textarea
                 className="w-full h-96 p-3 border rounded-md story-textarea th-200"
                 value={editedContent}
                 onChange={handleContentChange}
-                placeholder="エピソードの本文を入力..."
-                aria-label="エピソード本文"
+                placeholder="エピソードの概要を入力..."
+                aria-label="エピソード概要"
               />
-            </div>
-
-            {/* 本文生成UI */}
-            <div className="border p-4 rounded-md">
-              <h3 className="font-medium mb-2">本文を生成</h3>
-              <div className="flex items-center mb-4">
-                <span className="mr-2">目標文字数:</span>
-                <input
-                  type="number"
-                  min="500"
-                  max="5000"
-                  step="100"
-                  value={wordCount}
-                  onChange={(e) => setWordCount(Number(e.target.value))}
-                  className="w-24 p-2 border rounded-md"
-                  aria-label="目標文字数"
-                />
-                <span className="ml-2">文字</span>
-              </div>
+              <Button
+                onClick={handleSaveEpisode}
+                disabled={!selectedEpisode || isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    保存中...
+                  </>
+                ) : (
+                  "保存"
+                )}
+              </Button>
+              <span className="mr-2">目標文字数：
+              </span>
+              <input
+                type="number"
+                min="500"
+                max="5000"
+                step="100"
+                value={wordCount}
+                onChange={(e) => setWordCount(Number(e.target.value))}
+                className="w-24 p-2 border rounded-md"
+                aria-label="目標文字数"
+              />
+              <span className="ml-2">文字&nbsp;</span>
               <Button
                 onClick={handleGenerateContent}
                 disabled={isGenerating}
@@ -182,21 +189,22 @@ export default function EpisodeContentForm({
                   "本文を生成"
                 )}
               </Button>
+            </div>
 
-              {generatedContent && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">生成されたコンテンツ</h4>
-                  <textarea
-                    className="w-full h-48 p-3 border rounded-md mb-2"
-                    value={generatedContent}
-                    readOnly
-                    aria-label="生成されたコンテンツ"
-                  />
-                  <Button onClick={handleApplyGenerated}>
-                    このコンテンツを適用
-                  </Button>
-                </div>
-              )}
+            {/* 本文生成UI */}
+            <div className="border p-4 rounded-md">
+              <h3 className="font-medium mb-2">エピソード本文を編集</h3>
+              <div className="mt-4">
+                <textarea
+                  className="w-full h-48 p-3 border rounded-md mb-2 story-textarea th-200"
+                  value={generatedContent}
+                  readOnly
+                  aria-label="生成されたコンテンツ"
+                />
+                <Button onClick={handleApplyGenerated}>
+                  エピソード本文を保存
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
@@ -206,19 +214,7 @@ export default function EpisodeContentForm({
         )}
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button
-          onClick={handleSaveEpisode}
-          disabled={!selectedEpisode || isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              保存中...
-            </>
-          ) : (
-            "保存"
-          )}
-        </Button>
+
       </CardFooter>
     </Card>
   );

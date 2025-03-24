@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { useCharacters } from './hooks/useCharacters';
 import { extractCharactersFromBasicSetting } from './lib/character-service';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Book, User, Loader2 } from 'lucide-react';
+import { Blocks, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StoryProvider } from '@/components/story/StoryProvider';
 import { StoryTabs } from '@/components/story/StoryTabs';
@@ -134,8 +134,11 @@ export default function CharactersPage() {
           <div className={styles.mobileContainer}>
             <Tabs defaultValue="character-list">
               <TabsList className={styles.tabsList}>
-                <TabsTrigger value="character-list" className={styles.tabsTrigger}>キャラクター一覧</TabsTrigger>
-                <TabsTrigger value="character-edit" className={styles.tabsTrigger}>キャラクター編集</TabsTrigger>
+                <TabsTrigger value="character-list" className={styles.tabsTrigger}>
+                  キャラクター一覧
+                </TabsTrigger>
+                <TabsTrigger value="character-edit" className={styles.tabsTrigger}>
+                  キャラクター編集</TabsTrigger>
               </TabsList>
 
               <TabsContent value="character-list">
@@ -158,7 +161,7 @@ export default function CharactersPage() {
                 ) : (
                   <div className={styles.characterListContainer}>
                     {/* 作品設定ブロック */}
-                    <StorySettingBlock 
+                    <StorySettingBlock
                       storyId={storyId}
                       basicSetting={basicSetting || undefined}
                     />
@@ -175,7 +178,10 @@ export default function CharactersPage() {
                     {/* キャラクターリスト */}
                     <div className={styles.characterList}>
                       <div className={styles.characterListHeader}>
-                        <h2 className="text-xl font-semibold">キャラクター一覧</h2>
+                        <h2 className="text-xl font-semibold">
+                          <Blocks className="mr-2 h-4 w-4" />
+                          キャラクター一覧
+                        </h2>
                         <Button onClick={handleAddNewCharacter}>
                           新規作成
                         </Button>
@@ -212,6 +218,7 @@ export default function CharactersPage() {
                 {selectedCharacter ? (
                   <div className={styles.characterFormContainer}>
                     <h2 className="text-xl font-semibold mb-4">
+                      <Blocks className="mr-2 h-4 w-4" />
                       {selectedCharacter.id ? 'キャラクター編集' : '新規キャラクター作成'}
                     </h2>
                     <CharacterForm
@@ -265,7 +272,7 @@ export default function CharactersPage() {
                 ) : (
                   <div className={styles.characterList}>
                     {/* 作品設定ブロック */}
-                    <StorySettingBlock 
+                    <StorySettingBlock
                       storyId={storyId}
                       basicSetting={basicSetting || undefined}
                     />
@@ -281,7 +288,10 @@ export default function CharactersPage() {
 
                     {/* キャラクターリスト */}
                     <div className={styles.characterListHeader}>
-                      <h2 className="text-xl font-semibold">キャラクター一覧</h2>
+                      <h2 className="text-xl font-semibold">
+                        <Blocks className="mr-2 h-4 w-4" />
+                        キャラクター一覧
+                      </h2>
                       <Button onClick={handleAddNewCharacter}>
                         新規作成
                       </Button>
@@ -309,6 +319,7 @@ export default function CharactersPage() {
                 {selectedCharacter ? (
                   <div className={styles.characterForm}>
                     <h2 className="text-xl font-semibold mb-4">
+                      <Blocks className="mr-2 h-4 w-4" />
                       {selectedCharacter.id ? 'キャラクター編集' : '新規キャラクター作成'}
                     </h2>
                     <CharacterForm

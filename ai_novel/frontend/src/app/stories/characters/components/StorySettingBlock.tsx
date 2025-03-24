@@ -7,6 +7,7 @@ import styles from '../characters.module.css';
 import { toast } from "@/components/ui/use-toast";
 import { useCharacters } from '../hooks/useCharacters';
 import { CharacterData } from '../lib/types';
+import { Blocks } from 'lucide-react';
 
 interface BasicSettingType {
   id?: number;
@@ -273,7 +274,10 @@ export const StorySettingBlock = ({
   return (
     <div className={styles.storySettingBlock}>
       <div className={styles.storySettingHeader}>
-        <h2 className="text-lg font-semibold">登場人物設定</h2>
+        <h2 className="text-lg font-semibold">
+          <Blocks className="mr-2 h-4 w-4" />
+          登場人物設定
+        </h2>
         <div className="space-x-2">
           <Button
             variant="outline"

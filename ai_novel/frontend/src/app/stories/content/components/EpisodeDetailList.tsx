@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Blocks, Loader2 } from 'lucide-react';
 import { ActDetail, EpisodeDetail } from '@/lib/unified-api-client';
 import { ActDetailApi, episodeApi } from '@/lib/unified-api-client';
 import { toast } from "@/components/ui/use-toast";
@@ -133,7 +133,10 @@ export default function EpisodeDetailList({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>幕とエピソード</CardTitle>
+        <CardTitle>
+          <Blocks className="h-4 w-4 mr-2" />
+          幕とエピソード
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Blocks, Loader2 } from 'lucide-react';
 import { EpisodeDetail } from '@/lib/unified-api-client';
 import { episodeApi, contentApi } from '@/lib/unified-api-client';
 import { toast } from "@/components/ui/use-toast";
@@ -76,7 +76,7 @@ export default function EpisodeContentForm({
         }
       }
       setFullscreen(true);
-      
+
       // エピソード概要の場合は、選択されたエピソードの内容をセット
       if (type === 'edit' && selectedEpisode) {
         setEditedContent(selectedEpisode.content);
@@ -386,7 +386,10 @@ export default function EpisodeContentForm({
               ref={fullscreenRef}
             >
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">エピソード概要</CardTitle>
+                <CardTitle className="text-lg">
+                  <Blocks className="h-4 w-4 mr-2" />
+                  エピソード概要
+                </CardTitle>
                 <div className="flex items-center gap-2">
                   {isFullscreenEdit && (
                     <Button
@@ -451,7 +454,10 @@ export default function EpisodeContentForm({
             >
               <Card className="w-full">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">エピソード本文</CardTitle>
+                  <CardTitle className="text-lg">
+                    <Blocks className="h-4 w-4 mr-2" />
+                    エピソード本文
+                  </CardTitle>
                   <div className="flex items-center gap-2">
                     {isFullscreenContent && (
                       <Button

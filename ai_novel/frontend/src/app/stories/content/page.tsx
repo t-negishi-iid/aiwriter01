@@ -36,6 +36,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
   const [selectedAct, setSelectedAct] = useState<ActDetail | null>(null);
   const [selectedEpisode, setSelectedEpisode] = useState<EpisodeDetail | null>(null);
   const [editedContent, setEditedContent] = useState<string>('');
+  const [selectedActNumber, setSelectedActNumber] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
 
   // ここでコンテキストを使用（プロバイダの内側で）
@@ -80,6 +81,8 @@ function ContentPageInner({ storyId }: { storyId: string }) {
               selectedEpisode={selectedEpisode}
               setSelectedEpisode={setSelectedEpisode}
               setEditedContent={setEditedContent}
+              selectedActNumber={selectedActNumber}
+              setSelectedActNumber={setSelectedActNumber}
             />
           </TabsContent>
 
@@ -89,6 +92,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
               selectedEpisode={selectedEpisode}
               editedContent={editedContent}
               setEditedContent={setEditedContent}
+              selectedActNumber={selectedActNumber}
             />
           </TabsContent>
         </Tabs>
@@ -105,6 +109,8 @@ function ContentPageInner({ storyId }: { storyId: string }) {
                 selectedEpisode={selectedEpisode}
                 setSelectedEpisode={setSelectedEpisode}
                 setEditedContent={setEditedContent}
+                selectedActNumber={selectedActNumber}
+                setSelectedActNumber={setSelectedActNumber}
               />
             </div>
             
@@ -115,6 +121,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
                 selectedEpisode={selectedEpisode}
                 editedContent={editedContent}
                 setEditedContent={setEditedContent}
+                selectedActNumber={selectedActNumber}
               />
             </div>
           </div>

@@ -191,6 +191,23 @@ class EpisodeContentListView(generics.ListCreateAPIView):
         # エピソード詳細に紐づくエピソード本文を取得
         return EpisodeContent.objects.filter(episode__in=episode_details).order_by('episode__episode_number')
 
+    def list(self, request, *args, **kwargs):
+        """エピソード本文一覧を取得（データがない場合は204を返す）"""
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # クエリセットが空の場合は204 No Contentを返す
+        if not queryset.exists():
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        # 通常の処理（ページネーション含む）
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         """エピソード本文を新規作成"""

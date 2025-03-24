@@ -15,6 +15,8 @@ interface EpisodeDetailListProps {
   selectedEpisode: EpisodeDetail | null;
   setSelectedEpisode: (episode: EpisodeDetail | null) => void;
   setEditedContent: (content: string) => void;
+  selectedActNumber: string;
+  setSelectedActNumber: (actNumber: string) => void;
 }
 
 export default function EpisodeDetailList({
@@ -23,13 +25,14 @@ export default function EpisodeDetailList({
   setSelectedAct,
   selectedEpisode,
   setSelectedEpisode,
-  setEditedContent
+  setEditedContent,
+  selectedActNumber,
+  setSelectedActNumber
 }: EpisodeDetailListProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acts, setActs] = useState<ActDetail[]>([]);
   const [episodes, setEpisodes] = useState<EpisodeDetail[]>([]);
-  const [selectedActNumber, setSelectedActNumber] = useState<string>("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,7 +76,7 @@ export default function EpisodeDetailList({
     };
 
     fetchData();
-  }, [storyId, setSelectedAct, setSelectedEpisode, setEditedContent]);
+  }, [storyId, setSelectedAct, setSelectedEpisode, setEditedContent, setSelectedActNumber]);
 
   // 幕選択ハンドラ
   const handleSelectAct = async (act: ActDetail) => {

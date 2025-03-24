@@ -25,7 +25,6 @@ export default function EpisodeContentForm({
   selectedActNumber
 }: EpisodeContentFormProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wordCount, setWordCount] = useState<number>(1000);
   const [episodeContent, setEpisodeContent] = useState<string>("");
@@ -154,8 +153,12 @@ export default function EpisodeContentForm({
       );
 
       if (generationResponse && generationResponse.content) {
-        setGeneratedContent(generationResponse.content as string);
+        // 生成された本文を直接エピソード本文に設定
         setEpisodeContent(generationResponse.content as string);
+        toast({
+          title: "生成完了",
+          description: "エピソード本文が生成されました。内容を確認し、必要に応じて編集してください。",
+        });
       } else {
         toast({
           title: "エラー",
@@ -204,18 +207,6 @@ export default function EpisodeContentForm({
       });
     } finally {
       setIsSavingContent(false);
-    }
-  };
-
-  // 生成されたコンテンツをエディタに適用するハンドラ
-  const handleApplyGeneratedToEditor = () => {
-    if (generatedContent) {
-      setEpisodeContent(generatedContent);
-      setGeneratedContent("");
-      toast({
-        title: "適用完了",
-        description: "生成されたコンテンツが適用されました。",
-      });
     }
   };
 
@@ -316,22 +307,6 @@ export default function EpisodeContentForm({
                 )}
               </Button>
             </div>
-
-            {/* 生成された本文UI */}
-            {generatedContent && (
-              <div className="border p-4 rounded-md">
-                <h3 className="font-medium mb-2">生成された本文</h3>
-                <textarea
-                  className="w-full h-48 p-3 border rounded-md mb-2 story-textarea th-200"
-                  value={generatedContent}
-                  readOnly
-                  aria-label="生成された本文"
-                />
-                <Button onClick={handleApplyGeneratedToEditor}>
-                  本文として適用
-                </Button>
-              </div>
-            )}
           </div>
         ) : (
           <p className="text-center py-10">エピソードを選択してください</p>

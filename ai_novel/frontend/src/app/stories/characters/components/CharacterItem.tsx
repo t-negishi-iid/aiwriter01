@@ -29,7 +29,7 @@ export function CharacterItem({ character, index, onSelect, isSelected, isMobile
   };
 
   return (
-    <div key={character.id || index} className="bg-white border border-gray-200 rounded-md w-full mb-4">
+    <div key={character.id || index} className="bg-white rounded-md w-full mb-4">
       <div
         className={`${styles.characterHeader} ${isExpanded ? styles.characterHeaderExpanded : ''}`}
         onClick={() => setIsExpanded(!isExpanded)}
@@ -43,15 +43,23 @@ export function CharacterItem({ character, index, onSelect, isSelected, isMobile
         <h3 className="text-lg font-semibold">{character.name}</h3>
         <span className="text-sm text-gray-500 ml-2">{character.role}</span>
       </div>
-
       {isExpanded && (
         <div
           id={`character-content-${character.id || index}`}
-          className="p-4 border-t border-gray-200"
+          className="p-4"
         >
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <h4 className="text-sm font-medium text-gray-500">基本設定</h4>
+              <button
+                onClick={handleEditClick}
+                className={`px-3 py-1 text-sm rounded-md ${isSelected
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                編集
+              </button>
+
               <textarea
                 id={`character-content-${character.id || index}-textarea`}
                 className="mt-1 text-sm w-full border-none bg-transparent resize-none outline-none story-textarea th-300"
@@ -64,15 +72,6 @@ export function CharacterItem({ character, index, onSelect, isSelected, isMobile
             </div>
 
             <div className="flex justify-end space-x-2 mt-2">
-              <button
-                onClick={handleEditClick}
-                className={`px-3 py-1 text-sm rounded-md ${isSelected
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-              >
-                編集
-              </button>
             </div>
           </div>
         </div>

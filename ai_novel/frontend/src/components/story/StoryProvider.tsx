@@ -32,7 +32,7 @@ const StoryContext = createContext<StoryContextType>({
   isLoading: true,
   error: null,
   selectedAct: null,
-  setSelectedAct: () => {}
+  setSelectedAct: () => { }
 });
 
 interface StoryProviderProps {
@@ -99,6 +99,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
           console.error("作品設定取得エラー:", basicSettingData.reason);
         }
 
+        {/*
         // キャラクター情報の取得結果を処理
         if (charactersData.status === 'fulfilled') {
           console.log('キャラクター情報:', charactersData.value);
@@ -115,7 +116,9 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
           console.error("キャラクター情報取得エラー:", charactersData.reason);
           setCharacters([]);
         }
+        */}
 
+        {/*
         // あらすじ情報の取得結果を処理
         if (plotData.status === 'fulfilled') {
           console.log('あらすじ情報:', plotData.value);
@@ -123,6 +126,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
         } else {
           console.error("あらすじ情報取得エラー:", plotData.reason);
         }
+        */}
 
         console.log('======= デバッグ情報: 終了 =======');
       } catch (err) {
@@ -176,17 +180,7 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
             <ArrowLeft className="mr-1 h-4 w-4" />
             小説一覧に戻る
           </Link>
-          <p className="text-muted-foreground mt-2">
-            {story?.catchphrase && story.catchphrase.length > 30
-              ? `${story.catchphrase.substring(0, 30)}...`
-              : story?.catchphrase || "説明はありません"}
-          </p>
           <h1 className="text-3xl font-bold">{story?.title || "無題の小説"}</h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {story?.summary && story.summary.length > 80
-              ? `${story.summary.substring(0, 80)}...`
-              : story?.summary || "説明はありません"}
-          </p>
         </div>
 
         {error && (

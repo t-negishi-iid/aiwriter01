@@ -194,6 +194,22 @@
   margin: 20px 0;
 }
 
+.x-r-5 {
+  margin-right: 5px;
+}
+
+.x-r-10 {
+  margin-right: 10px;
+}
+
+.x-r-15 {
+  margin-right: 15px;
+}
+
+.x-r-20 {
+  margin-right: 20px;
+}
+
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {
   background-color: white !important;

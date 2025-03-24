@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { BookOpen, Edit } from 'lucide-react';
+import { Blocks, Edit } from 'lucide-react';
 import { BasicSetting } from '../lib/types';
 
 interface BasicSettingBlockProps {
@@ -23,7 +23,7 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
     <Card className="mb-4">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center">
-          <BookOpen className="h-5 w-5 mr-2" />
+          <Blocks className="h-5 w-5 mr-2" />
           基本設定のあらすじ
         </CardTitle>
       </CardHeader>

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Book } from 'lucide-react';
+import { Blocks, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { StoryProvider } from '@/components/story/StoryProvider';
@@ -33,10 +33,10 @@ export default function BasicSettingDataPage() {
         console.log("統合設定クリエイターデータの取得結果:", response);
 
         if (
-          response && 
-          response.success && 
-          response.data && 
-          typeof response.data === 'object' && 
+          response &&
+          response.success &&
+          response.data &&
+          typeof response.data === 'object' &&
           'basic_setting_data' in response.data
         ) {
           setBasicSettingData(response.data.basic_setting_data as string);
@@ -65,16 +65,25 @@ export default function BasicSettingDataPage() {
 
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>基本設定</CardTitle>
-          <CardDescription>小説の基本的な設定をここで行います。</CardDescription>
+          <CardTitle>
+            <Blocks className="h-4 w-4 mr-2" />
+            基本設定
+          </CardTitle>
+          <CardDescription>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {basicSettingData ? (
             <div className="space-y-6">
-              <div>
+              <div className="y-m-10">
                 <div className="flex justify-center mt-4 mb-4">
+                  <div className="font-sm y-m-5">小説の基本的なテーマ、作品世界、物語構成などの基本設定をここで行います。</div>
+                  <div className="font-sm y-m-5">対話型の「統合ブロックエディタ」で、小説の知識がなくても本格的な小説を作成する基本設定を作成できます。</div>
+                </div>
+                <div className="y-m-10">
                   <Button onClick={() => router.push(`/tools/integrated-setting-creator?storyId=${storyId}`)}>
-                    基本設定を作成／編集する
+                    <Blocks className="h-4 w-4 mr-2" />
+                    「統合ブロックエディタ」で、基本設定を作成／編集する
                   </Button>
                 </div>
 

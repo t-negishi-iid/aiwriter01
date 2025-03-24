@@ -105,7 +105,7 @@ export function PlotForm({
     if (generatedPlot) {
       console.log('PlotForm - 生成後のPlot:', generatedPlot);
       console.log('PlotForm - 生成後のraw_content:', generatedPlot.raw_content ? '存在します' : 'なし');
-      
+
       // 基本あらすじを保持したまま、詳細あらすじ（raw_content）だけを更新
       setFormData(prev => ({
         ...prev,
@@ -198,11 +198,14 @@ export function PlotForm({
         <CardContent>
           <div className="space-y-4">
 
-            <div>
-              <label className="block text-sm font-medium mb-3">基本あらすじ</label>
+            <div className="block mb-10 y-m-10">
+              <label className="block text-sm font-medium mb-3">
+                基本あらすじ
+              </label>
+            </div>
+            <div className="block mb-10 y-m-20">
               {renderBasicOverview()}
             </div>
-
             <div className={styles.formButtons}>
               <div className={styles.formButtonsRight}>
                 <Button type="button" onClick={handleSubmit} disabled={isSaving}>
@@ -220,15 +223,7 @@ export function PlotForm({
 
             <div className={styles.detailFormContainer}>
               <label className="block text-sm font-medium mb-10">詳細あらすじ</label>
-              <Textarea
-                name="raw_content"
-                value={formData.raw_content || ''}
-                onChange={handleChange}
-                rows={10}
-                placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
-                className={styles.textareaStyle}
-              />
-              <div className={styles.detailFormButtons}>
+              <div className={styles.formButtons}>
                 <Button
                   type="button"
                   onClick={handleSaveDetailOnly}
@@ -244,6 +239,14 @@ export function PlotForm({
                   )}
                 </Button>
               </div>
+              <Textarea
+                name="raw_content"
+                value={formData.raw_content || ''}
+                onChange={handleChange}
+                rows={10}
+                placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
+                className={styles.textareaStyle}
+              />
             </div>
           </div>
         </CardContent>

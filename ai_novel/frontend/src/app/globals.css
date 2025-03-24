@@ -210,6 +210,14 @@
   margin-right: 20px;
 }
 
+.float-right {
+  float: right;
+}
+
+.float-left {
+  float: left;
+}
+
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {
   background-color: white !important;

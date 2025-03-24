@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useState, useEffect } from 'react';
 import { episodeApi, EpisodeDetail } from '@/lib/unified-api-client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Blocks } from 'lucide-react';
 
 export default function EpisodesForm() {
   const { selectedAct, story, basicSetting } = useStoryContext();
@@ -65,7 +65,7 @@ export default function EpisodesForm() {
   // エピソード生成処理
   const handleCreateEpisodes = () => {
     if (!selectedAct || !story?.id) return;
-    
+
     // 基本設定IDのバリデーション
     if (basicSettingId === null) {
       setError('基本設定IDが取得できません。作品の基本設定が正しく設定されているか確認してください。');
@@ -95,6 +95,10 @@ export default function EpisodesForm() {
     <Card className={selectedAct ? 'border-primary' : 'border-gray-200'}>
       <CardHeader className="bg-gray-50">
         <CardTitle className="flex items-center">
+          <div className="ml-2 y-m-20">
+            <Blocks className="h-6 w-6" />
+            幕をエピソードに分割する
+          </div>
           {selectedAct ? (
             <>
               <span className="text-primary font-bold">{selectedAct.act_number}幕:</span>
@@ -110,7 +114,7 @@ export default function EpisodesForm() {
           <div className="w-full flex items-center mt-2 mb-4">
             <button
               onClick={handleCreateEpisodes}
-              className="px-3 py-1.5 bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+              className="px-3 py-1.5 bg-primary text-white rounded hover:bg-primary/90 transition-colors y-m-20"
               disabled={!selectedAct || isCreating}
             >
               {isCreating ? (
@@ -149,7 +153,9 @@ export default function EpisodesForm() {
 
         {/* エピソード一覧表示 */}
         <div className="mt-6">
-          <h3 className="text-lg font-medium border-b pb-2 mb-4">エピソード一覧</h3>
+          <h3 className="text-lg font-medium border-b pb-2 mb-4">
+            <Blocks className="mr-2 h-4 w-4" />
+            エピソード一覧</h3>
 
           {!selectedAct && (
             <div className="p-6 text-center border rounded-md bg-gray-50">

@@ -57,12 +57,16 @@ export default function EpisodeContentForm({
     console.log('isFullscreenEdit:', isFullscreenEdit);
   }, [isFullscreenEdit]);
 
-  // 全画面モードの切り替え処理を更新
-  const toggleFullscreen = useCallback(() => {
-    if (!isFullscreenEdit) {
+  // 全画面モードの切り替え処理（汎用化）
+  const toggleFullscreen = useCallback((type: 'edit' | 'content') => {
+    const isCurrentlyFullscreen = type === 'edit' ? isFullscreenEdit : isFullscreenContent;
+    const targetRef = type === 'edit' ? fullscreenRef : fullscreenContentRef;
+    const setFullscreen = type === 'edit' ? setIsFullscreenEdit : setIsFullscreenContent;
+
+    if (!isCurrentlyFullscreen) {
       // 全画面モードに入る
-      if (fullscreenRef.current) {
-        const element = fullscreenRef.current as FullScreenElement;
+      if (targetRef.current) {
+        const element = targetRef.current as FullScreenElement;
         if (element.requestFullscreen) {
           element.requestFullscreen();
         } else if (element.webkitRequestFullscreen) { // Safari
@@ -71,8 +75,10 @@ export default function EpisodeContentForm({
           element.msRequestFullscreen();
         }
       }
-      setIsFullscreenEdit(true);
-      if (selectedEpisode) {
+      setFullscreen(true);
+      
+      // エピソード概要の場合は、選択されたエピソードの内容をセット
+      if (type === 'edit' && selectedEpisode) {
         setEditedContent(selectedEpisode.content);
       }
     } else {
@@ -85,38 +91,9 @@ export default function EpisodeContentForm({
       } else if (doc.msExitFullscreen) { // IE11
         doc.msExitFullscreen();
       }
-      setIsFullscreenEdit(false);
+      setFullscreen(false);
     }
-  }, [isFullscreenEdit, selectedEpisode, setEditedContent]);
-
-  // エピソード本文用全画面モードの切り替え
-  const toggleContentFullscreen = useCallback(() => {
-    if (!isFullscreenContent) {
-      // 全画面モードに入る
-      if (fullscreenContentRef.current) {
-        const element = fullscreenContentRef.current as FullScreenElement;
-        if (element.requestFullscreen) {
-          element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) { // Safari
-          element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) { // IE11
-          element.msRequestFullscreen();
-        }
-      }
-      setIsFullscreenContent(true);
-    } else {
-      // 全画面モードを解除
-      const doc = document as FullScreenDocument;
-      if (doc.exitFullscreen) {
-        doc.exitFullscreen();
-      } else if (doc.webkitExitFullscreen) { // Safari
-        doc.webkitExitFullscreen();
-      } else if (doc.msExitFullscreen) { // IE11
-        doc.msExitFullscreen();
-      }
-      setIsFullscreenContent(false);
-    }
-  }, [isFullscreenContent]);
+  }, [isFullscreenEdit, isFullscreenContent, selectedEpisode, setEditedContent]);
 
   // フルスクリーン変更イベントのリスナーを追加
   useEffect(() => {
@@ -127,7 +104,7 @@ export default function EpisodeContentForm({
         doc.webkitFullscreenElement ||
         doc.msFullscreenElement
       );
-      
+
       if (!isFullscreenNow) {
         if (isFullscreenEdit) setIsFullscreenEdit(false);
         if (isFullscreenContent) setIsFullscreenContent(false);
@@ -149,8 +126,8 @@ export default function EpisodeContentForm({
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        if (isFullscreenEdit) toggleFullscreen();
-        if (isFullscreenContent) toggleContentFullscreen();
+        if (isFullscreenEdit) toggleFullscreen('edit');
+        if (isFullscreenContent) toggleFullscreen('content');
       }
     };
 
@@ -158,7 +135,7 @@ export default function EpisodeContentForm({
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [isFullscreenEdit, isFullscreenContent, toggleFullscreen, toggleContentFullscreen]);
+  }, [isFullscreenEdit, isFullscreenContent, toggleFullscreen]);
 
   // エピソード本文を取得する関数
   const fetchEpisodeContent = useCallback(async () => {
@@ -359,8 +336,39 @@ export default function EpisodeContentForm({
 
   return (
     <Card className="w-full">
+      <div className="mt-4 mb-4 flex items-center gap-2 p-4" style={{ margin: "10px", padding: "10px", border: "1px solid #ccc" }}>
+        <Button
+          onClick={handleGenerateContent}
+          disabled={isGenerating}
+          style={{ margin: "0 10px" }}
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              生成中...
+            </>
+          ) : (
+            "エピソード概要から本文を生成"
+          )}
+        </Button>
+        <span className="mr-2">目標文字数：</span>
+        <input
+          type="number"
+          min="500"
+          max="5000"
+          step="100"
+          value={wordCount}
+          onChange={(e) => setWordCount(Number(e.target.value))}
+          className="w-24 p-2 border rounded-md"
+          aria-label="目標文字数"
+        />
+        <span className="ml-2">文字&nbsp;</span>
+
+      </div>
+
       <CardHeader>
         <CardTitle>
+
           {selectedEpisode
             ? `${selectedEpisode.episode_number}話: ${selectedEpisode.title}`
             : 'エピソードが選択されていません'}
@@ -371,11 +379,10 @@ export default function EpisodeContentForm({
           <div className="space-y-4">
             {/* エピソード本文編集エリア */}
             <div
-              className={`card-container story-detail-container ${
-                isFullscreenEdit 
+              className={`card-container story-detail-container ${isFullscreenEdit
                 ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
                 : ""
-              }`}
+                }`}
               ref={fullscreenRef}
             >
               <CardHeader className="flex flex-row items-center justify-between">
@@ -398,7 +405,7 @@ export default function EpisodeContentForm({
                     </Button>
                   )}
                   <Button
-                    onClick={toggleFullscreen}
+                    onClick={() => toggleFullscreen('edit')}
                     variant="outline"
                   >
                     {isFullscreenEdit ? "全画面モード解除" : "全画面モード"}
@@ -456,7 +463,7 @@ export default function EpisodeContentForm({
                     </Button>
                   )}
                   <Button
-                    onClick={toggleContentFullscreen}
+                    onClick={() => toggleFullscreen('content')}
                     variant="outline"
                   >
                     {isFullscreenContent ? "全画面モード解除" : "全画面モード"}
@@ -464,34 +471,6 @@ export default function EpisodeContentForm({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="mr-2">目標文字数：</span>
-                  <input
-                    type="number"
-                    min="500"
-                    max="5000"
-                    step="100"
-                    value={wordCount}
-                    onChange={(e) => setWordCount(Number(e.target.value))}
-                    className="w-24 p-2 border rounded-md"
-                    aria-label="目標文字数"
-                  />
-                  <span className="ml-2">文字&nbsp;</span>
-                  <Button
-                    onClick={handleGenerateContent}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        生成中...
-                      </>
-                    ) : (
-                      "エピソード概要から本文を生成"
-                    )}
-                  </Button>
-
-                </div>
                 {isLoadingContent ? (
                   <div className="flex justify-center items-center py-4">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -499,11 +478,10 @@ export default function EpisodeContentForm({
                   </div>
                 ) : (
                   <div
-                    className={`card-container story-detail-container ${
-                      isFullscreenContent 
+                    className={`card-container story-detail-container ${isFullscreenContent
                       ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
                       : ""
-                    }`}
+                      }`}
                     ref={fullscreenContentRef}
                   >
                     <textarea

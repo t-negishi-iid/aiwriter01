@@ -306,22 +306,23 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # リクエストの検証
-        serializer = EpisodeContentCreateSerializer(data=request.data)
+        # リクエストの検証（既存のインスタンスを指定して更新モードに）
+        serializer = EpisodeContentCreateSerializer(instance=instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         # リクエストパラメータの取得
-        content = serializer.validated_data['content']
+        content = serializer.validated_data.get('content', instance.content)
         raw_content = serializer.validated_data.get('raw_content', content)
         
         # オプショナルパラメータ（titleは必須ではない）
-        if 'title' in request.data:
-            instance.title = request.data['title']
+        if 'title' in serializer.validated_data:
+            instance.title = serializer.validated_data['title']
 
         # エピソード本文の更新
         instance.content = content
         instance.word_count = len(content)
         instance.raw_content = raw_content
+        instance.is_edited = True  # 編集済みフラグをTrueに設定
         instance.save()
 
         # レスポンスを返す

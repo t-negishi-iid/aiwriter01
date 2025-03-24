@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -37,6 +37,25 @@ interface WorkSettingData {
   rawContent: string;         // 生成された元の内容全体
   createdAt?: string;         // 作成日時
   updatedAt?: string;         // 更新日時
+}
+
+// フルスクリーンAPI用の型定義
+interface FullScreenDocument extends Document {
+  mozFullScreenElement?: Element;
+  msFullscreenElement?: Element;
+  webkitFullscreenElement?: Element;
+  fullscreenElement: Element | null;
+  mozCancelFullScreen?: () => Promise<void>;
+  msExitFullscreen?: () => Promise<void>;
+  webkitExitFullscreen?: () => Promise<void>;
+  exitFullscreen: () => Promise<void>;
+}
+
+// HTMLElementをフルスクリーン対応にする拡張型
+interface FullScreenHTMLElement extends HTMLElement {
+  msRequestFullscreen?: () => Promise<void>;
+  mozRequestFullScreen?: () => Promise<void>;
+  webkitRequestFullscreen?: () => Promise<void>;
 }
 
 export default function BasicSettingPage() {
@@ -97,7 +116,7 @@ export default function BasicSettingPage() {
         if (response && response.success && response.data) {
           // データを適切な型にキャスト
           const settingData = response.data as IntegratedSettingData;
-          
+
           // basic_setting_dataを設定
           setBasicSettingData(settingData.basic_setting_data || null);
 
@@ -319,157 +338,184 @@ export default function BasicSettingPage() {
 
   // 作品設定のコンテンツ
   const WorkSettingContent = () => {
+    // ステートの定義
     const [showMainSettings, setShowMainSettings] = useState(true);
-    const [showRawContent, setShowRawContent] = useState(false);
+    const [showRawContent, setShowRawContent] = useState(true);
+    const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
 
-    // WorldSettingSelectorと同様のスタイル
-    const leftAlignedHeaderStyle = {
-      display: 'flex',
-      flexDirection: 'row' as const,
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      padding: '0.75rem 1rem',
-      backgroundColor: '#f0f7ff',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease',
-      marginBottom: '1rem'
+    // フルスクリーン表示用のref
+    const fullscreenRef = useRef<HTMLDivElement>(null);
+
+    // フルスクリーントグル関数
+    const toggleFullscreen = () => {
+      if (!fullscreenRef.current) return;
+
+      const doc = document as unknown as FullScreenDocument;
+
+      if (!isFullscreenEdit) {
+        // フルスクリーンモードに入る
+        const element = fullscreenRef.current as unknown as FullScreenHTMLElement;
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) { // Firefox
+          element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) { // Chrome, Safari
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { // IE/Edge
+          element.msRequestFullscreen();
+        }
+      } else {
+        // フルスクリーンモードを終了する
+        if (doc.exitFullscreen) {
+          doc.exitFullscreen();
+        } else if (doc.mozCancelFullScreen) { // Firefox
+          doc.mozCancelFullScreen();
+        } else if (doc.webkitExitFullscreen) { // Chrome, Safari
+          doc.webkitExitFullscreen();
+        } else if (doc.msExitFullscreen) { // IE/Edge
+          doc.msExitFullscreen();
+        }
+      }
+
+      setIsFullscreenEdit(!isFullscreenEdit);
     };
 
-    const expandIconStyle = {
-      fontSize: '1rem',
-      color: '#3498db',
-      marginRight: '0.5rem'
-    };
+    // フルスクリーン変更イベントリスナー
+    useEffect(() => {
+      const handleFullscreenChange = () => {
+        const doc = document as unknown as FullScreenDocument;
+        if (!doc.fullscreenElement && !doc.webkitFullscreenElement &&
+          !doc.mozFullScreenElement && !doc.msFullscreenElement) {
+          setIsFullscreenEdit(false);
+        }
+      };
 
-    const categoryTitleStyle = {
-      fontSize: '1.2rem',
-      fontWeight: 'bold',
-      margin: 0,
-      color: '#2c3e50'
-    };
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+      return () => {
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      };
+    }, []);
 
     return (
       <Card className="h-full">
         <CardHeader>
           <CardTitle>作品設定</CardTitle>
           <CardDescription>小説の世界観や設定情報</CardDescription>
+          <div className="flex justify-end">
+            <Button onClick={toggleFullscreen}>
+              {isFullscreenEdit ? '全画面モード解除' : '全画面モード'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* グループ1: 主要設定フォーム */}
           <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowMainSettings(!showMainSettings)}
-            >
-              <span style={expandIconStyle}>
-                {showMainSettings ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>作品設定詳細</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">主要設定</h3>
+              <Button onClick={toggleFullscreen}>
+                {isFullscreenEdit ? '全画面モード解除' : '全画面モード'}
+              </Button>
             </div>
-
-            {showMainSettings && (
-              <div className="space-y-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">作品世界と舞台設定</h3>
-                  <textarea
-                    id="story-settings"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
-                    placeholder="作品世界と舞台設定を入力してください"
-                    value={workSettingData.storySettings}
-                    onChange={handleWorkSettingChange('storySettings')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">主な登場人物</h3>
-                  <textarea
-                    id="characters"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="主な登場人物を入力してください"
-                    value={workSettingData.characters}
-                    onChange={handleWorkSettingChange('characters')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">あらすじ</h3>
-                  <textarea
-                    id="plot-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="あらすじを入力してください"
-                    value={workSettingData.plotOverview}
-                    onChange={handleWorkSettingChange('plotOverview')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第1幕</h3>
-                  <textarea
-                    id="act1-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第1幕の内容を入力してください"
-                    value={workSettingData.act1Overview}
-                    onChange={handleWorkSettingChange('act1Overview')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第2幕</h3>
-                  <textarea
-                    id="act2-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第2幕の内容を入力してください"
-                    value={workSettingData.act2Overview}
-                    onChange={handleWorkSettingChange('act2Overview')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第3幕</h3>
-                  <textarea
-                    id="act3-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第3幕の内容を入力してください"
-                    value={workSettingData.act3Overview}
-                    onChange={handleWorkSettingChange('act3Overview')}
-                    rows={6}
-                  />
-                </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">作品世界と舞台設定</h4>
+                <textarea
+                  id="story-settings"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="作品世界と舞台設定"
+                  value={workSettingData.storySettings}
+                  onChange={handleWorkSettingChange('storySettings')}
+                  rows={6}
+                />
               </div>
-            )}
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">主な登場人物</h4>
+                <textarea
+                  id="characters"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="主な登場人物"
+                  value={workSettingData.characters}
+                  onChange={handleWorkSettingChange('characters')}
+                  rows={6}
+                />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">あらすじ</h4>
+                <textarea
+                  id="plot-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="あらすじ"
+                  value={workSettingData.plotOverview}
+                  onChange={handleWorkSettingChange('plotOverview')}
+                  rows={6}
+                />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">第1幕</h4>
+                <textarea
+                  id="act1-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="第1幕"
+                  value={workSettingData.act1Overview}
+                  onChange={handleWorkSettingChange('act1Overview')}
+                  rows={6}
+                />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">第2幕</h4>
+                <textarea
+                  id="act2-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="第2幕"
+                  value={workSettingData.act2Overview}
+                  onChange={handleWorkSettingChange('act2Overview')}
+                  rows={6}
+                />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-md p-4">
+                <h4 className="text-lg font-medium mb-2">第3幕</h4>
+                <textarea
+                  id="act3-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="第3幕"
+                  value={workSettingData.act3Overview}
+                  onChange={handleWorkSettingChange('act3Overview')}
+                  rows={6}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* グループ2: 生データ */}
+          {/* グループ2: 生成された元の内容 */}
           <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
+            <h3 className="text-lg font-semibold mb-2">生成された元の内容</h3>
             <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowRawContent(!showRawContent)}
+              ref={fullscreenRef}
+              className={`mt-4 ${isFullscreenEdit ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4" : ""}`}
             >
-              <span style={expandIconStyle}>
-                {showRawContent ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>作品設定ロウデータ</h3>
-            </div>
-
-            {showRawContent && (
-              <div className="mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 overflow-y-auto w-full">
-                  <textarea
-                    id="raw-content"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-1200"
-                    placeholder="生成された元の内容全体"
-                    value={workSettingData.rawContent}
-                    onChange={handleWorkSettingChange('rawContent')}
-                    rows={12}
-                  />
-                </div>
+              <div className="flex justify-end mb-4">
+                <Button onClick={toggleFullscreen}>
+                  全画面モード解除
+                </Button>
               </div>
-            )}
+              <div className="bg-white border border-gray-200 rounded-md p-0 overflow-y-auto w-full">
+                <textarea
+                  id="raw-content"
+                  className={`w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-1200`}
+                  placeholder="生成された元の内容全体"
+                  value={workSettingData.rawContent}
+                  onChange={handleWorkSettingChange('rawContent')}
+                  rows={12}
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

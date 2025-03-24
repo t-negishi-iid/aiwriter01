@@ -89,6 +89,8 @@ export interface EpisodeDetail {
 export interface EpisodeCreateRequest {
   title: string;
   content: string;
+  episode_number?: number;
+  raw_content: string;
 }
 
 /**
@@ -468,24 +470,24 @@ export const episodeApi = {
     unifiedFetchApi<EpisodeDetail>(`/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`),
 
   /**
-   * エピソードの内容を更新
+   * エピソードの詳細を更新
    *
    * @param storyId - 小説ID
    * @param actId - 幕番号
-   * @param episodeId - エピソードID
+   * @param episodeNumber - エピソード番号
    * @param data - 更新するデータ（タイトルと内容）
    * @returns 更新されたエピソード情報
-   * - PUT /stories/{story_id}/acts/{act_number}/episodes/{pk}/
+   * - PUT /stories/{story_id}/acts/{act_number}/episodes/{episode_number}/
    * - 戻り値: 更新されたエピソード情報
    */
-  updateEpisodeContent: (
+  updateEpisodeDetail: (
     storyId: string | number,
     actId: string | number,
-    episodeId: string | number,
+    episodeNumber: string | number,
     data: EpisodeCreateRequest
   ): Promise<EpisodeDetail> =>
     unifiedFetchApi<EpisodeDetail>(
-      `/stories/${storyId}/acts/${actId}/episodes/${episodeId}/`,
+      `/stories/${storyId}/acts/${actId}/episodes/${episodeNumber}/`,
       {
         method: 'PUT',
         headers: {

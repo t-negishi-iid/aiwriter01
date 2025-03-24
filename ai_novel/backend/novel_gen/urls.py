@@ -122,7 +122,7 @@ urlpatterns = [
     path('stories/<int:story_id>/acts/<int:act_number>/episodes/',
          views.ActEpisodesListView.as_view(), name='act-episodes-list'),
     # 指定されたストーリーの指定された幕の指定されたエピソードを取得、更新、削除する
-    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:pk>/',
+    path('stories/<int:story_id>/acts/<int:act_number>/episodes/<int:episode_number>/',
          views.EpisodeDetailView.as_view(), name='episode-detail'),
 
     # エピソード本文関連

@@ -76,7 +76,7 @@ export default function EpisodeContentForm({
         }
       }
       setFullscreen(true);
-      
+
       // エピソード概要の場合は、選択されたエピソードの内容をセット
       if (type === 'edit' && selectedEpisode) {
         setEditedContent(selectedEpisode.content);
@@ -388,7 +388,11 @@ export default function EpisodeContentForm({
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">エピソード概要</CardTitle>
                 <div className="flex items-center gap-2">
-                  {isFullscreenEdit && (
+                  {isFullscreenEdit ? (
+                    <div className="px-3 py-2 text-sm text-gray-500 border rounded">
+                      全画面表示中は保存ができません
+                    </div>
+                  ) : (
                     <Button
                       onClick={handleSaveEpisodeDetail}
                       disabled={!selectedEpisode || isSaving}
@@ -421,24 +425,6 @@ export default function EpisodeContentForm({
                   placeholder="エピソードの概要を入力..."
                   aria-label="エピソード概要"
                 />
-                {!isFullscreenEdit && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      onClick={handleSaveEpisodeDetail}
-                      disabled={!selectedEpisode || isSaving}
-                      className="mr-4"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        "エピソード概要を保存"
-                      )}
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </div>
 
@@ -453,7 +439,11 @@ export default function EpisodeContentForm({
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg">エピソード本文</CardTitle>
                   <div className="flex items-center gap-2">
-                    {isFullscreenContent && (
+                    {isFullscreenContent ? (
+                      <div className="px-3 py-2 text-sm text-gray-500 border rounded">
+                        全画面表示中は保存ができません
+                      </div>
+                    ) : (
                       <Button
                         onClick={handleApplyGenerated}
                         disabled={isSavingContent}
@@ -492,22 +482,7 @@ export default function EpisodeContentForm({
                       aria-label="エピソード本文"
                     />
                   )}
-                  {!isFullscreenContent && (
-                    <Button
-                      onClick={handleApplyGenerated}
-                      disabled={isSavingContent}
-                      className="mt-4"
-                    >
-                      {isSavingContent ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        "エピソード本文を保存"
-                      )}
-                    </Button>
-                  )}
+
                 </CardContent>
               </Card>
             </div>

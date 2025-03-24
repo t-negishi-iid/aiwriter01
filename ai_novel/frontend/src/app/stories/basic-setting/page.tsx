@@ -339,8 +339,6 @@ export default function BasicSettingPage() {
   // 作品設定のコンテンツ
   const WorkSettingContent = () => {
     // ステートの定義
-    const [showMainSettings, setShowMainSettings] = useState(true);
-    const [showRawContent, setShowRawContent] = useState(true);
     const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
 
     // フルスクリーン表示用のref
@@ -376,8 +374,6 @@ export default function BasicSettingPage() {
           doc.msExitFullscreen();
         }
       }
-
-      setIsFullscreenEdit(!isFullscreenEdit);
     };
 
     // フルスクリーン変更イベントリスナー
@@ -387,6 +383,8 @@ export default function BasicSettingPage() {
         if (!doc.fullscreenElement && !doc.webkitFullscreenElement &&
           !doc.mozFullScreenElement && !doc.msFullscreenElement) {
           setIsFullscreenEdit(false);
+        } else {
+          setIsFullscreenEdit(true);
         }
       };
 
@@ -415,101 +413,25 @@ export default function BasicSettingPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* グループ1: 主要設定フォーム */}
+          {/* 作品設定コンテンツ */}
           <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">主要設定</h3>
-              <Button onClick={toggleFullscreen}>
-                {isFullscreenEdit ? '全画面モード解除' : '全画面モード'}
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">作品世界と舞台設定</h4>
-                <textarea
-                  id="story-settings"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="作品世界と舞台設定"
-                  value={workSettingData.storySettings}
-                  onChange={handleWorkSettingChange('storySettings')}
-                  rows={6}
-                />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">主な登場人物</h4>
-                <textarea
-                  id="characters"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="主な登場人物"
-                  value={workSettingData.characters}
-                  onChange={handleWorkSettingChange('characters')}
-                  rows={6}
-                />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">あらすじ</h4>
-                <textarea
-                  id="plot-overview"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="あらすじ"
-                  value={workSettingData.plotOverview}
-                  onChange={handleWorkSettingChange('plotOverview')}
-                  rows={6}
-                />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">第1幕</h4>
-                <textarea
-                  id="act1-overview"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="第1幕"
-                  value={workSettingData.act1Overview}
-                  onChange={handleWorkSettingChange('act1Overview')}
-                  rows={6}
-                />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">第2幕</h4>
-                <textarea
-                  id="act2-overview"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="第2幕"
-                  value={workSettingData.act2Overview}
-                  onChange={handleWorkSettingChange('act2Overview')}
-                  rows={6}
-                />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-4">
-                <h4 className="text-lg font-medium mb-2">第3幕</h4>
-                <textarea
-                  id="act3-overview"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="第3幕"
-                  value={workSettingData.act3Overview}
-                  onChange={handleWorkSettingChange('act3Overview')}
-                  rows={6}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* グループ2: 生成された元の内容 */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <h3 className="text-lg font-semibold mb-2">生成された元の内容</h3>
             <div
               ref={fullscreenRef}
               className={`mt-4 ${isFullscreenEdit ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4" : ""}`}
             >
-              <div className="flex justify-end mb-4">
-                <Button onClick={toggleFullscreen}>
-                  全画面モード解除
-                </Button>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-md p-0 overflow-y-auto w-full">
+              {isFullscreenEdit && (
+                <div className="flex justify-end mb-4">
+                  <Button onClick={toggleFullscreen}>
+                    全画面モード解除
+                  </Button>
+                </div>
+              )}
+              {/* テキストエリア */}
+              <div className="bg-white border border-gray-200 rounded-md p-4 overflow-y-auto w-full">
                 <textarea
                   id="raw-content"
-                  className={`w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-1200`}
-                  placeholder="生成された元の内容全体"
+                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
+                  placeholder="作品設定内容を入力してください"
                   value={workSettingData.rawContent}
                   onChange={handleWorkSettingChange('rawContent')}
                   rows={12}

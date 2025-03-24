@@ -13,10 +13,10 @@ export function StoryTabs({ storyId, activeTab }: StoryTabsProps) {
     { value: 'overview', label: '概要', href: `/stories?id=${storyId}` },
     { value: 'basic-setting-data', label: '基本設定', href: `/stories/basic-setting-data?id=${storyId}` },
     { value: 'basic-setting', label: '作品設定', href: `/stories/basic-setting?id=${storyId}` },
-    { value: 'characters', label: '登場人物', href: `/stories/characters?id=${storyId}` },
-    { value: 'plot', label: 'あらすじ詳細', href: `/stories/plot?id=${storyId}` },
-    { value: 'episodes', label: 'エピソード詳細', href: `/stories/episodes?id=${storyId}` },
-    { value: 'content', label: '小説執筆', href: `/stories/content?id=${storyId}` },
+    { value: 'characters', label: '人物設定', href: `/stories/characters?id=${storyId}` },
+    { value: 'plot', label: 'あらすじ詳細化', href: `/stories/plot?id=${storyId}` },
+    { value: 'episodes', label: 'エピソードに分割', href: `/stories/episodes?id=${storyId}` },
+    { value: 'content', label: '本文執筆', href: `/stories/content?id=${storyId}` },
   ];
 
   return (

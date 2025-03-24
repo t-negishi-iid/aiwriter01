@@ -8,7 +8,7 @@ import { Loader2, Blocks } from 'lucide-react';
 
 export default function EpisodesForm() {
   const { selectedAct, story, basicSetting } = useStoryContext();
-  const [episodeCount, setEpisodeCount] = useState(10);
+  const [episodeCount, setEpisodeCount] = useState(5);
   const [episodes, setEpisodes] = useState<EpisodeDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

@@ -30,6 +30,7 @@ export default function EpisodeContentForm({
   const [wordCount, setWordCount] = useState<number>(1000);
   const [episodeContent, setEpisodeContent] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
+  const [isSavingContent, setIsSavingContent] = useState<boolean>(false);
 
   // コンテキストからbasicSettingを取得
   const { basicSetting } = useStoryContext();
@@ -37,7 +38,7 @@ export default function EpisodeContentForm({
   // エピソード本文を取得する関数
   const fetchEpisodeContent = useCallback(async () => {
     if (!selectedEpisode) return;
-    
+
     try {
       setIsLoadingContent(true);
       const response = await contentApi.getEpisodeContent(
@@ -45,7 +46,7 @@ export default function EpisodeContentForm({
         selectedActNumber,
         selectedEpisode.episode_number
       );
-      
+
       if (response && response.content) {
         setEpisodeContent(response.content as string);
       } else {
@@ -146,9 +147,9 @@ export default function EpisodeContentForm({
         storyId,
         selectedActNumber,
         selectedEpisode.episode_number,
-        { 
+        {
           basic_setting_id: Number(basicSetting.id),
-          word_count: wordCount 
+          word_count: wordCount
         }
       );
 
@@ -175,9 +176,41 @@ export default function EpisodeContentForm({
   };
 
   // 生成されたコンテンツを適用するハンドラ
-  const handleApplyGenerated = () => {
+  const handleApplyGenerated = async () => {
+    try {
+      setIsSavingContent(true);
+      // エピソード本文を保存するAPIを呼び出し
+      if (selectedEpisode) {
+        await contentApi.updateEpisodeContent(
+          storyId,
+          selectedActNumber,
+          selectedEpisode.episode_number,
+          {
+            content: episodeContent,
+            raw_content: episodeContent,
+          }
+        );
+        toast({
+          title: "保存完了",
+          description: "エピソード本文が保存されました。",
+        });
+      }
+    } catch (error) {
+      console.error("エピソード本文の保存に失敗:", error);
+      toast({
+        title: "エラー",
+        description: "エピソード本文の保存に失敗しました。",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingContent(false);
+    }
+  };
+
+  // 生成されたコンテンツをエディタに適用するハンドラ
+  const handleApplyGeneratedToEditor = () => {
     if (generatedContent) {
-      setEditedContent(generatedContent);
+      setEpisodeContent(generatedContent);
       setGeneratedContent("");
       toast({
         title: "適用完了",
@@ -208,24 +241,6 @@ export default function EpisodeContentForm({
                 placeholder="エピソードの概要を入力..."
                 aria-label="エピソード概要"
               />
-            </div>
-            
-            <div>
-              <h3 className="font-medium mb-2">エピソード本文</h3>
-              {isLoadingContent ? (
-                <div className="flex justify-center items-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span>読み込み中...</span>
-                </div>
-              ) : (
-                <textarea
-                  className="w-full h-96 p-3 border rounded-md story-textarea th-200"
-                  value={episodeContent}
-                  onChange={(e) => setEpisodeContent(e.target.value)}
-                  placeholder="エピソード本文を入力..."
-                  aria-label="エピソード本文"
-                />
-              )}
               <div className="mt-4 flex items-center gap-2">
                 <Button
                   onClick={handleSaveEpisode}
@@ -269,6 +284,39 @@ export default function EpisodeContentForm({
               </div>
             </div>
 
+            <div>
+              <h3 className="font-medium mb-2">エピソード本文</h3>
+              {isLoadingContent ? (
+                <div className="flex justify-center items-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <span>読み込み中...</span>
+                </div>
+              ) : (
+                <textarea
+                  className="w-full h-96 p-3 border rounded-md story-textarea th-200"
+                  value={episodeContent}
+                  onChange={(e) => setEpisodeContent(e.target.value)}
+                  placeholder="エピソード本文を入力..."
+                  aria-label="エピソード本文"
+                />
+              )}
+              {/* ここにエピソード本文の保存ボタンを配置 */}
+              <Button
+                onClick={handleApplyGenerated}
+                disabled={isSavingContent}
+                className="mt-4"
+              >
+                {isSavingContent ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    保存中...
+                  </>
+                ) : (
+                  "エピソード本文を保存"
+                )}
+              </Button>
+            </div>
+
             {/* 生成された本文UI */}
             {generatedContent && (
               <div className="border p-4 rounded-md">
@@ -279,7 +327,7 @@ export default function EpisodeContentForm({
                   readOnly
                   aria-label="生成された本文"
                 />
-                <Button onClick={handleApplyGenerated}>
+                <Button onClick={handleApplyGeneratedToEditor}>
                   本文として適用
                 </Button>
               </div>

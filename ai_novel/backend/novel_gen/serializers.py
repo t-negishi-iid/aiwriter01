@@ -140,6 +140,7 @@ class EpisodeDetailCreateSerializer(serializers.ModelSerializer):
 class EpisodeDetailSerializer(serializers.ModelSerializer):
     """エピソード詳細シリアライザ"""
     act = ActDetailSerializer(read_only=True)
+    content = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = EpisodeDetail
@@ -150,6 +151,9 @@ class EpisodeDetailSerializer(serializers.ModelSerializer):
 
 class EpisodeContentCreateSerializer(serializers.ModelSerializer):
     """エピソード本文作成シリアライザ"""
+    content = serializers.CharField(required=False, allow_blank=True)
+    raw_content = serializers.JSONField(required=False, allow_null=True)
+    
     class Meta:
         model = EpisodeContent
         fields = ('id', 'episode', 'content', 'raw_content', 'created_at', 'updated_at')
@@ -159,6 +163,8 @@ class EpisodeContentCreateSerializer(serializers.ModelSerializer):
 class EpisodeContentSerializer(serializers.ModelSerializer):
     """エピソード本文シリアライザ"""
     episode = EpisodeDetailSerializer(read_only=True)
+    content = serializers.CharField(required=False, allow_blank=True)
+    raw_content = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = EpisodeContent

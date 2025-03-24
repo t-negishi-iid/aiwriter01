@@ -110,19 +110,19 @@ export default function EpisodeContentForm({
       if (response) {
         toast({
           title: "保存完了",
-          description: "エピソードが保存されました。",
+          description: "エピソード概要が保存されました。",
         });
       } else {
         // APIは成功したが結果が不明な場合
         toast({
           title: "注意",
-          description: "エピソードの保存状態が確認できませんでした。",
+          description: "エピソード概要の保存状態が確認できませんでした。",
         });
       }
     } catch (err) {
-      console.error("エピソード保存エラー:", err);
+      console.error("エピソード概要保存エラー:", err);
       // エラーメッセージをより詳細に表示
-      let errorMessage = "エピソードの保存に失敗しました。";
+      let errorMessage = "エピソード概要の保存に失敗しました。";
       if (err instanceof Error) {
         errorMessage += ` ${err.message}`;
       }
@@ -139,11 +139,11 @@ export default function EpisodeContentForm({
   // 本文生成ハンドラ
   const handleGenerateContent = async () => {
     if (!selectedEpisode || !basicSetting || !basicSetting.id) {
-      console.error("選択されたエピソードまたは基本設定がありません");
+      console.error("選択されたエピソードまたは作品設定がありません");
       console.log("basicSetting:", basicSetting);
       toast({
         title: "エラー",
-        description: "エピソードまたは基本設定が見つかりません。",
+        description: "エピソード概要または作品設定が見つかりません。",
         variant: "destructive"
       });
       return;
@@ -268,6 +268,12 @@ export default function EpisodeContentForm({
                     "エピソード概要を保存"
                   )}
                 </Button>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium mb-2">エピソード本文</h3>
+              <div className="mt-4 flex items-center gap-2">
                 <span className="mr-2">目標文字数：</span>
                 <input
                   type="number"
@@ -290,14 +296,11 @@ export default function EpisodeContentForm({
                       生成中...
                     </>
                   ) : (
-                    "本文を生成"
+                    "エピソード概要から本文を生成"
                   )}
                 </Button>
-              </div>
-            </div>
 
-            <div>
-              <h3 className="font-medium mb-2">エピソード本文</h3>
+              </div>
               {isLoadingContent ? (
                 <div className="flex justify-center items-center py-4">
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

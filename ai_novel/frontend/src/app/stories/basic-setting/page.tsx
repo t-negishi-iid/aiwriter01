@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Book } from 'lucide-react';
+import { Blocks, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { StoryProvider } from '@/components/story/StoryProvider';
@@ -97,7 +97,7 @@ export default function BasicSettingPage() {
         if (response && response.success && response.data) {
           // データを適切な型にキャスト
           const settingData = response.data as IntegratedSettingData;
-          
+
           // basic_setting_dataを設定
           setBasicSettingData(settingData.basic_setting_data || null);
 
@@ -275,8 +275,11 @@ export default function BasicSettingPage() {
   const BasicSettingContent = () => (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>作品設定</CardTitle>
-        <CardDescription>「基本設定」を元に作品のオリジナルな設定を生成／編集します。
+        <CardTitle>
+          <Blocks className="h-6 w-6" />
+          基本設定
+        </CardTitle>
+        <CardDescription>「基本設定」を元に作品のオリジナルな設定を自動生成します。
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -351,7 +354,10 @@ export default function BasicSettingPage() {
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle>作品設定</CardTitle>
+          <CardTitle>
+            <Blocks className="h-6 w-6" />
+            作品設定
+          </CardTitle>
           <CardDescription>小説の世界観や設定情報</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -393,6 +399,7 @@ export default function BasicSettingPage() {
                   />
                 </div>
 
+                {/*
                 <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
                   <h3 className="text-md font-medium p-4">あらすじ</h3>
                   <textarea
@@ -404,6 +411,7 @@ export default function BasicSettingPage() {
                     rows={6}
                   />
                 </div>
+                */}
 
                 <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
                   <h3 className="text-md font-medium p-4">第1幕</h3>

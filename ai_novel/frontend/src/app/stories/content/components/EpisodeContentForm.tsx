@@ -34,6 +34,28 @@ export default function EpisodeContentForm({
   // コンテキストからbasicSettingを取得
   const { basicSetting } = useStoryContext();
 
+  // 画面表示モード（通常 or 全画面）
+  const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
+
+  // デバッグ用：stateの変更を確認
+  useEffect(() => {
+    console.log('isFullscreenEdit:', isFullscreenEdit);
+  }, [isFullscreenEdit]);
+
+  // ESCキーで全画面モードを解除
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreenEdit) {
+        setIsFullscreenEdit(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [isFullscreenEdit]);
+
   // エピソード本文を取得する関数
   const fetchEpisodeContent = useCallback(async () => {
     if (!selectedEpisode) return;
@@ -244,93 +266,141 @@ export default function EpisodeContentForm({
         {selectedEpisode ? (
           <div className="space-y-4">
             {/* エピソード本文編集エリア */}
-            <div>
-              <h3 className="font-medium mb-2">エピソード概要</h3>
-              <textarea
-                className="w-full h-32 p-3 border rounded-md story-textarea th-200"
-                value={editedContent}
-                onChange={handleContentChange}
-                placeholder="エピソードの概要を入力..."
-                aria-label="エピソード概要"
-              />
-              <div className="mt-4 flex items-center gap-2">
+            <Card 
+              className={`w-full transition-all duration-300 ${
+                isFullscreenEdit 
+                  ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4" 
+                  : ""
+              }`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">エピソード概要</CardTitle>
+                <div className="flex items-center gap-2">
+                  {isFullscreenEdit && (
+                    <Button
+                      onClick={handleSaveEpisodeDetail}
+                      disabled={!selectedEpisode || isSaving}
+                      className="mr-2"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          保存中...
+                        </>
+                      ) : (
+                        "保存"
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => {
+                      console.log('編集モードボタンがクリックされました。現在の状態:', isFullscreenEdit);
+                      setIsFullscreenEdit(!isFullscreenEdit);
+                      if (!isFullscreenEdit) {
+                        setEditedContent(selectedEpisode.content);
+                      }
+                    }}
+                    variant="outline"
+                  >
+                    {isFullscreenEdit ? "編集モード解除" : "編集モード"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <textarea
+                  className={`w-full p-3 border rounded-md story-textarea th-200 ${
+                    isFullscreenEdit ? "h-[70vh]" : "h-32"
+                  }`}
+                  value={editedContent}
+                  onChange={handleContentChange}
+                  placeholder="エピソードの概要を入力..."
+                  aria-label="エピソード概要"
+                />
+                {!isFullscreenEdit && (
+                  <div className="mt-4 flex items-center gap-2">
+                    <Button
+                      onClick={handleSaveEpisodeDetail}
+                      disabled={!selectedEpisode || isSaving}
+                      className="mr-4"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          保存中...
+                        </>
+                      ) : (
+                        "エピソード概要を保存"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">エピソード本文</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="mr-2">目標文字数：</span>
+                  <input
+                    type="number"
+                    min="500"
+                    max="5000"
+                    step="100"
+                    value={wordCount}
+                    onChange={(e) => setWordCount(Number(e.target.value))}
+                    className="w-24 p-2 border rounded-md"
+                    aria-label="目標文字数"
+                  />
+                  <span className="ml-2">文字&nbsp;</span>
+                  <Button
+                    onClick={handleGenerateContent}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        生成中...
+                      </>
+                    ) : (
+                      "エピソード概要から本文を生成"
+                    )}
+                  </Button>
+
+                </div>
+                {isLoadingContent ? (
+                  <div className="flex justify-center items-center py-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span>読み込み中...</span>
+                  </div>
+                ) : (
+                  <textarea
+                    className="w-full h-96 p-3 border rounded-md story-textarea th-200"
+                    value={episodeContent}
+                    onChange={(e) => setEpisodeContent(e.target.value)}
+                    placeholder="エピソード本文を入力..."
+                    aria-label="エピソード本文"
+                  />
+                )}
+                {/* ここにエピソード本文の保存ボタンを配置 */}
                 <Button
-                  onClick={handleSaveEpisodeDetail}
-                  disabled={!selectedEpisode || isSaving}
-                  className="mr-4"
+                  onClick={handleApplyGenerated}
+                  disabled={isSavingContent}
+                  className="mt-4"
                 >
-                  {isSaving ? (
+                  {isSavingContent ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       保存中...
                     </>
                   ) : (
-                    "エピソード概要を保存"
+                    "エピソード本文を保存"
                   )}
                 </Button>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-2">エピソード本文</h3>
-              <div className="mt-4 flex items-center gap-2">
-                <span className="mr-2">目標文字数：</span>
-                <input
-                  type="number"
-                  min="500"
-                  max="5000"
-                  step="100"
-                  value={wordCount}
-                  onChange={(e) => setWordCount(Number(e.target.value))}
-                  className="w-24 p-2 border rounded-md"
-                  aria-label="目標文字数"
-                />
-                <span className="ml-2">文字&nbsp;</span>
-                <Button
-                  onClick={handleGenerateContent}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      生成中...
-                    </>
-                  ) : (
-                    "エピソード概要から本文を生成"
-                  )}
-                </Button>
-
-              </div>
-              {isLoadingContent ? (
-                <div className="flex justify-center items-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  <span>読み込み中...</span>
-                </div>
-              ) : (
-                <textarea
-                  className="w-full h-96 p-3 border rounded-md story-textarea th-200"
-                  value={episodeContent}
-                  onChange={(e) => setEpisodeContent(e.target.value)}
-                  placeholder="エピソード本文を入力..."
-                  aria-label="エピソード本文"
-                />
-              )}
-              {/* ここにエピソード本文の保存ボタンを配置 */}
-              <Button
-                onClick={handleApplyGenerated}
-                disabled={isSavingContent}
-                className="mt-4"
-              >
-                {isSavingContent ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    保存中...
-                  </>
-                ) : (
-                  "エピソード本文を保存"
-                )}
-              </Button>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <p className="text-center py-10">エピソードを選択してください</p>

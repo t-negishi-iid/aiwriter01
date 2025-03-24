@@ -30,13 +30,15 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
       <CardContent>
         <div className="space-y-2">
           <div>
-            <div className="relative mb-1">
-              <h3 className="text-sm font-medium" id="act1-label">第1幕</h3>
+            <div className="relative mb-1 y-m-20">
+              <h3 className="text-sm font-medium w-50 mp-0 float-left" id="act1-label">
+                第1幕
+              </h3>
               {onEditAct && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 absolute top-0 right-0"
+                  className="h-7 px-2 mp-0 float-right x-r-20"
                   onClick={() => handleEditClick(1)}
                 >
                   <Edit className="h-4 w-4 mr-1" />
@@ -54,13 +56,13 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
             />
           </div>
           <div>
-            <div className="relative mb-1">
-              <h3 className="text-sm font-medium" id="act2-label">第2幕</h3>
+            <div className="relative mb-1 y-m-20">
+              <h3 className="text-sm font-medium w-50 mp-0 float-left" id="act2-label">第2幕</h3>
               {onEditAct && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 absolute top-0 right-0"
+                  className="h-7 px-2 mp-0 float-right x-r-20"
                   onClick={() => handleEditClick(2)}
                 >
                   <Edit className="h-4 w-4 mr-1" />
@@ -78,13 +80,13 @@ export function BasicSettingBlock({ basicSetting, onEditAct }: BasicSettingBlock
             />
           </div>
           <div>
-            <div className="relative mb-1">
-              <h3 className="text-sm font-medium" id="act3-label">第3幕</h3>
+            <div className="relative mb-1 y-m-20">
+              <h3 className="text-sm font-medium w-50 mp-0 float-left" id="act3-label">第3幕</h3>
               {onEditAct && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 absolute top-0 right-0"
+                  className="h-7 px-2 mp-0 float-right x-r-20"
                   onClick={() => handleEditClick(3)}
                 >
                   <Edit className="h-4 w-4 mr-1" />

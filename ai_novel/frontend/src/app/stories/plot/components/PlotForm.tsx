@@ -136,39 +136,6 @@ export function PlotForm({
     }
   }, [plot]);
 
-  // 現在の幕に基づいて基本あらすじを表示
-  const renderBasicOverview = () => {
-    if (!basicSetting) {
-      return (
-        <Textarea
-          name="content"
-          value={formData.content}
-          onChange={handleChange}
-          rows={5}
-          placeholder="基本あらすじを入力してください"
-          className={styles.textareaStyle}
-        />
-      );
-    }
-
-    return (
-      <div>
-        <div className="flex items-center space-x-4 mb-2">
-          <div className="text-sm font-medium">
-            現在編集中: 第{currentAct}幕
-          </div>
-        </div>
-        <Textarea
-          name="content"
-          value={formData.content}
-          onChange={handleChange}
-          rows={3}
-          className={styles.textareaStyle}
-        />
-      </div>
-    );
-  };
-
   return (
     <form className={styles.formContainer}>
       <Card>
@@ -204,20 +171,26 @@ export function PlotForm({
               </label>
             </div>
             <div className="block mb-10 y-m-20">
-              {renderBasicOverview()}
-            </div>
-            <div className={styles.formButtons}>
-              <div className={styles.formButtonsRight}>
-                <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      保存中...
-                    </>
-                  ) : (
-                    '保存'
-                  )}
-                </Button>
+              <div>
+                <div className={styles.formButtonsRight}>
+                  <Button type="button" onClick={handleSubmit} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        保存中...
+                      </>
+                    ) : (
+                      '保存'
+                    )}
+                  </Button>
+                </div>
+                <Textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  rows={3}
+                  className={styles.textareaStyle}
+                />
               </div>
             </div>
 
@@ -235,7 +208,7 @@ export function PlotForm({
                       保存中...
                     </>
                   ) : (
-                    '詳細を保存'
+                    '保存'
                   )}
                 </Button>
               </div>

@@ -442,48 +442,48 @@ export default function EpisodeContentForm({
               </CardContent>
             </div>
 
-            <Card className="w-full">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">エピソード本文</CardTitle>
-                <div className="flex items-center gap-2">
-                  {isFullscreenContent && (
+            <div
+              className={`card-container story-detail-container ${isFullscreenContent
+                ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
+                : ""
+                }`}
+              ref={fullscreenContentRef}
+            >
+              <Card className="w-full">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg">エピソード本文</CardTitle>
+                  <div className="flex items-center gap-2">
+                    {isFullscreenContent && (
+                      <Button
+                        onClick={handleApplyGenerated}
+                        disabled={isSavingContent}
+                        className="mr-2"
+                      >
+                        {isSavingContent ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            保存中...
+                          </>
+                        ) : (
+                          "保存"
+                        )}
+                      </Button>
+                    )}
                     <Button
-                      onClick={handleApplyGenerated}
-                      disabled={isSavingContent}
-                      className="mr-2"
+                      onClick={() => toggleFullscreen('content')}
+                      variant="outline"
                     >
-                      {isSavingContent ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        "保存"
-                      )}
+                      {isFullscreenContent ? "全画面モード解除" : "全画面モード"}
                     </Button>
-                  )}
-                  <Button
-                    onClick={() => toggleFullscreen('content')}
-                    variant="outline"
-                  >
-                    {isFullscreenContent ? "全画面モード解除" : "全画面モード"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoadingContent ? (
-                  <div className="flex justify-center items-center py-4">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    <span>読み込み中...</span>
                   </div>
-                ) : (
-                  <div
-                    className={`card-container story-detail-container ${isFullscreenContent
-                      ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
-                      : ""
-                      }`}
-                    ref={fullscreenContentRef}
-                  >
+                </CardHeader>
+                <CardContent>
+                  {isLoadingContent ? (
+                    <div className="flex justify-center items-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <span>読み込み中...</span>
+                    </div>
+                  ) : (
                     <textarea
                       className={`w-full p-3 border rounded-md story-textarea ${isFullscreenContent ? "th-1200" : "h-96 th-200"}`}
                       value={episodeContent}
@@ -491,26 +491,26 @@ export default function EpisodeContentForm({
                       placeholder="エピソード本文を入力..."
                       aria-label="エピソード本文"
                     />
-                  </div>
-                )}
-                {!isFullscreenContent && (
-                  <Button
-                    onClick={handleApplyGenerated}
-                    disabled={isSavingContent}
-                    className="mt-4"
-                  >
-                    {isSavingContent ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        保存中...
-                      </>
-                    ) : (
-                      "エピソード本文を保存"
-                    )}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                  {!isFullscreenContent && (
+                    <Button
+                      onClick={handleApplyGenerated}
+                      disabled={isSavingContent}
+                      className="mt-4"
+                    >
+                      {isSavingContent ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          保存中...
+                        </>
+                      ) : (
+                        "エピソード本文を保存"
+                      )}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         ) : (
           <p className="text-center py-10">エピソードを選択してください</p>

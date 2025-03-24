@@ -176,7 +176,7 @@ class CreateEpisodesView(views.APIView):
 
             # エピソードのパターンを定義 - 「---」区切りと次のエピソードヘッダーの両方に対応
             episode_pattern = r'### エピソード(\d+)「([^」]+)」\s+(.*?)(?=### エピソード\d+「|---|$)'
-            
+
             # 生のテキストデータ
             raw_text = response['result']
 
@@ -252,7 +252,7 @@ class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     エピソードの取得・更新・削除ビュー
 
-    URL: /api/stories/{story_id}/acts/{act_number}/episodes/{episode_id}/
+    URL: /api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/
     """
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = EpisodeDetailSerializer
@@ -260,90 +260,14 @@ class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         story_id = self.kwargs.get('story_id')
         act_number = self.kwargs.get('act_number')
-        episode_id = self.kwargs.get('pk')
+        episode_number = self.kwargs.get('episode_number', self.kwargs.get('pk'))
 
         # 権限チェック
         story = get_object_or_404(AIStory, id=story_id, user=self.request.user)
         act = get_object_or_404(ActDetail, ai_story=story, act_number=act_number)
 
-        return get_object_or_404(EpisodeDetail, id=episode_id, act=act)
+        return get_object_or_404(EpisodeDetail, act=act, episode_number=episode_number)
 
     def update(self, request, *args, **kwargs):
-        if 'episode_number' in request.data:
-            # episode_numberの更新は特別な処理を行う
-            return self.update_episode_number(request, *args, **kwargs)
-        else:
-            # 通常の更新処理
-            return super().update(request, *args, **kwargs)
-
-    @transaction.atomic
-    def update_episode_number(self, request, *args, **kwargs):
-        """エピソードの並び順を入れ替える"""
-        story_id = self.kwargs.get('story_id')
-        act_number = self.kwargs.get('act_number')
-
-        # 権限チェック
-        story = get_object_or_404(AIStory, id=story_id, user=request.user)
-        act = get_object_or_404(ActDetail, ai_story=story, act_number=act_number)
-
-        # シリアライザーでリクエストデータを検証
-        serializer = EpisodeNumberUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        target_position = serializer.validated_data['episode_number']
-
-        # 対象のエピソードを取得
-        source_episode = self.get_object()
-        current_position = source_episode.episode_number
-
-        # 同じ位置なら何もしない
-        if current_position == target_position:
-            result_serializer = EpisodeDetailSerializer(source_episode)
-            return Response(result_serializer.data)
-
-        # 一時的に負の値を使用して一意制約に違反しないようにする
-        # 最大エピソード番号を取得して、それより小さい負の値を使用
-        max_episode_number = EpisodeDetail.objects.filter(act=act).aggregate(
-            max_num=models.Max('episode_number'))['max_num'] or 0
-        temp_number = -1 * (max_episode_number + 1000)  # 十分に小さい負の値
-
-        # まず対象エピソードを一時的な負の番号に変更
-        source_episode.episode_number = temp_number
-        source_episode.save()
-
-        # 上に移動する場合（current_position > target_position）
-        if current_position > target_position:
-            # エピソードの位置を調整
-            EpisodeDetail.objects.filter(
-                act=act,
-                episode_number__gte=target_position,
-                episode_number__lt=current_position
-            ).update(
-                episode_number=models.F('episode_number') + 1
-            )
-
-        # 下に移動する場合（current_position < target_position）
-        elif current_position < target_position:
-            # エピソードの位置を調整
-            EpisodeDetail.objects.filter(
-                act=act,
-                episode_number__gt=current_position,
-                episode_number__lte=target_position
-            ).update(
-                episode_number=models.F('episode_number') - 1
-            )
-
-        # 最後に対象エピソードを目的の位置に更新
-        source_episode.episode_number = target_position
-        source_episode.save()
-
-        # 更新されたエピソード一覧を取得
-        episodes = EpisodeDetail.objects.filter(act=act).order_by('episode_number')
-
-        # レスポンスを返す
-        return Response({
-            'count': episodes.count(),
-            'next': None,
-            'previous': None,
-            'results': EpisodeDetailSerializer(episodes, many=True).data,
-            'status': 'success'
-        })
+        # 通常の更新処理のみを行う
+        return super().update(request, *args, **kwargs)

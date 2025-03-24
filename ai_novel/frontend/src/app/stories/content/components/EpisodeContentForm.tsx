@@ -80,44 +80,55 @@ export default function EpisodeContentForm({
     setEditedContent(e.target.value);
   };
 
-  // エピソード保存ハンドラ
-  const handleSaveEpisode = async () => {
+  // エピソード概要保存ハンドラ
+  const handleSaveEpisodeDetail = async () => {
     if (!selectedEpisode) return;
 
     try {
       setIsSaving(true);
 
-      // エピソード更新APIを呼び出し
-      await episodeApi.updateEpisodeContent(
-        storyId,
-        selectedActNumber,
-        selectedEpisode.episode_number,
-        {
+      // タイプエラーを回避するために正しい型のデータを作成
+      const episodeData = {
+        title: selectedEpisode.title,
+        content: editedContent,
+        episode_number: selectedEpisode.episode_number,
+        raw_content: JSON.stringify({
           title: selectedEpisode.title,
           content: editedContent
-        }
-      );
+        })
+      };
 
-      // エピソード本文も更新
-      await contentApi.updateEpisodeContent(
+      // エピソード詳細APIを呼び出し - 正しいエンドポイントを使用
+      const response = await episodeApi.updateEpisodeDetail(
         storyId,
         selectedActNumber,
         selectedEpisode.episode_number,
-        {
-          content: episodeContent,
-          raw_content: ""
-        }
+        episodeData
       );
 
-      toast({
-        title: "保存完了",
-        description: "エピソードが保存されました。",
-      });
+      // レスポンスの確認
+      if (response) {
+        toast({
+          title: "保存完了",
+          description: "エピソードが保存されました。",
+        });
+      } else {
+        // APIは成功したが結果が不明な場合
+        toast({
+          title: "注意",
+          description: "エピソードの保存状態が確認できませんでした。",
+        });
+      }
     } catch (err) {
       console.error("エピソード保存エラー:", err);
+      // エラーメッセージをより詳細に表示
+      let errorMessage = "エピソードの保存に失敗しました。";
+      if (err instanceof Error) {
+        errorMessage += ` ${err.message}`;
+      }
       toast({
         title: "エラー",
-        description: "エピソードの保存に失敗しました。",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -184,7 +195,7 @@ export default function EpisodeContentForm({
       setIsSavingContent(true);
       // エピソード本文を保存するAPIを呼び出し
       if (selectedEpisode) {
-        await contentApi.updateEpisodeContent(
+        const response = await contentApi.updateEpisodeContent(
           storyId,
           selectedActNumber,
           selectedEpisode.episode_number,
@@ -193,10 +204,20 @@ export default function EpisodeContentForm({
             raw_content: episodeContent,
           }
         );
-        toast({
-          title: "保存完了",
-          description: "エピソード本文が保存されました。",
-        });
+
+        // レスポンスの確認
+        if (response) {
+          toast({
+            title: "保存完了",
+            description: "エピソード本文が保存されました。",
+          });
+        } else {
+          // APIは成功したが結果が不明な場合
+          toast({
+            title: "注意",
+            description: "エピソード本文の保存状態が確認できませんでした。",
+          });
+        }
       }
     } catch (error) {
       console.error("エピソード本文の保存に失敗:", error);
@@ -234,7 +255,7 @@ export default function EpisodeContentForm({
               />
               <div className="mt-4 flex items-center gap-2">
                 <Button
-                  onClick={handleSaveEpisode}
+                  onClick={handleSaveEpisodeDetail}
                   disabled={!selectedEpisode || isSaving}
                   className="mr-4"
                 >
@@ -244,7 +265,7 @@ export default function EpisodeContentForm({
                       保存中...
                     </>
                   ) : (
-                    "保存"
+                    "エピソード概要を保存"
                   )}
                 </Button>
                 <span className="mr-2">目標文字数：</span>

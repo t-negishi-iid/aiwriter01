@@ -281,12 +281,30 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
         # エピソード詳細の検証
         episode = get_object_or_404(EpisodeDetail, act=act, episode_number=episode_number)
 
-        # エピソード本文の取得
-        return get_object_or_404(EpisodeContent, episode=episode)
+        # エピソード本文の取得（get_object_or_404の代わりにtry-except使用）
+        try:
+            return EpisodeContent.objects.get(episode=episode)
+        except EpisodeContent.DoesNotExist:
+            return None
+
+    def retrieve(self, request, *args, **kwargs):
+        """エピソード本文を取得（データがない場合は204を返す）"""
+        instance = self.get_object()
+        
+        # エピソード本文が存在しない場合は204 No Contentを返す
+        if instance is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         """エピソード本文を更新"""
         instance = self.get_object()
+
+        # エピソード本文が存在しない場合は204 No Contentを返す
+        if instance is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         # リクエストの検証
         serializer = EpisodeContentCreateSerializer(data=request.data)
@@ -313,5 +331,10 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         """エピソード本文を削除"""
         instance = self.get_object()
+
+        # エピソード本文が存在しない場合は204 No Contentを返す
+        if instance is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         instance.delete()
         return Response({"success": True}, status=status.HTTP_200_OK)

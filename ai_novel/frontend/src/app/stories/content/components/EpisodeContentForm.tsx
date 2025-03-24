@@ -88,7 +88,7 @@ export default function EpisodeContentForm({
       setIsSaving(true);
 
       // エピソード更新APIを呼び出し
-      await episodeApi.updateEpisode(
+      await episodeApi.updateEpisodeContent(
         storyId,
         selectedActNumber,
         selectedEpisode.episode_number,

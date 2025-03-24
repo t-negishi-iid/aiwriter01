@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -15,6 +15,18 @@ interface EpisodeContentFormProps {
   editedContent: string;
   setEditedContent: (content: string) => void;
   selectedActNumber: string;
+}
+
+interface FullScreenElement extends HTMLElement {
+  webkitRequestFullscreen?: () => Promise<void>;
+  msRequestFullscreen?: () => Promise<void>;
+}
+
+interface FullScreenDocument extends Document {
+  webkitFullscreenElement?: Element;
+  msFullscreenElement?: Element;
+  webkitExitFullscreen?: () => void;
+  msExitFullscreen?: () => void;
 }
 
 export default function EpisodeContentForm({
@@ -36,17 +48,109 @@ export default function EpisodeContentForm({
 
   // 画面表示モード（通常 or 全画面）
   const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
+  const [isFullscreenContent, setIsFullscreenContent] = useState(false);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+  const fullscreenContentRef = useRef<HTMLDivElement>(null);
 
   // デバッグ用：stateの変更を確認
   useEffect(() => {
     console.log('isFullscreenEdit:', isFullscreenEdit);
   }, [isFullscreenEdit]);
 
-  // ESCキーで全画面モードを解除
+  // 全画面モードの切り替え処理を更新
+  const toggleFullscreen = useCallback(() => {
+    if (!isFullscreenEdit) {
+      // 全画面モードに入る
+      if (fullscreenRef.current) {
+        const element = fullscreenRef.current as FullScreenElement;
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) { // Safari
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { // IE11
+          element.msRequestFullscreen();
+        }
+      }
+      setIsFullscreenEdit(true);
+      if (selectedEpisode) {
+        setEditedContent(selectedEpisode.content);
+      }
+    } else {
+      // 全画面モードを解除
+      const doc = document as FullScreenDocument;
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen();
+      } else if (doc.webkitExitFullscreen) { // Safari
+        doc.webkitExitFullscreen();
+      } else if (doc.msExitFullscreen) { // IE11
+        doc.msExitFullscreen();
+      }
+      setIsFullscreenEdit(false);
+    }
+  }, [isFullscreenEdit, selectedEpisode, setEditedContent]);
+
+  // エピソード本文用全画面モードの切り替え
+  const toggleContentFullscreen = useCallback(() => {
+    if (!isFullscreenContent) {
+      // 全画面モードに入る
+      if (fullscreenContentRef.current) {
+        const element = fullscreenContentRef.current as FullScreenElement;
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) { // Safari
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { // IE11
+          element.msRequestFullscreen();
+        }
+      }
+      setIsFullscreenContent(true);
+    } else {
+      // 全画面モードを解除
+      const doc = document as FullScreenDocument;
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen();
+      } else if (doc.webkitExitFullscreen) { // Safari
+        doc.webkitExitFullscreen();
+      } else if (doc.msExitFullscreen) { // IE11
+        doc.msExitFullscreen();
+      }
+      setIsFullscreenContent(false);
+    }
+  }, [isFullscreenContent]);
+
+  // フルスクリーン変更イベントのリスナーを追加
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const doc = document as FullScreenDocument;
+      const isFullscreenNow = !!(
+        doc.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.msFullscreenElement
+      );
+      
+      if (!isFullscreenNow) {
+        if (isFullscreenEdit) setIsFullscreenEdit(false);
+        if (isFullscreenContent) setIsFullscreenContent(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, [isFullscreenEdit, isFullscreenContent]);
+
+  // Escキーが押されたときの処理
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isFullscreenEdit) {
-        setIsFullscreenEdit(false);
+      if (event.key === 'Escape') {
+        if (isFullscreenEdit) toggleFullscreen();
+        if (isFullscreenContent) toggleContentFullscreen();
       }
     };
 
@@ -54,7 +158,7 @@ export default function EpisodeContentForm({
     return () => {
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [isFullscreenEdit]);
+  }, [isFullscreenEdit, isFullscreenContent, toggleFullscreen, toggleContentFullscreen]);
 
   // エピソード本文を取得する関数
   const fetchEpisodeContent = useCallback(async () => {
@@ -266,12 +370,13 @@ export default function EpisodeContentForm({
         {selectedEpisode ? (
           <div className="space-y-4">
             {/* エピソード本文編集エリア */}
-            <Card 
-              className={`w-full transition-all duration-300 ${
+            <div
+              className={`card-container story-detail-container ${
                 isFullscreenEdit 
-                  ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4" 
-                  : ""
+                ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
+                : ""
               }`}
+              ref={fullscreenRef}
             >
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">エピソード概要</CardTitle>
@@ -293,24 +398,17 @@ export default function EpisodeContentForm({
                     </Button>
                   )}
                   <Button
-                    onClick={() => {
-                      console.log('編集モードボタンがクリックされました。現在の状態:', isFullscreenEdit);
-                      setIsFullscreenEdit(!isFullscreenEdit);
-                      if (!isFullscreenEdit) {
-                        setEditedContent(selectedEpisode.content);
-                      }
-                    }}
+                    onClick={toggleFullscreen}
                     variant="outline"
                   >
-                    {isFullscreenEdit ? "編集モード解除" : "編集モード"}
+                    {isFullscreenEdit ? "全画面モード解除" : "全画面モード"}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 <textarea
-                  className={`w-full p-3 border rounded-md story-textarea th-200 ${
-                    isFullscreenEdit ? "h-[70vh]" : "h-32"
-                  }`}
+                  className={`w-full p-3 border rounded-md story-textarea ${isFullscreenEdit ? "th-1200" : "h-32 th-200"
+                    }`}
                   value={editedContent}
                   onChange={handleContentChange}
                   placeholder="エピソードの概要を入力..."
@@ -335,11 +433,35 @@ export default function EpisodeContentForm({
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </div>
 
             <Card className="w-full">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">エピソード本文</CardTitle>
+                <div className="flex items-center gap-2">
+                  {isFullscreenContent && (
+                    <Button
+                      onClick={handleApplyGenerated}
+                      disabled={isSavingContent}
+                      className="mr-2"
+                    >
+                      {isSavingContent ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          保存中...
+                        </>
+                      ) : (
+                        "保存"
+                      )}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={toggleContentFullscreen}
+                    variant="outline"
+                  >
+                    {isFullscreenContent ? "全画面モード解除" : "全画面モード"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="mt-4 flex items-center gap-2">
@@ -376,29 +498,39 @@ export default function EpisodeContentForm({
                     <span>読み込み中...</span>
                   </div>
                 ) : (
-                  <textarea
-                    className="w-full h-96 p-3 border rounded-md story-textarea th-200"
-                    value={episodeContent}
-                    onChange={(e) => setEpisodeContent(e.target.value)}
-                    placeholder="エピソード本文を入力..."
-                    aria-label="エピソード本文"
-                  />
+                  <div
+                    className={`card-container story-detail-container ${
+                      isFullscreenContent 
+                      ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4"
+                      : ""
+                    }`}
+                    ref={fullscreenContentRef}
+                  >
+                    <textarea
+                      className={`w-full p-3 border rounded-md story-textarea ${isFullscreenContent ? "th-1200" : "h-96 th-200"}`}
+                      value={episodeContent}
+                      onChange={(e) => setEpisodeContent(e.target.value)}
+                      placeholder="エピソード本文を入力..."
+                      aria-label="エピソード本文"
+                    />
+                  </div>
                 )}
-                {/* ここにエピソード本文の保存ボタンを配置 */}
-                <Button
-                  onClick={handleApplyGenerated}
-                  disabled={isSavingContent}
-                  className="mt-4"
-                >
-                  {isSavingContent ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      保存中...
-                    </>
-                  ) : (
-                    "エピソード本文を保存"
-                  )}
-                </Button>
+                {!isFullscreenContent && (
+                  <Button
+                    onClick={handleApplyGenerated}
+                    disabled={isSavingContent}
+                    className="mt-4"
+                  >
+                    {isSavingContent ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        保存中...
+                      </>
+                    ) : (
+                      "エピソード本文を保存"
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>

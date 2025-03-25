@@ -18,7 +18,7 @@ from ..serializers import (
     EpisodeContentCreateSerializer, EpisodeContentSerializer,
     EpisodeContentRequestSerializer
 )
-from ..dify_streaming_api import DifyStreamingAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 logger = logging.getLogger(__name__)
@@ -81,21 +81,26 @@ class CreateEpisodeContentView(views.APIView):
             request_type='episode_content',
             ai_story=story,
             parameters={
-                'episode_id': episode.id,
+                'story_id': story.id,
+                'basic_setting_id': basic_setting_id,
+                'act_number': act_number,
+                'episode_number': episode_number,
                 'word_count': word_count
             },
             credit_cost=4
         )
 
-        # ストリーミングAPIを呼び出す
-        dify_api = DifyStreamingAPI(timeout=3600)  # タイムアウトを60分に設定
-        try:
-            # ストリーミングレスポンスを処理して最終的なコンテンツを取得
-            full_content = ""
-            chunks = []
 
-            # ストリーミングジェネレータを取得
-            response_generator = dify_api.create_episode_content_stream(
+        try:
+            # ストリーミングAPIを初期化
+            streaming_api = DifyStreamingAPI()
+
+            # 全チャンクと最終チャンク用の変数
+            all_chunks = []
+            last_chunk = None
+
+            # ストリーミングAPIを呼び出し、各チャンクを処理
+            for chunk in streaming_api.create_episode_content_stream(
                 basic_setting=basic_setting.raw_content,
                 all_characters_list=all_characters_list,
                 all_episode_details_list=all_episode_details_list,
@@ -104,39 +109,45 @@ class CreateEpisodeContentView(views.APIView):
                 episode_number=episode_number,
                 word_count=word_count,
                 user_id=str(request.user.id)
-            )
+            ):
+                # エラーチェック
+                if 'error' in chunk:
+                    api_log.is_success = False
+                    api_log.response = str(chunk)
+                    api_log.save()
+                    return Response(
+                        {'error': 'エピソード本文の生成に失敗しました', 'details': chunk},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
 
-            # ジェネレータからテキストチャンクを読み込む
-            for chunk in response_generator:
-                chunks.append(chunk)
-                if 'event' in chunk and chunk['event'] == 'text_chunk' and 'data' in chunk and 'text' in chunk['data']:
-                    full_content += chunk['data']['text']
+                # チャンクを保存
+                all_chunks.append(chunk)
 
-            # エラーチェック
-            if not full_content:
-                logger.error("ストリーミングレスポンスからコンテンツを取得できませんでした。")
-                api_log.is_success = False
-                api_log.response = "エピソード本文の生成に失敗しました（空のレスポンス）"
-                api_log.save()
-                return Response(
-                    {'error': 'エピソード本文の生成に失敗しました（空のレスポンス）'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                # 最終チャンクを更新
+                if 'done' in chunk and chunk['done']:
+                    last_chunk = chunk
+                elif 'event' in chunk and chunk['event'] == 'node_finished':
+                    last_chunk = chunk
 
-            content = full_content
+            # 最終チャンクからMarkdownを取得
+            raw_content = get_markdown_from_last_chunk(last_chunk, all_chunks)
+
+            # レスポンスの検証
+            logger.debug(f"DEBUG - CreateEpisodeDetailView - API response markdown: {raw_content[:500]}...")
+
 
             # 取得したcontentからエピソードタイトルと本文を取得
             episode_title = episode.title  # デフォルトはエピソード詳細のタイトル
-            episode_content = content
+            episode_content = raw_content
 
             # タイトルのパターンを検出 (## エピソード数「タイトル」 の形式)
-            title_match = re.search(r'##\s+エピソード\d+「([^」]+)」', content)
+            title_match = re.search(r'##\s+エピソード\d+「([^」]+)」', raw_content)
             if title_match:
                 # タイトルが見つかった場合
                 episode_title = title_match.group(1)
 
                 # タイトル行を除いた本文を抽出
-                content_lines = content.split('\n')
+                content_lines = raw_content.split('\n')
                 for i, line in enumerate(content_lines):
                     if '##' in line and 'エピソード' in line:
                         # タイトル行の次から本文が始まる
@@ -152,7 +163,7 @@ class CreateEpisodeContentView(views.APIView):
                         'title': episode_title,
                         'content': episode_content,
                         'word_count': len(episode_content),
-                        'raw_content': content
+                        'raw_content': raw_content
                     }
                 )
             except Exception as content_error:
@@ -167,7 +178,7 @@ class CreateEpisodeContentView(views.APIView):
 
             # APIログの更新
             api_log.is_success = True
-            api_log.response = content
+            api_log.response = raw_content
             api_log.save()
 
             # クレジットの確認と消費
@@ -188,6 +199,9 @@ class CreateEpisodeContentView(views.APIView):
                 {'error': 'エピソード本文の生成に失敗しました', 'details': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
 
 
 class EpisodeContentListView(generics.ListCreateAPIView):

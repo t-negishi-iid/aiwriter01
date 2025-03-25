@@ -138,6 +138,7 @@ class CreateEpisodesView(views.APIView):
             ai_story=story,
             parameters={
                 'story_id': story_id,
+                'basic_setting_id': basic_setting_id,
                 'act_number': act_number,
                 'episode_count': episode_count
             },
@@ -147,11 +148,11 @@ class CreateEpisodesView(views.APIView):
         try:
             # ストリーミングAPIを初期化
             streaming_api = DifyStreamingAPI()
-            
+
             # 全チャンクと最終チャンク用の変数
             all_chunks = []
             last_chunk = None
-            
+
             # ストリーミングAPIを呼び出し、各チャンクを処理
             for chunk in streaming_api.create_episode_details_stream(
                 basic_setting=basic_setting.raw_content,
@@ -170,19 +171,19 @@ class CreateEpisodesView(views.APIView):
                         {'error': 'エピソード詳細の生成に失敗しました', 'details': chunk},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-                
+
                 # チャンクを保存
                 all_chunks.append(chunk)
-                
+
                 # 最終チャンクを更新
                 if 'done' in chunk and chunk['done']:
                     last_chunk = chunk
                 elif 'event' in chunk and chunk['event'] == 'node_finished':
                     last_chunk = chunk
-            
+
             # 最終チャンクからMarkdownを取得
             raw_text = get_markdown_from_last_chunk(last_chunk, all_chunks)
-            
+
             # レスポンスの検証
             logger.debug(f"DEBUG - CreateEpisodeDetailView - API response markdown: {raw_text[:500]}...")
 
@@ -277,22 +278,22 @@ class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
     def update(self, request, *args, **kwargs):
         # オブジェクトを取得
         instance = self.get_object()
-        
+
         # シリアライザでデータを部分的に更新
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        
+
         # raw_contentをMarkdown形式で生成
         episode_number = instance.episode_number
         title = request.data.get('title', instance.title)
         content = request.data.get('content', instance.content)
-        
+
         # Markdown形式でraw_contentを作成
         markdown_content = f"### エピソード{episode_number}「{title}」\n\n{content}"
-        
+
         # raw_contentを設定
         serializer.validated_data['raw_content'] = markdown_content
-        
+
         # 保存を実行
         self.perform_update(serializer)
 

@@ -18,7 +18,7 @@ from ..serializers import (
     EpisodeDetailSerializer, EpisodeDetailRequestSerializer,
     EpisodeNumberUpdateSerializer, EpisodeCreateSerializer
 )
-from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 
@@ -131,8 +131,6 @@ class CreateEpisodesView(views.APIView):
         all_act_raw_content = [act.raw_content for act in act_details]
 
         # APIリクエスト
-        api = DifyNovelAPI()
-
         # APIログの作成
         api_log = APIRequestLog.objects.create(
             user=request.user,
@@ -147,38 +145,45 @@ class CreateEpisodesView(views.APIView):
         )
 
         try:
-            # 6. 3、4、5とエピソード数を渡してDify APIを呼び出す
-            response = api.create_episode_details(
+            # ストリーミングAPIを初期化
+            streaming_api = DifyStreamingAPI()
+            
+            # 全チャンクと最終チャンク用の変数
+            all_chunks = []
+            last_chunk = None
+            
+            # ストリーミングAPIを呼び出し、各チャンクを処理
+            for chunk in streaming_api.create_episode_details_stream(
                 basic_setting=basic_setting.raw_content,
                 all_characters_list=character_details_raw_content,
                 all_act_details_list=all_act_raw_content,
                 target_act_detail=act.raw_content,
                 episode_count=episode_count,
-                user_id=str(request.user.id),
-                blocking=True
-            )
-
+                user_id=str(request.user.id)
+            ):
+                # エラーチェック
+                if 'error' in chunk:
+                    api_log.is_success = False
+                    api_log.response = str(chunk)
+                    api_log.save()
+                    return Response(
+                        {'error': 'エピソード詳細の生成に失敗しました', 'details': chunk},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+                
+                # チャンクを保存
+                all_chunks.append(chunk)
+                last_chunk = chunk
+            
+            # 最終チャンクからMarkdownを取得
+            raw_text = get_markdown_from_last_chunk(last_chunk, all_chunks)
+            
             # レスポンスの検証
-            logger.debug(f"DEBUG - CreateEpisodeDetailView - API response: {response}")
-
-            # レスポンスの検証
-            if 'error' in response:
-                api_log.is_success = False
-                api_log.response = str(response)
-                api_log.save()
-                return Response(
-                    {'error': 'エピソード詳細の生成に失敗しました', 'details': response},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            # レスポンスを各エピソードにパースする
-            import re
+            logger.debug(f"DEBUG - CreateEpisodeDetailView - API response markdown: {raw_text[:500]}...")
 
             # エピソードのパターンを定義 - 「---」区切りと次のエピソードヘッダーの両方に対応
+            import re
             episode_pattern = r'### エピソード(\d+)「([^」]+)」\s+(.*?)(?=### エピソード\d+「|---|$)'
-
-            # 生のテキストデータ
-            raw_text = response['result']
 
             # 正規表現でエピソードを抽出
             episodes_matches = list(re.finditer(episode_pattern, raw_text, re.DOTALL))

@@ -6,6 +6,9 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+import re
+import json
+import logging
 
 from ..models import (
     AIStory, BasicSetting, CharacterDetail, ActDetail,
@@ -15,14 +18,14 @@ from ..serializers import (
     EpisodeContentCreateSerializer, EpisodeContentSerializer,
     EpisodeContentRequestSerializer
 )
-from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI
 from ..utils import check_and_consume_credit
 
+logger = logging.getLogger(__name__)
 
 class CreateEpisodeContentView(views.APIView):
     """
-    エピソード本文生成ビュー
-
+    エピソード本文生成ビュー（ストリーミングAPI版
     EpisodeDetail（幕の詳細）を指定された文字数で小説本文を生成する。（Dify APIを使用）
     クレジットを消費します。
     """
@@ -84,10 +87,15 @@ class CreateEpisodeContentView(views.APIView):
             credit_cost=4
         )
 
-        # APIを呼び出す
-        dify_api = DifyNovelAPI(timeout=1200)  # タイムアウトを10分に設定
+        # ストリーミングAPIを呼び出す
+        dify_api = DifyStreamingAPI(timeout=3600)  # タイムアウトを60分に設定
         try:
-            response = dify_api.create_episode_content(
+            # ストリーミングレスポンスを処理して最終的なコンテンツを取得
+            full_content = ""
+            chunks = []
+
+            # ストリーミングジェネレータを取得
+            response_generator = dify_api.create_episode_content_stream(
                 basic_setting=basic_setting.raw_content,
                 all_characters_list=all_characters_list,
                 all_episode_details_list=all_episode_details_list,
@@ -95,29 +103,33 @@ class CreateEpisodeContentView(views.APIView):
                 act_number=act_number,
                 episode_number=episode_number,
                 word_count=word_count,
-                user_id=str(request.user.id),
-                blocking=True
+                user_id=str(request.user.id)
             )
 
-            # レスポンスの検証
-            if 'error' in response:
+            # ジェネレータからテキストチャンクを読み込む
+            for chunk in response_generator:
+                chunks.append(chunk)
+                if 'event' in chunk and chunk['event'] == 'text_chunk' and 'data' in chunk and 'text' in chunk['data']:
+                    full_content += chunk['data']['text']
+
+            # エラーチェック
+            if not full_content:
+                logger.error("ストリーミングレスポンスからコンテンツを取得できませんでした。")
                 api_log.is_success = False
-                api_log.response = str(response)
+                api_log.response = "エピソード本文の生成に失敗しました（空のレスポンス）"
                 api_log.save()
                 return Response(
-                    {'error': 'エピソード本文の生成に失敗しました', 'details': response},
+                    {'error': 'エピソード本文の生成に失敗しました（空のレスポンス）'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-
-            content = response['result']
+            content = full_content
 
             # 取得したcontentからエピソードタイトルと本文を取得
             episode_title = episode.title  # デフォルトはエピソード詳細のタイトル
             episode_content = content
 
             # タイトルのパターンを検出 (## エピソード数「タイトル」 の形式)
-            import re
             title_match = re.search(r'##\s+エピソード\d+「([^」]+)」', content)
             if title_match:
                 # タイトルが見つかった場合
@@ -131,14 +143,27 @@ class CreateEpisodeContentView(views.APIView):
                         episode_content = '\n'.join(content_lines[i+1:]).strip()
                         break
 
-            # エピソード本文を保存
-            episode_content_obj = EpisodeContent.objects.create(
-                episode=episode,
-                title=episode_title,  # パースしたタイトルを使用
-                content=episode_content,  # パースした本文を使用
-                word_count=len(episode_content),  # 簡易的な文字数カウント
-                raw_content=content  # 元の内容をそのまま保存
-            )
+            # エピソード本文を保存（既存のエピソード本文がある場合は更新する）
+            try:
+                # 既存のエピソード本文を取得して更新
+                episode_content_obj, created = EpisodeContent.objects.update_or_create(
+                    episode=episode,
+                    defaults={
+                        'title': episode_title,
+                        'content': episode_content,
+                        'word_count': len(episode_content),
+                        'raw_content': content
+                    }
+                )
+            except Exception as content_error:
+                logger.error(f"エピソード本文の保存中にエラー発生: {content_error}")
+                api_log.is_success = False
+                api_log.response = f"エピソード本文の保存中にエラー発生: {content_error}"
+                api_log.save()
+                return Response(
+                    {'error': 'エピソード本文の保存に失敗しました', 'details': str(content_error)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
             # APIログの更新
             api_log.is_success = True
@@ -152,7 +177,7 @@ class CreateEpisodeContentView(views.APIView):
 
             # レスポンスを返す
             result_serializer = EpisodeContentSerializer(episode_content_obj)
-            return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(result_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
         except Exception as e:
             # エラーログ
@@ -194,11 +219,11 @@ class EpisodeContentListView(generics.ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         """エピソード本文一覧を取得（データがない場合は204を返す）"""
         queryset = self.filter_queryset(self.get_queryset())
-        
+
         # クエリセットが空の場合は204 No Contentを返す
         if not queryset.exists():
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         # 通常の処理（ページネーション含む）
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -290,11 +315,11 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         """エピソード本文を取得（データがない場合は204を返す）"""
         instance = self.get_object()
-        
+
         # エピソード本文が存在しない場合は204 No Contentを返す
         if instance is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -313,7 +338,7 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
         # リクエストパラメータの取得
         content = serializer.validated_data['content']
         raw_content = serializer.validated_data.get('raw_content', content)
-        
+
         # オプショナルパラメータ（titleは必須ではない）
         if 'title' in request.data:
             instance.title = request.data['title']

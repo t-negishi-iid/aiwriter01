@@ -17,6 +17,8 @@ export function StoryTabs({ storyId, activeTab }: StoryTabsProps) {
     { value: 'plot', label: 'あらすじ詳細化', href: `/stories/plot?id=${storyId}` },
     { value: 'episodes', label: 'エピソードに分割', href: `/stories/episodes?id=${storyId}` },
     { value: 'content', label: '本文執筆', href: `/stories/content?id=${storyId}` },
+    { value: 'summary', label: '小説を読む', href: `/stories/read?id=${storyId}` },
+
   ];
 
   return (

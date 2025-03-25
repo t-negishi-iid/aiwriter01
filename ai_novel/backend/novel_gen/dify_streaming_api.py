@@ -12,6 +12,64 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
+    """
+    最終チャンクからMarkdownコンテンツを抽出します。
+    
+    Args:
+        last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
+        all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
+        
+    Returns:
+        str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
+    """
+    try:
+        # 最優先：最終チャンク（node_finished イベント）からのデータ抽出
+        if last_chunk and "event" in last_chunk and last_chunk["event"] == "node_finished":
+            if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
+                result = last_chunk["data"]["outputs"]["result"]
+                if isinstance(result, str) and result:
+                    logger.debug("node_finishedイベントからMarkdownを抽出しました")
+                    return result
+        
+        # 次に優先：標準的なDify API形式からMarkdownを抽出
+        if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
+            result = last_chunk["data"]["outputs"]["result"]
+            
+            # resultが文字列の場合はそのまま返す
+            if isinstance(result, str):
+                logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
+                return result
+            # リストの場合はJSON文字列に変換
+            elif isinstance(result, list):
+                logger.debug("リスト形式のresultをJSON文字列に変換しました")
+                return json.dumps(result, ensure_ascii=False)
+                
+        # text_chunkイベントからの抽出を試みる
+        if all_chunks:
+            last_text_chunks = [
+                chunk for chunk in all_chunks 
+                if chunk.get("event") == "text_chunk" 
+                and "data" in chunk 
+                and "text" in chunk["data"]
+            ]
+            
+            if last_text_chunks:
+                # 最後のtext_chunkを使用
+                text_content = last_text_chunks[-1]["data"]["text"]
+                if text_content:
+                    logger.debug("text_chunkイベントからMarkdownを抽出しました")
+                    return text_content
+                
+        logger.error("Markdownコンテンツの抽出に失敗しました")
+        if last_chunk:
+            logger.error(f"最終チャンク: {json.dumps(last_chunk, ensure_ascii=False)}")
+        return ""
+    except Exception as e:
+        logger.error(f"Markdownコンテンツの抽出中にエラーが発生しました: {str(e)}")
+        return ""
+
+
 class DifyStreamingAPI:
     """
     Dify APIとのストリーミング通信を行うクラス
@@ -51,7 +109,7 @@ class DifyStreamingAPI:
         }
     }
 
-    def __init__(self, timeout: int = 300, max_retries: int = 3, retry_delay: int = 5):
+    def __init__(self, timeout: int = 300, max_retries: int = 3, retry_delay: int = 5, test_mode: bool = False):
         """
         コンストラクタ
 
@@ -59,10 +117,12 @@ class DifyStreamingAPI:
             timeout: リクエストのタイムアウト時間（秒）
             max_retries: リトライ回数
             retry_delay: リトライ間隔（秒）
+            test_mode: テストモードかどうか
         """
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.test_mode = test_mode
 
     def _get_headers(self, api_type: str) -> Dict[str, str]:
         """
@@ -162,14 +222,24 @@ class DifyStreamingAPI:
         """
         for line in response.iter_lines():
             if not line:
+                # 空行はスキップ
                 continue
             
             try:
                 decoded_line = line.decode('utf-8')
                 
+                # 空のデコード行もスキップ
+                if not decoded_line.strip():
+                    continue
+                
                 # SSE形式のデータ処理 (data: {...})
                 if decoded_line.startswith('data: '):
                     data_str = decoded_line[6:]  # 'data: ' を削除
+                    
+                    # データ文字列が空の場合はスキップ
+                    if not data_str.strip():
+                        logger.warning("Empty data string received, skipping")
+                        continue
                     
                     # 特別なケース: [DONE]
                     if data_str.strip() == '[DONE]':
@@ -180,8 +250,9 @@ class DifyStreamingAPI:
                         data = json.loads(data_str)
                         yield data
                     except json.JSONDecodeError as e:
-                        logger.error(f"Error decoding JSON: {e}")
-                        logger.error(f"Raw data: {data_str}")
+                        logger.error(f"Error decoding JSON from data: prefix: {e}")
+                        logger.error(f"Raw data (first 200 chars): {data_str[:200]}")
+                        # エラーをスキップして次の行へ
                         continue
                 # 通常のJSONレスポンス処理
                 else:
@@ -190,73 +261,17 @@ class DifyStreamingAPI:
                         yield data
                     except json.JSONDecodeError as e:
                         logger.error(f"Error processing response line: {e}")
+                        logger.error(f"Raw line (first 200 chars): {decoded_line[:200]}")
+                        # エラーをスキップして次の行へ
                         continue
+            except UnicodeDecodeError as e:
+                logger.error(f"Unicode decode error: {e}")
+                logger.error(f"Raw binary data: {line}")
+                continue
             except Exception as e:
-                logger.error(f"Error processing streaming response: {e}")
+                logger.error(f"Unexpected error processing stream line: {e}")
                 continue
     
-    @staticmethod
-    def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
-        """
-        最終チャンクからMarkdownコンテンツを抽出します。
-        
-        Args:
-            last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
-            all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
-            
-        Returns:
-            str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
-        """
-        try:
-            # 最優先：最終チャンク（node_finished イベント）からのデータ抽出
-            if last_chunk and "event" in last_chunk and last_chunk["event"] == "node_finished":
-                if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
-                    result = last_chunk["data"]["outputs"]["result"]
-                    if isinstance(result, str) and result:
-                        logger.debug("node_finishedイベントからMarkdownを抽出しました")
-                        return result
-            
-            # 次に優先：標準的なDify API形式からMarkdownを抽出
-            if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
-                result = last_chunk["data"]["outputs"]["result"]
-                
-                # resultが文字列の場合はそのまま返す
-                if isinstance(result, str):
-                    logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
-                    return result
-                # リストの場合はJSON文字列に変換
-                elif isinstance(result, list):
-                    logger.debug("リスト形式のresultをJSON文字列に変換しました")
-                    return json.dumps(result, ensure_ascii=False)
-                # その他の型の場合は文字列に変換
-                else:
-                    logger.debug(f"その他の型({type(result)})を文字列に変換しました")
-                    return str(result)
-            
-            # フォールバック：text_chunkイベントからのテキスト収集
-            if all_chunks and isinstance(all_chunks, list):
-                text_chunks = []
-                for chunk in all_chunks:
-                    # text_chunkイベントを検出
-                    if chunk.get('event') == 'text_chunk':
-                        # data.textフィールドからテキストを抽出
-                        if 'data' in chunk and isinstance(chunk['data'], dict) and 'text' in chunk['data']:
-                            text_chunks.append(chunk['data']['text'])
-                
-                # 収集したテキストを結合
-                if text_chunks:
-                    logger.debug(f"text_chunkイベントから{len(text_chunks)}個のチャンクを抽出しました")
-                    return ''.join(text_chunks)
-                else:
-                    logger.debug("text_chunkイベントが見つかりませんでした")
-            
-        except Exception as e:
-            logger.error(f"Error extracting Markdown from last chunk: {e}")
-        
-        # 抽出に失敗した場合は空文字列を返す
-        logger.warning("Markdownの抽出に失敗しました")
-        return ""
-
     """
     アプリケーションメソッド
     実際にDifyのAPIを呼び出してサービスを提供
@@ -265,7 +280,8 @@ class DifyStreamingAPI:
     def create_basic_setting_stream(
         self,
         basic_setting_data: str,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         基本設定を生成（ストリーミングモード）
@@ -273,10 +289,14 @@ class DifyStreamingAPI:
         Args:
             basic_setting_data: 基本設定データ
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: 生成結果の各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
         # 入力データの準備
         inputs = {
             "basic_setting_data": basic_setting_data
@@ -288,7 +308,8 @@ class DifyStreamingAPI:
         self,
         basic_setting: str,
         character_data: str,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         キャラクター詳細を生成（ストリーミングモード）
@@ -297,10 +318,15 @@ class DifyStreamingAPI:
             basic_setting: 基本設定
             character_data: キャラクターデータ（raw_content）
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: レスポンスの各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
+        # 入力データの準備
         inputs = {
             "basic_setting": basic_setting,
             "character": character_data,
@@ -312,7 +338,8 @@ class DifyStreamingAPI:
         self,
         basic_setting: str,
         all_characters: str,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         あらすじ詳細を生成（ストリーミングモード）
@@ -321,10 +348,15 @@ class DifyStreamingAPI:
             basic_setting: 基本設定 : str
             all_characters: 全キャラクター詳細（str）
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: レスポンスの各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
+        # 入力データの準備
         inputs = {
             "basic_setting": basic_setting,
             "all_characters": all_characters
@@ -339,7 +371,8 @@ class DifyStreamingAPI:
         all_act_details_list: List[Dict[str, Any]],
         target_act_detail: Dict[str, Any],
         episode_count: int,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         エピソード詳細を生成（ストリーミングモード）
@@ -351,10 +384,14 @@ class DifyStreamingAPI:
             target_act_detail: ターゲットとなる幕詳細
             episode_count: 分割するエピソード数
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: レスポンスの各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         all_act_details_str = json.dumps(all_act_details_list, ensure_ascii=False)
@@ -379,7 +416,8 @@ class DifyStreamingAPI:
         act_number: int,
         episode_number: int,
         word_count: int,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         エピソード本文を生成（ストリーミングモード）
@@ -393,10 +431,14 @@ class DifyStreamingAPI:
             episode_number: エピソード番号
             word_count: 文字数
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: レスポンスの各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         all_episode_details_str = json.dumps(all_episode_details_list, ensure_ascii=False)
@@ -421,7 +463,8 @@ class DifyStreamingAPI:
         plot_details: List[Dict[str, Any]],
         target_content: str,
         target_type: str,
-        user_id: str
+        user_id: str,
+        test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
         タイトルを生成（ストリーミングモード）
@@ -433,10 +476,14 @@ class DifyStreamingAPI:
             target_content: ターゲットコンテンツ
             target_type: ターゲットタイプ（episode, act, novel）
             user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
         Yields:
             Dict[str, Any]: レスポンスの各チャンク
         """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+        
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         plot_details_str = json.dumps(plot_details, ensure_ascii=False)

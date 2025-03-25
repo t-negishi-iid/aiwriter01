@@ -173,7 +173,12 @@ class CreateEpisodesView(views.APIView):
                 
                 # チャンクを保存
                 all_chunks.append(chunk)
-                last_chunk = chunk
+                
+                # 最終チャンクを更新
+                if 'done' in chunk and chunk['done']:
+                    last_chunk = chunk
+                elif 'event' in chunk and chunk['event'] == 'node_finished':
+                    last_chunk = chunk
             
             # 最終チャンクからMarkdownを取得
             raw_text = get_markdown_from_last_chunk(last_chunk, all_chunks)

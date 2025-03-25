@@ -14,6 +14,7 @@ from ..serializers import (
     CharacterDetailRequestSerializer
 )
 from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 
@@ -124,9 +125,6 @@ class CreateCharacterDetailView(views.APIView):
         if not success:
             return Response({'error': message}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
-        # APIリクエスト
-        api = DifyNovelAPI()
-
         # APIログの作成
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
         api_log = APIRequestLog.objects.create(
@@ -141,44 +139,46 @@ class CreateCharacterDetailView(views.APIView):
         )
 
         try:
-            # 同期APIリクエスト
-            response = api.create_character_detail(
+            # ストリーミングAPIクライアントの初期化
+            api = DifyStreamingAPI()
+            
+            # 最後のチャンクを保持する変数
+            last_chunk = None
+            
+            # ストリーミングAPIリクエストを実行し、すべてのチャンクを内部で処理
+            for chunk in api.create_character_detail_stream(
                 basic_setting=basic_setting.raw_content,
                 character_data=character.raw_content,
-                user_id=str(request.user.id),
-                blocking=True
-            )
+                user_id=str(request.user.id)
+            ):
+                # 最後のチャンクを更新
+                last_chunk = chunk
+            
+            # 最後のチャンクからMarkdownコンテンツを抽出
+            if last_chunk:
+                content = get_markdown_from_last_chunk(last_chunk)
+                
+                # キャラクター詳細を更新
+                character.appearance = content
+                character.personality = content
+                character.background = content
+                character.motivation = content
+                character.relationship = content
+                character.development = content
+                character.raw_content = content
+                character.save()
 
-            # レスポンスの検証
-            if 'error' in response:
-                api_log.is_success = False
-                api_log.response = str(response)
+                # APIログの更新
+                api_log.is_success = True
+                api_log.response = content
                 api_log.save()
-                return Response(
-                    {'error': 'キャラクター詳細の生成レスポンスエラー', 'details': response},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
 
-            content = response['result']
-
-            # キャラクター詳細を更新
-            character.appearance = content
-            character.personality = content
-            character.background = content
-            character.motivation = content
-            character.relationship = content
-            character.development = content
-            character.raw_content = content
-            character.save()
-
-            # APIログの更新
-            api_log.is_success = True
-            api_log.response = content
-            api_log.save()
-
-            # レスポンスを返す
-            result_serializer = CharacterDetailSerializer(character)
-            return Response(result_serializer.data, status=status.HTTP_200_OK)
+                # レスポンスを返す
+                result_serializer = CharacterDetailSerializer(character)
+                return Response(result_serializer.data, status=status.HTTP_200_OK)
+            else:
+                # 最後のチャンクが取得できなかった場合
+                raise ValueError("有効なレスポンスが取得できませんでした")
 
         except Exception as e:
             # エラーログ

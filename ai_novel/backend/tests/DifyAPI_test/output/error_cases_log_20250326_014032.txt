@@ -1,0 +1,11 @@
+=== エラーケースのテスト ===
+開始時刻: 2025-03-26 01:40:32
+
+
+== テストケース1: 無効なユーザーIDでのリクエスト ==
+検出したエラー: API request failed with status code 400: {"code": "invalid_param", "message": "Arg user must be provided.", "status": 400}
+
+
+== テストケース2: 空の入力データでのリクエスト ==
+
+== テストケース3: 無効なエピソード数でのリクエスト ==

@@ -10,7 +10,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from django.http import Http404
+from django.http import Http404, StreamingHttpResponse
 from django.db import transaction
 
 from ..models import AIStory, BasicSettingData, BasicSetting, APIRequestLog
@@ -19,6 +19,7 @@ from ..serializers import (
     BasicSettingRequestSerializer, DifyResponseSerializer
 )
 from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 # ロガーの設定
@@ -290,12 +291,6 @@ class BasicSettingCreateView(views.APIView):
             logger.debug("Credit check successful")
             write_to_debug_log("Credit check successful")
 
-            # APIリクエスト
-            api = DifyNovelAPI()
-            formatted_content = basic_setting_data.get_formatted_content()
-            logger.debug(f"Formatted content: {formatted_content[:100]}...")
-            write_to_debug_log(f"Formatted content: {formatted_content[:100]}...")
-
             # APIログの作成
             api_log = APIRequestLog.objects.create(
                 user=request.user,
@@ -308,68 +303,82 @@ class BasicSettingCreateView(views.APIView):
             write_to_debug_log(f"Created API log: {api_log.id}")
 
             try:
-                # 同期APIリクエスト
-                logger.debug("Sending API request")
-                write_to_debug_log("Sending API request")
-                response = api.create_basic_setting(
+                # ストリーミングAPIリクエスト
+                logger.debug("Sending streaming API request")
+                write_to_debug_log("Sending streaming API request")
+                
+                # DifyStreamingAPIを初期化
+                api = DifyStreamingAPI()
+                formatted_content = basic_setting_data.get_formatted_content()
+                
+                # 最後のチャンクを保持する変数
+                last_chunk = None
+                
+                # ストリーミングAPIリクエストを実行し、すべてのチャンクを内部で処理
+                for chunk in api.create_basic_setting_stream(
                     basic_setting_data=formatted_content,
-                    user_id=str(request.user.id),
-                    blocking=True
-                )
-                logger.debug(f"API response received: {str(response)[:100]}...")
-                write_to_debug_log(f"API response received: {str(response)[:100]}...")
-
-                # レスポンスの検証
-                if 'error' in response:
-                    logger.error(f"API error: {response.get('error')}")
-                    write_to_debug_log(f"API error: {response.get('error')}")
+                    user_id=str(request.user.id)
+                ):
+                    # 最後のチャンクを更新
+                    last_chunk = chunk
+                    # ログにチャンク情報を記録（デバッグ用）
+                    logger.debug(f"Received chunk: {json.dumps(chunk, ensure_ascii=False)[:100]}...")
+                
+                # 最後のチャンクからMarkdownコンテンツを抽出
+                if last_chunk:
+                    try:
+                        markdown_content = get_markdown_from_last_chunk(last_chunk)
+                        
+                        # パースしてBasicSettingを作成
+                        parsed_content = self._parse_basic_setting_content(markdown_content)
+                        
+                        # BasicSettingを保存
+                        basic_setting = BasicSetting.objects.create(
+                            ai_story=story,
+                            setting_data=basic_setting_data,
+                            story_setting=parsed_content.get('story_setting', ''),
+                            characters=parsed_content.get('characters', ''),
+                            plot_overview=parsed_content.get('plot_overview', ''),
+                            act1_overview=parsed_content.get('act1_overview', ''),
+                            act2_overview=parsed_content.get('act2_overview', ''),
+                            act3_overview=parsed_content.get('act3_overview', ''),
+                            raw_content=markdown_content
+                        )
+                        
+                        # APIログを更新
+                        api_log.is_success = True
+                        api_log.response = markdown_content
+                        api_log.save()
+                        
+                        logger.debug(f"Basic setting created: {basic_setting.id}")
+                        write_to_debug_log(f"Basic setting created: {basic_setting.id}")
+                        
+                        # レスポンスを返す（従来の形式を維持）
+                        result_serializer = BasicSettingSerializer(basic_setting)
+                        logger.debug("Returning successful response")
+                        write_to_debug_log("Returning successful response")
+                        return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+                    except Exception as e:
+                        error_msg = f"Error processing final chunk: {str(e)}"
+                        logger.error(error_msg)
+                        write_to_debug_log(error_msg)
+                        api_log.is_success = False
+                        api_log.response = f"Error: {str(e)}"
+                        api_log.save()
+                        return Response(
+                            {'error': '基本設定の生成に失敗しました', 'details': str(e)},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                        )
+                else:
+                    logger.error("No response chunks received from API")
+                    write_to_debug_log("No response chunks received from API")
                     api_log.is_success = False
-                    api_log.response = str(response)
+                    api_log.response = "No response chunks received"
                     api_log.save()
                     return Response(
-                        {'error': '基本設定の生成に失敗しました', 'details': response},
+                        {'error': '基本設定の生成に失敗しました', 'details': 'APIからのレスポンスがありませんでした'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-
-                content = response['result']
-                logger.debug(f"API content received: {content[:100]}...")
-                write_to_debug_log(f"API content received: {content[:100]}...")
-
-                # コンテンツをパースして各セクションに分割
-                logger.debug("Parsing basic setting content")
-                write_to_debug_log("Parsing basic setting content")
-                parsed_content = self._parse_basic_setting_content(content)
-
-                # パースした内容を保存
-                logger.debug("Creating basic setting")
-                write_to_debug_log("Creating basic setting")
-                basic_setting = BasicSetting.objects.create(
-                    ai_story=story,
-                    setting_data=basic_setting_data,
-                    story_setting=parsed_content.get('story_setting', ''),
-                    characters=parsed_content.get('characters', ''),
-                    plot_overview=parsed_content.get('plot_overview', ''),
-                    act1_overview=parsed_content.get('act1_overview', ''),
-                    act2_overview=parsed_content.get('act2_overview', ''),
-                    act3_overview=parsed_content.get('act3_overview', ''),
-                    raw_content=content
-                )
-                logger.debug(f"Basic setting created: {basic_setting.id}")
-                write_to_debug_log(f"Basic setting created: {basic_setting.id}")
-
-                # APIログの更新
-                api_log.is_success = True
-                api_log.response = content
-                api_log.save()
-                logger.debug("API log updated")
-                write_to_debug_log("API log updated")
-
-                # レスポンスを返す
-                result_serializer = BasicSettingSerializer(basic_setting)
-                logger.debug("Returning successful response")
-                write_to_debug_log("Returning successful response")
-                return Response(result_serializer.data, status=status.HTTP_201_CREATED)
-
             except Exception as e:
                 # エラーログ
                 error_msg = f"Exception in API request: {str(e)}"

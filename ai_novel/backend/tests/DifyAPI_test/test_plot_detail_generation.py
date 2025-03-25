@@ -18,7 +18,7 @@ from typing import Dict, Any, List, Iterator, Tuple
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 # Dify Streaming APIのインポート
-from novel_gen.dify_streaming_api import DifyStreamingAPI
+from novel_gen.dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 
 # ロギングの設定
 logging.basicConfig(
@@ -250,7 +250,7 @@ def test_create_plot_detail_stream():
                     f.write(f"[完了] {done_msg}\n\n")
                 
                 # 最終チャンクからのMarkdown抽出処理
-                last_chunk_markdown = dify_api.get_markdown_from_last_chunk(chunk, all_chunks)
+                last_chunk_markdown = get_markdown_from_last_chunk(chunk, all_chunks)
                 if last_chunk_markdown:
                     logger.info(f"最終チャンクからMarkdownを抽出しました")
                     markdown_content = last_chunk_markdown

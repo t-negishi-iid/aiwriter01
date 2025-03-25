@@ -391,7 +391,7 @@ export default function EpisodeContentForm({
                   エピソード概要
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  {isFullscreenEdit && (
+                  {!isFullscreenEdit && (
                     <Button
                       onClick={handleSaveEpisodeDetail}
                       disabled={!selectedEpisode || isSaving}
@@ -424,24 +424,6 @@ export default function EpisodeContentForm({
                   placeholder="エピソードの概要を入力..."
                   aria-label="エピソード概要"
                 />
-                {!isFullscreenEdit && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button
-                      onClick={handleSaveEpisodeDetail}
-                      disabled={!selectedEpisode || isSaving}
-                      className="mr-4"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        "エピソード概要を保存"
-                      )}
-                    </Button>
-                  </div>
-                )}
               </CardContent>
             </div>
 

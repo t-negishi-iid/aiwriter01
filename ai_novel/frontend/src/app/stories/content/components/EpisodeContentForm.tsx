@@ -44,6 +44,7 @@ export default function EpisodeContentForm({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [wordCount, setWordCount] = useState<number>(1000);
   const [episodeContent, setEpisodeContent] = useState<string>("");
+  const [episodeContentTitle, setEpisodeContentTitle] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
   const [isSavingContent, setIsSavingContent] = useState<boolean>(false);
   const [titleError, setTitleError] = useState<string>('');
@@ -147,36 +148,48 @@ export default function EpisodeContentForm({
   const fetchEpisodeContent = useCallback(async () => {
     if (!selectedEpisode) return;
 
+    setIsLoadingContent(true);
     try {
-      setIsLoadingContent(true);
+      // 正しいパラメータ（storyId, actNumber, episodeNumber）を使用
       const response = await contentApi.getEpisodeContent(
         storyId,
         selectedActNumber,
         selectedEpisode.episode_number
       );
 
-      if (response && response.content) {
-        setEpisodeContent(response.content as string);
+      console.log("エピソード本文取得レスポンス:", response);
+
+      if (response && typeof response.content === 'string') {
+        setEpisodeContent(response.content);
+        setEpisodeContentTitle(typeof response.title === 'string' ? response.title : "");
       } else {
+        console.log("本文データが見つかりません", response);
         setEpisodeContent("");
-        toast({
-          title: "注意",
-          description: "エピソード本文が見つかりませんでした。",
-        });
+        setEpisodeContentTitle("");
       }
-    } catch (err) {
-      console.error("エピソード本文取得エラー:", err);
+    } catch (error: unknown) {
+      console.error("エピソード本文の取得中にエラーが発生しました:", error);
+      // エラーのタイプに応じて異なるメッセージを表示
+      let errorMessage = "エピソード本文の取得中にエラーが発生しました。";
+      if (error instanceof Error) {
+        // エラーが404の場合は特別なメッセージを表示
+        if (error.message.includes("404")) {
+          errorMessage = "このエピソードの本文はまだ作成されていません。「エピソード概要から本文を生成」ボタンを使って本文を作成してください。";
+        } else {
+          errorMessage += ` ${error.message}`;
+        }
+      }
       toast({
-        title: "エラー",
-        description: "エピソード本文の取得に失敗しました。",
-        variant: "destructive"
+        title: "情報",
+        description: errorMessage,
+        variant: error instanceof Error && error.message?.includes("404") ? "default" : "destructive",
       });
       setEpisodeContent("");
+      setEpisodeContentTitle("");
     } finally {
       setIsLoadingContent(false);
     }
-  }, [selectedEpisode, storyId, selectedActNumber]);
-
+  }, [storyId, selectedEpisode, selectedActNumber]);
   // selectedEpisodeが変更されたときにエピソード本文を読み込む
   useEffect(() => {
     if (selectedEpisode) {
@@ -202,6 +215,11 @@ export default function EpisodeContentForm({
     setEditedContent(e.target.value);
   };
 
+  // エピソード本文タイトル変更ハンドラ
+  const handleContentTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEpisodeContentTitle(e.target.value);
+  };
+
   // エピソード概要保存ハンドラ
   const handleSaveEpisodeDetail = async () => {
     if (!selectedEpisode) return;
@@ -223,7 +241,7 @@ export default function EpisodeContentForm({
       // エピソード詳細APIを呼び出し - 正しいエンドポイントを使用
       const response = await episodeApi.updateEpisodeDetail(
         storyId,
-        selectedActNumber,
+        selectedEpisode.id,
         selectedEpisode.episode_number,
         episodeData
       );
@@ -285,9 +303,12 @@ export default function EpisodeContentForm({
         }
       );
 
-      if (generationResponse && generationResponse.content) {
+      if (generationResponse && typeof generationResponse.content === 'string') {
         // 生成された本文を直接エピソード本文に設定
-        setEpisodeContent(generationResponse.content as string);
+        setEpisodeContent(generationResponse.content);
+        if (typeof generationResponse.title === 'string') {
+          setEpisodeContentTitle(generationResponse.title);
+        }
         toast({
           title: "生成完了",
           description: "エピソード本文が生成されました。内容を確認し、必要に応じて編集してください。",
@@ -299,8 +320,8 @@ export default function EpisodeContentForm({
           variant: "destructive"
         });
       }
-    } catch (err) {
-      console.error("コンテンツ生成エラー:", err);
+    } catch (error: unknown) {
+      console.error("コンテンツ生成エラー:", error);
       toast({
         title: "エラー",
         description: "エピソードの本文生成に失敗しました。",
@@ -313,6 +334,16 @@ export default function EpisodeContentForm({
 
   // 生成されたコンテンツを適用するハンドラ
   const handleApplyGenerated = async () => {
+    // タイトルが空の場合はエラーを表示して処理を中断
+    if (!episodeContentTitle.trim()) {
+      toast({
+        title: "エラー",
+        description: "エピソード本文タイトルを入力してください。",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setIsSavingContent(true);
       // エピソード本文を保存するAPIを呼び出し
@@ -322,10 +353,16 @@ export default function EpisodeContentForm({
           selectedActNumber,
           selectedEpisode.episode_number,
           {
+            title: episodeContentTitle,
             content: episodeContent,
-            raw_content: episodeContent,
+            raw_content: JSON.stringify({
+              title: episodeContentTitle,
+              content: episodeContent
+            })
           }
         );
+
+        console.log("エピソード本文保存レスポンス:", response);
 
         // レスポンスの確認
         if (response) {
@@ -341,11 +378,11 @@ export default function EpisodeContentForm({
           });
         }
       }
-    } catch (error) {
-      console.error("エピソード本文の保存に失敗:", error);
+    } catch (error: unknown) {
+      console.error("エピソード本文の保存中にエラーが発生しました:", error);
       toast({
         title: "エラー",
-        description: "エピソード本文の保存に失敗しました。",
+        description: "エピソード本文の保存中にエラーが発生しました。",
         variant: "destructive"
       });
     } finally {
@@ -501,13 +538,31 @@ export default function EpisodeContentForm({
                       <span>読み込み中...</span>
                     </div>
                   ) : (
-                    <textarea
-                      className={`w-full p-3 border rounded-md story-textarea ${isFullscreenContent ? "th-1200" : "h-96 th-200"}`}
-                      value={episodeContent}
-                      onChange={(e) => setEpisodeContent(e.target.value)}
-                      placeholder="エピソード本文を入力..."
-                      aria-label="エピソード本文"
-                    />
+                    <>
+                      <div className="mb-4">
+                        <label htmlFor="episode-content-title" className="block text-sm font-medium mb-1">
+                          エピソード本文タイトル
+                        </label>
+                        <input
+                          id="episode-content-title"
+                          type="text"
+                          className={`w-full p-3 border rounded-md story-input ${titleError ? 'border-red-500' : ''}`}
+                          value={episodeContentTitle}
+                          onChange={handleContentTitleChange}
+                          placeholder="エピソード本文のタイトルを入力..."
+                          aria-label="エピソード本文のタイトル"
+                          required
+                        />
+                        {titleError && <p className="text-red-500 text-sm mt-1">{titleError}</p>}
+                      </div>
+                      <textarea
+                        className={`w-full p-3 border rounded-md story-textarea ${isFullscreenContent ? "th-1200" : "h-96 th-200"}`}
+                        value={episodeContent}
+                        onChange={(e) => setEpisodeContent(e.target.value)}
+                        placeholder="エピソード本文を入力..."
+                        aria-label="エピソード本文"
+                      />
+                    </>
                   )}
                   {!isFullscreenContent && (
                     <Button

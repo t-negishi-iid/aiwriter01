@@ -16,7 +16,7 @@ from ..models import (
 )
 from ..serializers import (
     EpisodeContentCreateSerializer, EpisodeContentSerializer,
-    EpisodeContentRequestSerializer
+    EpisodeContentRequestSerializer, EpisodeContentUpdateSerializer
 )
 from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
@@ -345,22 +345,33 @@ class EpisodeContentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if instance is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-        # リクエストの検証
-        serializer = EpisodeContentCreateSerializer(data=request.data)
+        # 更新用シリアライザを使用
+        serializer = EpisodeContentUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # リクエストパラメータの取得
+        # 検証済みデータを取得
         content = serializer.validated_data['content']
-        raw_content = serializer.validated_data.get('raw_content', content)
-
-        # オプショナルパラメータ（titleは必須ではない）
-        if 'title' in request.data:
-            instance.title = request.data['title']
-
+        
+        # タイトルが指定されていれば更新
+        if 'title' in serializer.validated_data:
+            instance.title = serializer.validated_data['title']
+        
+        # エピソードの情報を取得
+        episode = instance.episode
+        act = episode.act
+        story_id = self.kwargs.get('story_id')
+        act_number = self.kwargs.get('act_number')
+        episode_number = self.kwargs.get('episode_number')
+        
+        # エピソードタイトルと本文からMarkdownを生成
+        markdown_content = f"# 第{act_number}幕 {act.title}\n"
+        markdown_content += f"## エピソード{episode_number}「{instance.title}」\n\n"
+        markdown_content += f"{content}"
+        
         # エピソード本文の更新
         instance.content = content
         instance.word_count = len(content)
-        instance.raw_content = raw_content
+        instance.raw_content = markdown_content
         instance.save()
 
         # レスポンスを返す

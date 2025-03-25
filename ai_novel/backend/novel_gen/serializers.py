@@ -165,11 +165,23 @@ class EpisodeContentSerializer(serializers.ModelSerializer):
     episode = EpisodeDetailSerializer(read_only=True)
     content = serializers.CharField(required=False, allow_blank=True)
     raw_content = serializers.JSONField(required=False, allow_null=True)
+    title = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = EpisodeContent
-        fields = ('id', 'episode', 'content', 'raw_content', 'created_at', 'updated_at')
+        fields = ('id', 'episode', 'title', 'content', 'raw_content', 'created_at', 'updated_at')
         read_only_fields = ('id', 'episode', 'created_at', 'updated_at')
+
+
+class EpisodeContentUpdateSerializer(serializers.ModelSerializer):
+    """エピソード本文更新用シリアライザ"""
+    content = serializers.CharField(required=True)
+    raw_content = serializers.CharField(required=True)
+    title = serializers.CharField(required=False, allow_blank=True)
+    
+    class Meta:
+        model = EpisodeContent
+        fields = ('content', 'raw_content', 'title')
 
 
 class DifyResponseSerializer(serializers.Serializer):

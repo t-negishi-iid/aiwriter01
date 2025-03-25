@@ -7,6 +7,11 @@ from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.db import transaction, models
 import logging
+import json
+import re
+from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
+from ..utils import check_and_consume_credit
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +23,6 @@ from ..serializers import (
     EpisodeDetailSerializer, EpisodeDetailRequestSerializer,
     EpisodeNumberUpdateSerializer, EpisodeCreateSerializer
 )
-from ..dify_api import DifyNovelAPI
-from ..utils import check_and_consume_credit
-
 
 class ActEpisodesListView(generics.ListCreateAPIView):
     """
@@ -80,9 +82,20 @@ class CreateEpisodesView(views.APIView):
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        story_id = self.kwargs.get('story_id')
-        act_number = self.kwargs.get('act_number')
-
+        """
+        Dify APIで幕のエピソード群を生成し、保存する
+        """
+        # テストモードフラグの取得（デフォルトはFalse）
+        test_mode = request.data.get('test_mode', False)
+        
+        # ストーリーIDとアクト番号の取得
+        story_id = kwargs.get('story_id')
+        act_number = kwargs.get('act_number')
+        
+        # リクエストからデータを取得
+        data = request.data
+        episode_count = int(data.get('episode_count', 3))
+        
         # 権限チェック
         story = get_object_or_404(AIStory, id=story_id, user=request.user)
         act = get_object_or_404(ActDetail, ai_story=story, act_number=act_number)
@@ -130,9 +143,6 @@ class CreateEpisodesView(views.APIView):
         act_details = ActDetail.objects.filter(ai_story=story)
         all_act_raw_content = [act.raw_content for act in act_details]
 
-        # APIリクエスト
-        api = DifyNovelAPI()
-
         # APIログの作成
         api_log = APIRequestLog.objects.create(
             user=request.user,
@@ -146,45 +156,149 @@ class CreateEpisodesView(views.APIView):
             credit_cost=3
         )
 
+        # 最終応答を格納する変数
+        final_response = None
+        
         try:
-            # 6. 3、4、5とエピソード数を渡してDify APIを呼び出す
-            response = api.create_episode_details(
-                basic_setting=basic_setting.raw_content,
-                all_characters_list=character_details_raw_content,
-                all_act_details_list=all_act_raw_content,
-                target_act_detail=act.raw_content,
-                episode_count=episode_count,
-                user_id=str(request.user.id),
-                blocking=True
-            )
-
-            # レスポンスの検証
-            logger.debug(f"DEBUG - CreateEpisodeDetailView - API response: {response}")
-
-            # レスポンスの検証
-            if 'error' in response:
-                api_log.is_success = False
-                api_log.response = str(response)
-                api_log.save()
-                return Response(
-                    {'error': 'エピソード詳細の生成に失敗しました', 'details': response},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # ストリーミングAPIクライアントの初期化
+            api = DifyStreamingAPI(test_mode=test_mode)
+            
+            # 最後のチャンクを保持する変数
+            last_chunk = None
+            all_chunks = []
+            
+            # ログにデバッグ情報を出力
+            logger.debug(f"DEBUG - CreateEpisodesView - ストリーミングAPIリクエスト開始: act_id={act.id}, episode_count={episode_count}, test_mode={test_mode}")
+            
+            # テストモードの場合、ストリーミングレスポンスとして返すためのレスポンスを初期化
+            if test_mode:
+                from django.http import StreamingHttpResponse
+                
+                def stream_response():
+                    try:
+                        # ターゲット幕の情報を辞書形式で準備（act_numberを含める）
+                        target_act_data = {
+                            "act_number": act.act_number,
+                            "content": act.raw_content
+                        }
+                        
+                        # ストリーミングAPIリクエストを実行し、リアルタイムでチャンクを返す
+                        for chunk in api.create_episode_details_stream(
+                            basic_setting=basic_setting.raw_content,
+                            all_characters_list=character_details_raw_content,
+                            all_act_details_list=all_act_raw_content,
+                            target_act_detail=target_act_data,
+                            episode_count=episode_count,
+                            user_id=str(request.user.id),
+                            test_mode=True
+                        ):
+                            # 最後のチャンクを更新
+                            if chunk:
+                                last_chunk = chunk
+                                all_chunks.append(chunk)
+                                
+                                # JSONデータをシリアライズしてバイトに変換
+                                chunk_data = json.dumps(chunk) + "\n"
+                                yield chunk_data.encode('utf-8')
+                                
+                                # デバッグ用にチャンクの概要をログ
+                                if "event" in chunk:
+                                    logger.debug(f"DEBUG - CreateEpisodesView - チャンク返送: event={chunk['event']}")
+                        
+                        # すべてのチャンクの処理後、Markdownコンテンツを抽出
+                        markdown_content = get_markdown_from_last_chunk(last_chunk, all_chunks)
+                        logger.debug(f"DEBUG - CreateEpisodesView - 最終Markdownデータ抽出完了: {len(markdown_content)} 文字")
+                        
+                        # 最終結果としてMarkdownデータを返す
+                        final_result = {"markdown_content": markdown_content, "status": "completed"}
+                        yield (json.dumps(final_result) + "\n").encode('utf-8')
+                        
+                    except Exception as stream_error:
+                        logger.error(f"DEBUG - CreateEpisodesView - ストリーミングエラー: {str(stream_error)}")
+                        error_response = {"error": str(stream_error), "status": "error"}
+                        yield (json.dumps(error_response) + "\n").encode('utf-8')
+                
+                # StreamingHttpResponseを返す
+                return StreamingHttpResponse(
+                    streaming_content=stream_response(),
+                    content_type='application/json'
                 )
+            
+            # 通常モード（テストモードでない場合）の処理
+            else:
+                # ターゲット幕の情報を辞書形式で準備（act_numberを含める）
+                target_act_data = {
+                    "act_number": act.act_number,
+                    "content": act.raw_content
+                }
+                
+                # ストリーミングリクエスト実行
+                for chunk in api.create_episode_details_stream(
+                    basic_setting=basic_setting.raw_content,
+                    all_characters_list=character_details_raw_content,
+                    all_act_details_list=all_act_raw_content,
+                    target_act_detail=target_act_data,
+                    episode_count=episode_count,
+                    user_id=str(request.user.id),
+                    test_mode=test_mode
+                ):
+                    # 最後のチャンクを更新
+                    if chunk:
+                        last_chunk = chunk
+                        all_chunks.append(chunk)
+                        
+                        # デバッグ用にチャンクの概要をログ
+                        if "event" in chunk:
+                            logger.debug(f"DEBUG - CreateEpisodesView - チャンク受信: event={chunk['event']}")
+            # デバッグ用ログ
+            logger.debug(f"DEBUG - CreateEpisodesView - Received all chunks, processing final result")
+            
+            # 最後のチャンクからMarkdownコンテンツを抽出
+            if not last_chunk:
+                raise ValueError("有効なレスポンスが取得できませんでした")
+                
+            raw_text = get_markdown_from_last_chunk(last_chunk, all_chunks)
+            if not raw_text:
+                logger.error(f"DEBUG - CreateEpisodesView - 最終チャンクから有効な内容を抽出できませんでした")
+                logger.error(f"DEBUG - CreateEpisodesView - 最終チャンク: {json.dumps(last_chunk, ensure_ascii=False)[:500]}...")
+                raise ValueError("APIレスポンスから有効なコンテンツを抽出できませんでした")
 
-            # レスポンスを各エピソードにパースする
-            import re
+            # APIログにレスポンスの先頭部分を記録（デバッグ用）
+            logger.debug(f"DEBUG - CreateEpisodesView - 抽出した結果（先頭100文字）: {raw_text[:100]}")
 
-            # エピソードのパターンを定義 - 「---」区切りと次のエピソードヘッダーの両方に対応
-            episode_pattern = r'### エピソード(\d+)「([^」]+)」\s+(.*?)(?=### エピソード\d+「|---|$)'
+            # エピソードのパターンを定義 - 「### エピソード{数字}「{タイトル}」」の形式
+            episode_pattern = r'### エピソード(\d+)「([^」]+)」'
 
-            # 生のテキストデータ
-            raw_text = response['result']
+            # マークダウンコンテンツを分割
+            episodes = []
+            current_position = 0
 
-            # 正規表現でエピソードを抽出
-            episodes_matches = list(re.finditer(episode_pattern, raw_text, re.DOTALL))
+            for match in re.finditer(episode_pattern, raw_text):
+                episode_num = match.group(1)
+                episode_title = match.group(2)
+                start_pos = match.start()
+
+                # 前のエピソードの終了位置を現在のエピソードの開始位置とする
+                if current_position > 0 and episodes:
+                    episode_content = raw_text[current_position:start_pos].strip()
+                    episodes[-1]['content'] = episode_content
+
+                # 新しいエピソードを追加
+                episodes.append({
+                    'number': episode_num,
+                    'title': episode_title,
+                    'start_pos': start_pos,
+                    'content': ''  # 後で設定
+                })
+
+                current_position = start_pos
+
+            # 最後のエピソードの内容を設定
+            if episodes:
+                episodes[-1]['content'] = raw_text[episodes[-1]['start_pos']:].strip()
 
             # 抽出されたエピソードが存在しない場合はエラーを返す
-            if not episodes_matches:
+            if not episodes:
                 api_log.is_success = False
                 api_log.response = "エピソードのパースに失敗しました"
                 api_log.save()
@@ -199,32 +313,59 @@ class CreateEpisodesView(views.APIView):
             deleted_count = EpisodeDetail.objects.filter(act=act).delete()[0]
             logger.debug(f"DEBUG - CreateEpisodesView - 幕ID {act.id} のエピソード {deleted_count} 件を削除しました")
 
-            # 新しいエピソードを作成
+            # エピソードモデルの作成
             created_episodes = []
-            for match in episodes_matches:
-                episode_number = int(match.group(1))
-                title = match.group(2)
-                content = match.group(3).strip()
+            for episode_data in episodes:
+                # エピソード番号とタイトルを取得
+                episode_number = int(episode_data['number'])
+                episode_title = episode_data['title']
 
-                # エピソードデータをJSON形式で保存
-                episode_data = {
-                    'episode_number': episode_number,
-                    'title': title,
-                    'content': content
-                }
+                # エピソード内容を取得し、見出しを除去
+                content = episode_data['content']
+                # エピソード見出しのパターン
+                episode_header = f"### エピソード{episode_data['number']}「{episode_data['title']}」"
 
-                episode = EpisodeDetail.objects.create(
-                    act=act,
-                    episode_number=episode_number,
-                    title=title,
-                    content=content,
-                    raw_content=episode_data
-                )
-                created_episodes.append(episode)
+                # 内容から見出しを削除（見出しが内容の先頭にある場合）
+                if content.strip().startswith(episode_header):
+                    content = content.replace(episode_header, "", 1).strip()
+
+                # 既存のエピソードを確認
+                existing_episode = EpisodeDetail.objects.filter(
+                    ai_story=story,
+                    act_number=act_number,
+                    episode_number=episode_number
+                ).first()
+
+                if existing_episode:
+                    # 既存エピソードの更新
+                    existing_episode.title = episode_title
+                    existing_episode.content = content
+                    existing_episode.raw_content = json.dumps({
+                        'episode_number': episode_number,
+                        'title': episode_title,
+                        'content': content
+                    })
+                    existing_episode.save()
+                    created_episodes.append(existing_episode)
+                else:
+                    # 新規エピソードの作成
+                    episode = EpisodeDetail.objects.create(
+                        ai_story=story,
+                        act_number=act_number,
+                        episode_number=episode_number,
+                        title=episode_title,
+                        content=content,
+                        raw_content=json.dumps({
+                            'episode_number': episode_number,
+                            'title': episode_title,
+                            'content': content
+                        })
+                    )
+                    created_episodes.append(episode)
 
             # APIログの更新
             api_log.is_success = True
-            api_log.response = str(episodes_matches)
+            api_log.response = str(episodes)
             api_log.save()
 
             # レスポンスを返す

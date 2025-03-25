@@ -201,7 +201,7 @@ export default function EpisodeContentForm({
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEditedTitle(value);
-    
+
     // バリデーション：空白チェック
     if (!value.trim()) {
       setTitleError('タイトルは必須です');
@@ -343,7 +343,7 @@ export default function EpisodeContentForm({
       });
       return;
     }
-    
+
     try {
       setIsSavingContent(true);
       // エピソード本文を保存するAPIを呼び出し
@@ -507,7 +507,7 @@ export default function EpisodeContentForm({
                     エピソード本文
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    {isFullscreenContent && (
+                    {!isFullscreenContent && (
                       <Button
                         onClick={handleApplyGenerated}
                         disabled={isSavingContent}
@@ -540,9 +540,6 @@ export default function EpisodeContentForm({
                   ) : (
                     <>
                       <div className="mb-4">
-                        <label htmlFor="episode-content-title" className="block text-sm font-medium mb-1">
-                          エピソード本文タイトル
-                        </label>
                         <input
                           id="episode-content-title"
                           type="text"
@@ -563,22 +560,6 @@ export default function EpisodeContentForm({
                         aria-label="エピソード本文"
                       />
                     </>
-                  )}
-                  {!isFullscreenContent && (
-                    <Button
-                      onClick={handleApplyGenerated}
-                      disabled={isSavingContent}
-                      className="mt-4"
-                    >
-                      {isSavingContent ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        "エピソード本文を保存"
-                      )}
-                    </Button>
                   )}
                 </CardContent>
               </Card>

@@ -14,6 +14,8 @@ interface EpisodeContentFormProps {
   selectedEpisode: EpisodeDetail | null;
   editedContent: string;
   setEditedContent: (content: string) => void;
+  editedTitle: string;
+  setEditedTitle: (title: string) => void;
   selectedActNumber: string;
 }
 
@@ -34,6 +36,8 @@ export default function EpisodeContentForm({
   selectedEpisode,
   editedContent,
   setEditedContent,
+  editedTitle,
+  setEditedTitle,
   selectedActNumber
 }: EpisodeContentFormProps) {
   const [isSaving, setIsSaving] = useState(false);
@@ -42,6 +46,7 @@ export default function EpisodeContentForm({
   const [episodeContent, setEpisodeContent] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
   const [isSavingContent, setIsSavingContent] = useState<boolean>(false);
+  const [titleError, setTitleError] = useState<string>('');
 
   // コンテキストからbasicSettingを取得
   const { basicSetting } = useStoryContext();
@@ -80,6 +85,7 @@ export default function EpisodeContentForm({
       // エピソード概要の場合は、選択されたエピソードの内容をセット
       if (type === 'edit' && selectedEpisode) {
         setEditedContent(selectedEpisode.content);
+        setEditedTitle(selectedEpisode.title);
       }
     } else {
       // 全画面モードを解除
@@ -93,7 +99,7 @@ export default function EpisodeContentForm({
       }
       setFullscreen(false);
     }
-  }, [isFullscreenEdit, isFullscreenContent, selectedEpisode, setEditedContent]);
+  }, [isFullscreenEdit, isFullscreenContent, selectedEpisode, setEditedContent, setEditedTitle]);
 
   // フルスクリーン変更イベントのリスナーを追加
   useEffect(() => {
@@ -178,6 +184,19 @@ export default function EpisodeContentForm({
     }
   }, [selectedEpisode, fetchEpisodeContent]);
 
+  // エピソードタイトル更新ハンドラ
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEditedTitle(value);
+    
+    // バリデーション：空白チェック
+    if (!value.trim()) {
+      setTitleError('タイトルは必須です');
+    } else {
+      setTitleError('');
+    }
+  };
+
   // エピソード概要更新ハンドラ
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditedContent(e.target.value);
@@ -192,11 +211,11 @@ export default function EpisodeContentForm({
 
       // タイプエラーを回避するために正しい型のデータを作成
       const episodeData = {
-        title: selectedEpisode.title,
+        title: editedTitle,
         content: editedContent,
         episode_number: selectedEpisode.episode_number,
         raw_content: JSON.stringify({
-          title: selectedEpisode.title,
+          title: editedTitle,
           content: editedContent
         })
       };
@@ -394,7 +413,7 @@ export default function EpisodeContentForm({
                   {!isFullscreenEdit && (
                     <Button
                       onClick={handleSaveEpisodeDetail}
-                      disabled={!selectedEpisode || isSaving}
+                      disabled={!selectedEpisode || isSaving || !editedTitle.trim()}
                       className="mr-2"
                     >
                       {isSaving ? (
@@ -416,6 +435,16 @@ export default function EpisodeContentForm({
                 </div>
               </CardHeader>
               <CardContent>
+                <input
+                  type="text"
+                  className={`w-full p-3 border rounded-md story-input ${titleError ? 'border-red-500' : ''}`}
+                  value={editedTitle}
+                  onChange={handleTitleChange}
+                  placeholder="エピソードのタイトルを入力..."
+                  aria-label="エピソードタイトル"
+                  required
+                />
+                {titleError && <p className="text-red-500 text-sm mt-1">{titleError}</p>}
                 <textarea
                   className={`w-full p-3 border rounded-md story-textarea ${isFullscreenEdit ? "th-1200" : "h-32 th-200"
                     }`}

@@ -15,6 +15,7 @@ interface EpisodeDetailListProps {
   selectedEpisode: EpisodeDetail | null;
   setSelectedEpisode: (episode: EpisodeDetail | null) => void;
   setEditedContent: (content: string) => void;
+  setEditedTitle: (title: string) => void;
   selectedActNumber: string;
   setSelectedActNumber: (actNumber: string) => void;
 }
@@ -26,6 +27,7 @@ export default function EpisodeDetailList({
   selectedEpisode,
   setSelectedEpisode,
   setEditedContent,
+  setEditedTitle,
   selectedActNumber,
   setSelectedActNumber
 }: EpisodeDetailListProps) {
@@ -59,6 +61,7 @@ export default function EpisodeDetailList({
               const firstEpisode = episodesResponse.results[0];
               setSelectedEpisode(firstEpisode);
               setEditedContent(firstEpisode.content || '');
+              setEditedTitle(firstEpisode.title || '');
             }
           } catch (episodeErr) {
             console.error('エピソード取得エラー:', episodeErr);
@@ -76,7 +79,7 @@ export default function EpisodeDetailList({
     };
 
     fetchData();
-  }, [storyId, setSelectedAct, setSelectedEpisode, setEditedContent, setSelectedActNumber]);
+  }, [storyId, setSelectedAct, setSelectedEpisode, setEditedContent, setEditedTitle, setSelectedActNumber]);
 
   // 幕選択ハンドラ
   const handleSelectAct = async (act: ActDetail) => {
@@ -84,6 +87,7 @@ export default function EpisodeDetailList({
     setSelectedActNumber(act.act_number.toString());
     setSelectedEpisode(null);
     setEditedContent('');
+    setEditedTitle('');
 
     try {
       setIsLoading(true);
@@ -94,10 +98,12 @@ export default function EpisodeDetailList({
         const firstEpisode = episodesResponse.results[0];
         setSelectedEpisode(firstEpisode);
         setEditedContent(firstEpisode.content || '');
+        setEditedTitle(firstEpisode.title || '');
       } else {
         setEpisodes([]);
         setSelectedEpisode(null);
         setEditedContent('');
+        setEditedTitle('');
       }
     } catch (episodeErr) {
       console.error("エピソード一覧取得エラー:", episodeErr);
@@ -127,6 +133,7 @@ export default function EpisodeDetailList({
   // エピソード選択ハンドラ
   const handleSelectEpisode = (episode: EpisodeDetail) => {
     setSelectedEpisode(episode);
+    setEditedTitle(episode.title || '');
     setEditedContent(episode.content || '');
   };
 

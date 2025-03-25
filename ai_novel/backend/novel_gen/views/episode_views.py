@@ -216,19 +216,15 @@ class CreateEpisodesView(views.APIView):
                 title = match.group(2)
                 content = match.group(3).strip()
 
-                # エピソードデータをJSON形式で保存
-                episode_data = {
-                    'episode_number': episode_number,
-                    'title': title,
-                    'content': content
-                }
+                # エピソードデータをMarkdown形式で保存
+                markdown_content = f"### エピソード{episode_number}「{title}」\n\n{content}"
 
                 episode = EpisodeDetail.objects.create(
                     act=act,
                     episode_number=episode_number,
                     title=title,
                     content=content,
-                    raw_content=episode_data
+                    raw_content=markdown_content
                 )
                 created_episodes.append(episode)
 
@@ -279,5 +275,26 @@ class EpisodeDetailView(generics.RetrieveUpdateDestroyAPIView):
         return get_object_or_404(EpisodeDetail, act=act, episode_number=episode_number)
 
     def update(self, request, *args, **kwargs):
-        # 通常の更新処理のみを行う
-        return super().update(request, *args, **kwargs)
+        # オブジェクトを取得
+        instance = self.get_object()
+        
+        # シリアライザでデータを部分的に更新
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        
+        # raw_contentをMarkdown形式で生成
+        episode_number = instance.episode_number
+        title = request.data.get('title', instance.title)
+        content = request.data.get('content', instance.content)
+        
+        # Markdown形式でraw_contentを作成
+        markdown_content = f"### エピソード{episode_number}「{title}」\n\n{content}"
+        
+        # raw_contentを設定
+        serializer.validated_data['raw_content'] = markdown_content
+        
+        # 保存を実行
+        self.perform_update(serializer)
+
+        # レスポンスを返す
+        return Response(serializer.data)

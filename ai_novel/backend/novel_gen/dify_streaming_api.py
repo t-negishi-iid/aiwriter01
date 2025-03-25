@@ -158,52 +158,104 @@ class DifyStreamingAPI:
 
     def _process_streaming_response(self, response: requests.Response) -> Iterator[Dict[str, Any]]:
         """
-        ストリーミングレスポンスを処理する
-
-        Args:
-            response: リクエストのレスポンスオブジェクト
-
-        Yields:
-            Dict[str, Any]: パースされたレスポンスチャンク
+        ストリーミングレスポンスを処理し、解析済みのレスポンスチャンクを生成します。
         """
         for line in response.iter_lines():
             if not line:
                 continue
-
+            
             try:
                 decoded_line = line.decode('utf-8')
                 
-                # SSEフォーマットの処理（'data: ' プレフィックスがある場合）
+                # SSE形式のデータ処理 (data: {...})
                 if decoded_line.startswith('data: '):
                     data_str = decoded_line[6:]  # 'data: ' を削除
                     
-                    # ストリーム終了マーカー
-                    if data_str == "[DONE]":
-                        yield {"end_of_stream": True}
+                    # 特別なケース: [DONE]
+                    if data_str.strip() == '[DONE]':
+                        yield {'done': True}
                         continue
                     
-                    # JSON解析
-                    data = json.loads(data_str)
-                    
-                    # 最後のチャンクの場合、data->outputs->resultからMarkdown内容を抽出
-                    if "data" in data and "outputs" in data["data"] and "result" in data["data"]["outputs"]:
-                        # 最終データとして結果を設定
-                        data["final_data"] = data["data"]["outputs"]["result"]
-                        
-                    yield data
+                    try:
+                        data = json.loads(data_str)
+                        yield data
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Error decoding JSON: {e}")
+                        logger.error(f"Raw data: {data_str}")
+                        continue
+                # 通常のJSONレスポンス処理
                 else:
-                    # 非SSE形式の場合は直接JSONとして解析
-                    data = json.loads(decoded_line)
-                    
-                    # 最後のチャンクの場合、data->outputs->resultからMarkdown内容を抽出
-                    if "data" in data and "outputs" in data["data"] and "result" in data["data"]["outputs"]:
-                        # 最終データとして結果を設定
-                        data["final_data"] = data["data"]["outputs"]["result"]
-                        
-                    yield data
+                    try:
+                        data = json.loads(decoded_line)
+                        yield data
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Error processing response line: {e}")
+                        continue
             except Exception as e:
-                logger.error(f"Error processing response line: {e}")
+                logger.error(f"Error processing streaming response: {e}")
                 continue
+    
+    @staticmethod
+    def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
+        """
+        最終チャンクからMarkdownコンテンツを抽出します。
+        
+        Args:
+            last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
+            all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
+            
+        Returns:
+            str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
+        """
+        try:
+            # 最優先：最終チャンク（node_finished イベント）からのデータ抽出
+            if last_chunk and "event" in last_chunk and last_chunk["event"] == "node_finished":
+                if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
+                    result = last_chunk["data"]["outputs"]["result"]
+                    if isinstance(result, str) and result:
+                        logger.debug("node_finishedイベントからMarkdownを抽出しました")
+                        return result
+            
+            # 次に優先：標準的なDify API形式からMarkdownを抽出
+            if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
+                result = last_chunk["data"]["outputs"]["result"]
+                
+                # resultが文字列の場合はそのまま返す
+                if isinstance(result, str):
+                    logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
+                    return result
+                # リストの場合はJSON文字列に変換
+                elif isinstance(result, list):
+                    logger.debug("リスト形式のresultをJSON文字列に変換しました")
+                    return json.dumps(result, ensure_ascii=False)
+                # その他の型の場合は文字列に変換
+                else:
+                    logger.debug(f"その他の型({type(result)})を文字列に変換しました")
+                    return str(result)
+            
+            # フォールバック：text_chunkイベントからのテキスト収集
+            if all_chunks and isinstance(all_chunks, list):
+                text_chunks = []
+                for chunk in all_chunks:
+                    # text_chunkイベントを検出
+                    if chunk.get('event') == 'text_chunk':
+                        # data.textフィールドからテキストを抽出
+                        if 'data' in chunk and isinstance(chunk['data'], dict) and 'text' in chunk['data']:
+                            text_chunks.append(chunk['data']['text'])
+                
+                # 収集したテキストを結合
+                if text_chunks:
+                    logger.debug(f"text_chunkイベントから{len(text_chunks)}個のチャンクを抽出しました")
+                    return ''.join(text_chunks)
+                else:
+                    logger.debug("text_chunkイベントが見つかりませんでした")
+            
+        except Exception as e:
+            logger.error(f"Error extracting Markdown from last chunk: {e}")
+        
+        # 抽出に失敗した場合は空文字列を返す
+        logger.warning("Markdownの抽出に失敗しました")
+        return ""
 
     """
     アプリケーションメソッド

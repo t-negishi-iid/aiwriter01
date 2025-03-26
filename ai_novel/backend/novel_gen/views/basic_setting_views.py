@@ -83,7 +83,7 @@ class BasicSettingCreateView(views.APIView):
                     section_content = []
                 else:
                     # セクションコンテンツに追加
-                    if current_section:
+                    if current_section and line != '---' and line != '--':  # "---"と"--"の行は無視
                         section_content.append(line)
 
             # 最後のセクションの内容を保存
@@ -117,7 +117,7 @@ class BasicSettingCreateView(views.APIView):
                         section_content = []
                     else:
                         # セクションコンテンツに追加
-                        if current_section:
+                        if current_section and line != '---' and line != '--':  # "---"と"--"の行は無視
                             section_content.append(line)
 
             # 最後のセクションの内容を保存
@@ -572,7 +572,7 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def _generate_raw_content(self, instance):
         """オブジェクトの各フィールドからMarkdown形式のraw_contentを生成"""
-        
+
         # セクションタイトルのマッピング（_get_section_keyの逆マッピング）
         section_titles = {
             'title': 'タイトル',
@@ -587,27 +587,27 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
             'mystery': '物語の背景となる過去の謎',
             'plot_pattern': 'プロットパターン',
         }
-        
+
         # 生成するMarkdownテキスト
         content_parts = ["# 作品設定\n"]
-        
+
         # 通常のセクションを処理
         for field, title in section_titles.items():
             field_value = getattr(instance, field, '')
             if field_value:
                 content_parts.append(f"## {title}\n{field_value}\n")
-        
+
         # あらすじセクションの特別処理
         plot_parts = []
         for act_num in [1, 2, 3]:
             act_content = getattr(instance, f'act{act_num}_overview', '')
             if act_content:
                 plot_parts.append(f"### 第{act_num}幕\n{act_content}")
-        
+
         # あらすじセクションがあれば追加
         if plot_parts:
             content_parts.append("## あらすじ\n" + "\n\n".join(plot_parts) + "\n")
-        
+
         # すべてのパーツを結合
         return "\n".join(content_parts)
 

@@ -59,148 +59,75 @@ class BasicSettingCreateView(views.APIView):
             dict: パースされた各セクションのデータ
         """
         try:
-            # 初期化
-            result = {
-                'title': '',
-                'summary': '',
-                'theme': '',
-                'theme_description': '',
-                'time_place': '',
-                'world_setting': '',
-                'world_setting_basic': '',
-                'world_setting_features': '',
-                'writing_style': '',
-                'writing_style_structure': '',
-                'writing_style_expression': '',
-                'writing_style_theme': '',
-                'emotional': '',
-                'emotional_love': '',
-                'emotional_feelings': '',
-                'emotional_atmosphere': '',
-                'emotional_sensuality': '',
-                'characters': '',
-                'key_items': '',
-                'mystery': '',
-                'plot_pattern': '',
-                'act1_title': '',
-                'act1_overview': '',
-                'act2_title': '',
-                'act2_overview': '',
-                'act3_title': '',
-                'act3_overview': '',
-            }
-
             # 文字列を行に分割
             lines = content.split('\n')
-            
-            # 現在処理中のセクション
+
+            # セクション処理用の変数
             current_section = None
-            current_subsection = None
             section_content = []
-            
-            # 各セクションの開始行と終了行のインデックスを格納
-            section_data = {}
-            
-            for i, line in enumerate(lines):
-                # 主要セクションを検出 (## で始まるもの)
+            sections = {}
+
+            result = {}
+
+            # 処理1：メインセクション（##）の分割
+            for line in lines:
+                # 新しいセクションの開始を検出
                 if line.startswith('## '):
                     # 前のセクションの内容を保存
-                    if current_section:
-                        section_content_text = '\n'.join(section_content).strip()
-                        if current_section in result:
-                            result[current_section] = section_content_text
-                    
-                    # 新しいセクションを設定
+                    if current_section and section_content:
+                        sections[current_section] = '\n'.join(section_content).strip()
+
+                    # 新しいセクションの開始
                     section_title = line[3:].strip()
                     current_section = self._get_section_key(section_title)
-                    current_subsection = None
                     section_content = []
-                    continue
-                
-                # サブセクションを検出 (### で始まるもの)
-                elif line.startswith('### '):
-                    # 前のサブセクションの内容を保存
-                    if current_subsection:
-                        section_content_text = '\n'.join(section_content).strip()
-                        if current_subsection in result:
-                            result[current_subsection] = section_content_text
-                    
-                    # 新しいサブセクションを設定
-                    subsection_title = line[4:].strip()
-                    
-                    # 各幕の処理
-                    if '第1幕' in subsection_title:
-                        # タイトルが「第1幕タイトル」の場合
-                        if current_section == 'act1_overview':
-                            result['act1_title'] = subsection_title.replace('第1幕', '').strip()
-                        current_subsection = 'act1_overview'
-                    elif '第2幕' in subsection_title:
-                        if current_section == 'act2_overview':
-                            result['act2_title'] = subsection_title.replace('第2幕', '').strip()
-                        current_subsection = 'act2_overview'
-                    elif '第3幕' in subsection_title:
-                        if current_section == 'act3_overview':
-                            result['act3_title'] = subsection_title.replace('第3幕', '').strip()
-                        current_subsection = 'act3_overview'
-                    
-                    # 世界観の詳細
-                    elif current_section == 'world_setting':
-                        if '基本的な世界観' in subsection_title:
-                            current_subsection = 'world_setting_basic'
-                        elif '特徴的な要素' in subsection_title:
-                            current_subsection = 'world_setting_features'
-                        else:
-                            current_subsection = current_section
-                    
-                    # 作風の詳細
-                    elif current_section == 'writing_style':
-                        if '文体と構造的特徴' in subsection_title:
-                            current_subsection = 'writing_style_structure'
-                        elif '表現技法' in subsection_title:
-                            current_subsection = 'writing_style_expression'
-                        elif 'テーマと主題' in subsection_title:
-                            current_subsection = 'writing_style_theme'
-                        else:
-                            current_subsection = current_section
-                    
-                    # 情緒的要素の詳細
-                    elif current_section == 'emotional':
-                        if '愛情表現' in subsection_title:
-                            current_subsection = 'emotional_love'
-                        elif '感情表現' in subsection_title:
-                            current_subsection = 'emotional_feelings'
-                        elif '雰囲気演出' in subsection_title:
-                            current_subsection = 'emotional_atmosphere'
-                        elif '官能的表現' in subsection_title:
-                            current_subsection = 'emotional_sensuality'
-                        else:
-                            current_subsection = current_section
-                    
-                    # テーマの説明
-                    elif current_section == 'theme' and 'テーマ（主題）の説明' in subsection_title:
-                        current_subsection = 'theme_description'
+                else:
+                    # セクションコンテンツに追加
+                    if current_section:
+                        section_content.append(line)
+
+            # 最後のセクションの内容を保存
+            if current_section and section_content:
+                sections[current_section] = '\n'.join(section_content).strip()
+
+            # セクション内容を結果辞書にコピー
+            for key, content in sections.items():
+                if key != 'plot':  # あらすじセクション以外をそのまま保存
+                    result[key] = content
+
+            # 処理2：あらすじセクションのサブセクション（###）処理
+            if 'plot' in sections:
+                content = sections['plot']
+                lines = content.split('\n')
+
+                current_section = None
+                section_content = []
+
+                # プロット文の処理と同じ流れでサブセクションを処理
+                for line in lines:
+                    # 新しいセクションの開始を検出
+                    if line.startswith('### '):
+                        # 前のセクションの内容を保存
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+
+                        # 新しいセクションの開始
+                        section_title = line[4:].strip()
+                        current_section = self._get_section_key(section_title)
+                        section_content = []
                     else:
-                        current_subsection = current_section
-                    
-                    section_content = []
-                    continue
-                
-                # 現在のセクションまたはサブセクションにコンテンツを追加
-                if current_subsection:
-                    section_content.append(line)
-                elif current_section:
-                    section_content.append(line)
-            
-            # 最後のセクション/サブセクションの内容を保存
-            if current_subsection and section_content:
-                section_content_text = '\n'.join(section_content).strip()
-                if current_subsection in result:
-                    result[current_subsection] = section_content_text
-            elif current_section and section_content:
-                section_content_text = '\n'.join(section_content).strip()
-                if current_section in result:
-                    result[current_section] = section_content_text
-            
+                        # セクションコンテンツに追加
+                        if current_section:
+                            section_content.append(line)
+
+            # 最後のセクションの内容を保存
+            if current_section and section_content:
+                sections[current_section] = '\n'.join(section_content).strip()
+
+            # セクション内容を結果辞書にコピー
+            for key, content in sections.items():
+                result[key] = content
+
             return result
         except Exception as e:
             logger.error(f"Error parsing basic setting content: {str(e)}")
@@ -235,7 +162,7 @@ class BasicSettingCreateView(views.APIView):
                 'act3_title': '',
                 'act3_overview': '',
             }
-    
+
     def _get_section_key(self, section_title):
         """セクションタイトルからモデルフィールド名に変換"""
         mapping = {
@@ -245,12 +172,12 @@ class BasicSettingCreateView(views.APIView):
             '時代と場所': 'time_place',
             '作品世界と舞台設定': 'world_setting',
             '参考とする作風': 'writing_style',
-            '参考とする作風パターン': 'writing_style',  
             '情緒的・感覚的要素': 'emotional',
             '主な登場人物': 'characters',
             '主な固有名詞': 'key_items',
             '物語の背景となる過去の謎': 'mystery',
-            'プロットパターン': 'plot_pattern',  
+            'プロットパターン': 'plot_pattern',
+            'あらすじ': 'plot',
             '第1幕': 'act1_overview',
             '第2幕': 'act2_overview',
             '第3幕': 'act3_overview',
@@ -410,14 +337,14 @@ class BasicSettingCreateView(views.APIView):
                 # ストリーミングAPIリクエスト
                 logger.debug("Sending streaming API request")
                 write_to_debug_log("Sending streaming API request")
-                
+
                 # DifyStreamingAPIを初期化
                 api = DifyStreamingAPI()
                 formatted_content = basic_setting_data.get_formatted_content()
-                
+
                 # 最後のチャンクを保持する変数
                 last_chunk = None
-                
+
                 # ストリーミングAPIリクエストを実行し、すべてのチャンクを内部で処理
                 for chunk in api.create_basic_setting_stream(
                     basic_setting_data=formatted_content,
@@ -427,15 +354,15 @@ class BasicSettingCreateView(views.APIView):
                     last_chunk = chunk
                     # ログにチャンク情報を記録（デバッグ用）
                     logger.debug(f"Received chunk: {json.dumps(chunk, ensure_ascii=False)[:100]}...")
-                
+
                 # 最後のチャンクからMarkdownコンテンツを抽出
                 if last_chunk:
                     try:
                         markdown_content = get_markdown_from_last_chunk(last_chunk)
-                        
+
                         # パースしてBasicSettingを作成
                         parsed_content = self._parse_basic_setting_content(markdown_content)
-                        
+
                         # BasicSettingを保存
                         basic_setting = BasicSetting.objects.create(
                             ai_story=ai_story,
@@ -469,15 +396,15 @@ class BasicSettingCreateView(views.APIView):
                             act3_overview=parsed_content.get('act3_overview', ''),
                             raw_content=markdown_content
                         )
-                        
+
                         # APIログを更新
                         api_log.is_success = True
                         api_log.response = markdown_content
                         api_log.save()
-                        
+
                         logger.debug(f"Basic setting created: {basic_setting.id}")
                         write_to_debug_log(f"Basic setting created: {basic_setting.id}")
-                        
+
                         # レスポンスを返す（従来の形式を維持）
                         result_serializer = BasicSettingSerializer(basic_setting)
                         logger.debug("Returning successful response")
@@ -559,59 +486,59 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         try:
             instance = self.get_object()
-            
+
             # act番号が指定されている場合、対応するフィールドのみを返す
             act_number = request.query_params.get('act')
             if act_number in ['1', '2', '3']:
                 act_num = int(act_number)
                 field_name = f'act{act_num}_overview'
-                
+
                 return Response({
                     'id': instance.id,
                     field_name: getattr(instance, field_name, '')
                 })
-                
+
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
         except Http404:
             # データが存在しない場合は204 No Contentを返す
             return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
     def update(self, request, *args, **kwargs):
         """
         オブジェクトを更新するメソッド
-        
+
         更新後、全フィールドをMarkdown形式で連結してraw_contentを生成します。
         特定の幕(act)のみの更新もサポートしています。
         幕のタイトルフィールドにはデフォルトで空文字を設定します。
         """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        
+
         # act番号が指定されている場合、対応するフィールドのみを更新
         act_number = request.query_params.get('act')
         if act_number in ['1', '2', '3']:
             act_num = int(act_number)
             field_name = f'act{act_num}_overview'
             title_field = f'act{act_num}_title'
-            
+
             if field_name in request.data:
                 # 該当する幕のフィールドのみを更新
                 setattr(instance, field_name, request.data[field_name])
                 # タイトルフィールドに空文字を設定
                 setattr(instance, title_field, '')
                 instance.save()
-                
+
                 # Markdownフォーマットでraw_contentを更新
                 raw_content = self._generate_raw_content(instance)
                 instance.raw_content = raw_content
                 instance.save()
-                
+
                 return Response({
                     'id': instance.id,
                     field_name: getattr(instance, field_name)
                 })
-        
+
         # タイトルフィールドに空文字を設定
         data = request.data.copy()
         if 'act1_title' not in data:
@@ -620,145 +547,145 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
             data['act2_title'] = ''
         if 'act3_title' not in data:
             data['act3_title'] = ''
-            
+
         # 通常の更新処理
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        
+
         # 更新後のインスタンスを取得
         updated_instance = self.get_object()
-        
+
         # Markdownフォーマットでraw_contentを生成
         raw_content = self._generate_raw_content(updated_instance)
-        
+
         # raw_contentを更新して保存
         updated_instance.raw_content = raw_content
         updated_instance.save()
-        
+
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
-        
+
         return Response(serializer.data)
-    
+
     def _generate_raw_content(self, instance):
         """
         BasicSettingの全フィールドをMarkdown形式で連結してraw_contentを生成する
-        
+
         Args:
             instance: BasicSettingインスタンス
-            
+
         Returns:
             str: Markdown形式の文字列
         """
         md_content = "# 作品設定\n\n"
-        
+
         # タイトル
         md_content += "## タイトル\n"
         md_content += f"{instance.title}\n\n"
-        
+
         # サマリー
         md_content += "## サマリー\n"
         md_content += f"{instance.summary}\n\n"
-        
+
         # テーマ（主題）
         md_content += "## テーマ（主題）\n"
         md_content += f"{instance.theme}\n\n"
-        
+
         # テーマ（主題）の説明
         if instance.theme_description:
             md_content += "### テーマ（主題）の説明\n"
             md_content += f"{instance.theme_description}\n\n"
-        
+
         # 時代と場所
         md_content += "## 時代と場所\n"
         md_content += f"{instance.time_place}\n\n"
-        
+
         # 作品世界と舞台設定
         md_content += "## 作品世界と舞台設定\n"
         md_content += f"{instance.world_setting}\n\n"
-        
+
         # 作品世界と舞台設定の説明
         if instance.world_setting_basic:
             md_content += "### 基本的な世界観\n"
             md_content += f"{instance.world_setting_basic}\n\n"
-        
+
         # 作品世界の特徴
         if instance.world_setting_features:
             md_content += "### 特徴的な要素\n"
             md_content += f"{instance.world_setting_features}\n\n"
-        
+
         # 参考とする作風
         md_content += "## 参考とする作風\n"
         md_content += f"{instance.writing_style}\n\n"
-        
+
         # 文体と構造的特徴
         if instance.writing_style_structure:
             md_content += "### 文体と構造的特徴\n"
             md_content += f"{instance.writing_style_structure}\n\n"
-        
+
         # 表現技法
         if instance.writing_style_expression:
             md_content += "### 表現技法\n"
             md_content += f"{instance.writing_style_expression}\n\n"
-        
+
         # テーマと主題
         if instance.writing_style_theme:
             md_content += "### テーマと主題\n"
             md_content += f"{instance.writing_style_theme}\n\n"
-        
+
         # 情緒的・感覚的要素
         md_content += "## 情緒的・感覚的要素\n"
         md_content += f"{instance.emotional}\n\n"
-        
+
         # 愛情表現
         if instance.emotional_love:
             md_content += "### 愛情表現\n"
             md_content += f"{instance.emotional_love}\n\n"
-        
+
         # 感情表現
         if instance.emotional_feelings:
             md_content += "### 感情表現\n"
             md_content += f"{instance.emotional_feelings}\n\n"
-        
+
         # 雰囲気演出
         if instance.emotional_atmosphere:
             md_content += "### 雰囲気演出\n"
             md_content += f"{instance.emotional_atmosphere}\n\n"
-        
+
         # 官能的表現
         if instance.emotional_sensuality:
             md_content += "### 官能的表現\n"
             md_content += f"{instance.emotional_sensuality}\n\n"
-        
+
         # 主な登場人物
         md_content += "## 主な登場人物\n"
         md_content += f"{instance.characters}\n\n"
-        
+
         # 物語の背景となる過去の謎
         md_content += "## 物語の背景となる過去の謎\n"
         md_content += f"{instance.mystery}\n\n"
-        
+
         # 主な固有名詞
         md_content += "## 主な固有名詞\n"
         md_content += f"{instance.key_items}\n\n"
-        
+
         # プロットパターン
         md_content += "## プロットパターン\n"
         md_content += f"{instance.plot_pattern}\n\n"
-        
+
         # 各幕の構成
         md_content += "## 第1幕\n"
         md_content += f"{instance.act1_overview}\n\n"
-        
+
         md_content += "## 第2幕\n"
         md_content += f"{instance.act2_overview}\n\n"
-        
+
         md_content += "## 第3幕\n"
         md_content += f"{instance.act3_overview}\n\n"
-        
+
         return md_content
 
 

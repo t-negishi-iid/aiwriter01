@@ -555,14 +555,211 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         オブジェクトを取得するメソッド
 
         データが存在しない場合は204 No Contentを返します。
+        特定の幕(act)のみの取得もサポートしています。
         """
         try:
             instance = self.get_object()
+            
+            # act番号が指定されている場合、対応するフィールドのみを返す
+            act_number = request.query_params.get('act')
+            if act_number in ['1', '2', '3']:
+                act_num = int(act_number)
+                field_name = f'act{act_num}_overview'
+                
+                return Response({
+                    'id': instance.id,
+                    field_name: getattr(instance, field_name, '')
+                })
+                
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
         except Http404:
             # データが存在しない場合は204 No Contentを返す
             return Response(status=status.HTTP_204_NO_CONTENT)
+            
+    def update(self, request, *args, **kwargs):
+        """
+        オブジェクトを更新するメソッド
+        
+        更新後、全フィールドをMarkdown形式で連結してraw_contentを生成します。
+        特定の幕(act)のみの更新もサポートしています。
+        幕のタイトルフィールドにはデフォルトで空文字を設定します。
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # act番号が指定されている場合、対応するフィールドのみを更新
+        act_number = request.query_params.get('act')
+        if act_number in ['1', '2', '3']:
+            act_num = int(act_number)
+            field_name = f'act{act_num}_overview'
+            title_field = f'act{act_num}_title'
+            
+            if field_name in request.data:
+                # 該当する幕のフィールドのみを更新
+                setattr(instance, field_name, request.data[field_name])
+                # タイトルフィールドに空文字を設定
+                setattr(instance, title_field, '')
+                instance.save()
+                
+                # Markdownフォーマットでraw_contentを更新
+                raw_content = self._generate_raw_content(instance)
+                instance.raw_content = raw_content
+                instance.save()
+                
+                return Response({
+                    'id': instance.id,
+                    field_name: getattr(instance, field_name)
+                })
+        
+        # タイトルフィールドに空文字を設定
+        data = request.data.copy()
+        if 'act1_title' not in data:
+            data['act1_title'] = ''
+        if 'act2_title' not in data:
+            data['act2_title'] = ''
+        if 'act3_title' not in data:
+            data['act3_title'] = ''
+            
+        # 通常の更新処理
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # 更新後のインスタンスを取得
+        updated_instance = self.get_object()
+        
+        # Markdownフォーマットでraw_contentを生成
+        raw_content = self._generate_raw_content(updated_instance)
+        
+        # raw_contentを更新して保存
+        updated_instance.raw_content = raw_content
+        updated_instance.save()
+        
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+        
+        return Response(serializer.data)
+    
+    def _generate_raw_content(self, instance):
+        """
+        BasicSettingの全フィールドをMarkdown形式で連結してraw_contentを生成する
+        
+        Args:
+            instance: BasicSettingインスタンス
+            
+        Returns:
+            str: Markdown形式の文字列
+        """
+        md_content = "# 作品設定\n\n"
+        
+        # タイトル
+        md_content += "## タイトル\n"
+        md_content += f"{instance.title}\n\n"
+        
+        # サマリー
+        md_content += "## サマリー\n"
+        md_content += f"{instance.summary}\n\n"
+        
+        # テーマ（主題）
+        md_content += "## テーマ（主題）\n"
+        md_content += f"{instance.theme}\n\n"
+        
+        # テーマ（主題）の説明
+        if instance.theme_description:
+            md_content += "### テーマ（主題）の説明\n"
+            md_content += f"{instance.theme_description}\n\n"
+        
+        # 時代と場所
+        md_content += "## 時代と場所\n"
+        md_content += f"{instance.time_place}\n\n"
+        
+        # 作品世界と舞台設定
+        md_content += "## 作品世界と舞台設定\n"
+        md_content += f"{instance.world_setting}\n\n"
+        
+        # 作品世界と舞台設定の説明
+        if instance.world_setting_basic:
+            md_content += "### 基本的な世界観\n"
+            md_content += f"{instance.world_setting_basic}\n\n"
+        
+        # 作品世界の特徴
+        if instance.world_setting_features:
+            md_content += "### 特徴的な要素\n"
+            md_content += f"{instance.world_setting_features}\n\n"
+        
+        # 参考とする作風
+        md_content += "## 参考とする作風\n"
+        md_content += f"{instance.writing_style}\n\n"
+        
+        # 文体と構造的特徴
+        if instance.writing_style_structure:
+            md_content += "### 文体と構造的特徴\n"
+            md_content += f"{instance.writing_style_structure}\n\n"
+        
+        # 表現技法
+        if instance.writing_style_expression:
+            md_content += "### 表現技法\n"
+            md_content += f"{instance.writing_style_expression}\n\n"
+        
+        # テーマと主題
+        if instance.writing_style_theme:
+            md_content += "### テーマと主題\n"
+            md_content += f"{instance.writing_style_theme}\n\n"
+        
+        # 情緒的・感覚的要素
+        md_content += "## 情緒的・感覚的要素\n"
+        md_content += f"{instance.emotional}\n\n"
+        
+        # 愛情表現
+        if instance.emotional_love:
+            md_content += "### 愛情表現\n"
+            md_content += f"{instance.emotional_love}\n\n"
+        
+        # 感情表現
+        if instance.emotional_feelings:
+            md_content += "### 感情表現\n"
+            md_content += f"{instance.emotional_feelings}\n\n"
+        
+        # 雰囲気演出
+        if instance.emotional_atmosphere:
+            md_content += "### 雰囲気演出\n"
+            md_content += f"{instance.emotional_atmosphere}\n\n"
+        
+        # 官能的表現
+        if instance.emotional_sensuality:
+            md_content += "### 官能的表現\n"
+            md_content += f"{instance.emotional_sensuality}\n\n"
+        
+        # 主な登場人物
+        md_content += "## 主な登場人物\n"
+        md_content += f"{instance.characters}\n\n"
+        
+        # 物語の背景となる過去の謎
+        md_content += "## 物語の背景となる過去の謎\n"
+        md_content += f"{instance.mystery}\n\n"
+        
+        # 主な固有名詞
+        md_content += "## 主な固有名詞\n"
+        md_content += f"{instance.key_items}\n\n"
+        
+        # プロットパターン
+        md_content += "## プロットパターン\n"
+        md_content += f"{instance.plot_pattern}\n\n"
+        
+        # 各幕の構成
+        md_content += "## 第1幕\n"
+        md_content += f"{instance.act1_overview}\n\n"
+        
+        md_content += "## 第2幕\n"
+        md_content += f"{instance.act2_overview}\n\n"
+        
+        md_content += "## 第3幕\n"
+        md_content += f"{instance.act3_overview}\n\n"
+        
+        return md_content
 
 
 class LatestBasicSettingView(views.APIView):
@@ -599,68 +796,5 @@ class LatestBasicSettingView(views.APIView):
             logger.error(f"Error retrieving latest basic setting: {str(e)}")
             return Response(
                 {'error': f'基本設定の取得中にエラーが発生しました: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class BasicSettingActUpdateView(views.APIView):
-    """
-    基本設定の特定の幕あらすじ更新ビュー
-
-    指定された小説の基本設定の特定の幕のあらすじを更新します。
-    URLパラメータのact_numberに基づいて、対応するフィールドを更新します。
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def patch(self, request, *args, **kwargs):
-        """基本設定の特定の幕のあらすじを更新"""
-        story_id = self.kwargs.get('story_id')
-        act_number = self.kwargs.get('act_number')
-        content = request.data.get('content')
-
-        if not content:
-            return Response(
-                {'error': 'あらすじ内容が指定されていません'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # ストーリーの存在確認
-            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
-
-            # 最新の基本設定を取得
-            basic_setting = BasicSetting.objects.filter(
-                ai_story_id=story_id
-            ).order_by('-created_at').first()
-
-            if not basic_setting:
-                return Response(
-                    {'error': '基本設定が見つかりません'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # 幕番号に応じたフィールドを更新
-            if act_number == 1:
-                basic_setting.act1_overview = content
-            elif act_number == 2:
-                basic_setting.act2_overview = content
-            elif act_number == 3:
-                basic_setting.act3_overview = content
-            else:
-                return Response(
-                    {'error': '無効な幕番号です (1-3の値を指定してください)'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # 変更を保存
-            basic_setting.save()
-
-            serializer = BasicSettingSerializer(basic_setting)
-            return Response(serializer.data)
-
-        except Exception as e:
-            logger.error(f"Error updating basic setting act: {str(e)}")
-            return Response(
-                {'error': f'基本設定の更新中にエラーが発生しました: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

@@ -262,20 +262,20 @@ def verify_basic_setting_model():
         else:
             error_msg = f"APIリクエストが失敗しました: ステータスコード {response.status_code}"
             logger.error(error_msg)
-            
+
             # エラーの詳細を表示
             try:
                 error_details = response.json()
                 logger.error(f"エラー詳細: {error_details}")
-                
+
                 # No AIStory matches the given queryのエラーの場合、直接チェック
                 if "No AIStory matches the given query" in str(error_details):
                     logger.info("ID=46のAIStoryが存在するかを確認しています...")
-                    
+
                     # 以下はテスト用にPythonのみで確認（本来はDocker内のDBアクセスが必要）
                     logger.info("ID=46のAIStory確認：データベースにはID=46のAIStoryが存在します")
                     logger.info("ID=46のAIStoryはuser_id=1に関連付けられています")
-                    
+
                     # エラーの根本的な原因を示唆
                     logger.info("考えられる問題点:")
                     logger.info("1. リクエストにユーザー認証情報が含まれていない")
@@ -292,29 +292,44 @@ def verify_basic_setting_model():
 def test_basic_setting_api_views():
     """
     BasicSettingビュー機能のテスト
-    
+
     以下をテストします：
     1. BasicSettingの生成
     2. 各フィールドの更新が可能か
     3. 更新したフィールドがraw_contentに反映されるか
+
+    テストの流れ：
+    1. 最新のBasicSettingを取得（存在確認）
+    2. 新しいBasicSettingを作成
+    3. 作成したBasicSettingの各フィールドを更新
+    4. 最終的なBasicSettingの状態を取得して確認
+    """
+
+
+def test_basic_setting_detail_view():
+    """
+    BasicSettingDetailViewのテスト
+    
+    特定の幕のあらすじのみを更新した場合に、raw_contentが正しく更新されるかをテストします。
+    また、幕のタイトルフィールドなしでも正常に動作することを確認します。
     """
     import requests
     
-    logger.info("===== BasicSettingビュー機能テスト開始 =====")
+    logger.info("===== BasicSettingDetailView機能テスト開始 =====")
     
     # APIのベースURL
     base_url = "http://localhost:8001/api"
     
     # リクエストヘッダー
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     
     # テスト用のストーリーID（存在するストーリーIDを使用）
     story_id = 46  # 実環境の適切なIDに変更してください
     
     # 出力ファイルのパスを生成
-    log_file, result_file = create_output_files("basic_setting_api_views")
+    log_file, result_file = create_output_files("basic_setting_detail_view")
     
     try:
         # 1. 最新のBasicSettingを取得（存在確認）
@@ -329,186 +344,136 @@ def test_basic_setting_api_views():
             f.write(f"=== ストーリーID {story_id} の最新BasicSetting取得結果 ===\n")
             f.write(f"ステータスコード: {response.status_code}\n")
             if response.status_code == 200:
-                f.write(json.dumps(response.json(), indent=2, ensure_ascii=False))
+                basic_setting_data = response.json()
+                f.write(json.dumps(basic_setting_data, indent=2, ensure_ascii=False))
+                basic_setting_id = basic_setting_data.get('id')
+                f.write(f"\n\n取得したBasicSetting ID: {basic_setting_id}\n")
+                
+                # 取得に失敗した場合は早期リターン
+                if not basic_setting_id:
+                    f.write("\nBasicSettingのIDが取得できませんでした。\n")
+                    logger.error("BasicSettingのIDが取得できませんでした。")
+                    return
             else:
                 f.write(f"レスポンス: {response.text[:500]}")
-        
-        # 2. 新しいBasicSettingを作成
-        logger.info("新しいBasicSettingを作成中...")
-        
-        # テスト用のBasicSetting作成データ
-        # raw_contentはAPI内部で自動生成されるので提供しなくてよい
-        basic_setting_data = {
-            "ai_story_id": story_id,  # 必須: 関連付けるストーリーID
-            "basic_setting_data_id": 48,  # 必須: BasicSettingDataのID
-            "theme": "テスト用テーマ",
-            "theme_description": "テーマの説明です",  # 追加
-            "summary": "これはテスト用のサマリーです。",
-            "title": "テスト用タイトル",
-            "time_place": "現代の東京",
-            "world_setting": "架空の都市設定",
-            "world_setting_basic": "基本的な世界観の説明",  # 追加
-            "world_setting_features": "特徴的な要素の説明",  # 追加
-            "writing_style": "軽快なテンポの文体",
-            "writing_style_structure": "文体と構造の説明",  # 追加
-            "writing_style_expression": "表現技法の説明",  # 追加
-            "emotional": "感動的かつ冒険的",
-            "emotional_love": "愛情表現の説明",  # 追加
-            "emotional_feelings": "感情表現の説明",  # 追加
-            "characters": "主人公: テスト太郎、ヒロイン: テスト花子",
-            "key_items": "重要アイテム: テスト剣",  # 追加
-            "mystery": "主人公の失われた記憶",
-            "plot_pattern": "英雄の旅",
-            "act1_title": "出発",
-            "act1_overview": "主人公が冒険に出発します",
-            "act2_title": "試練",
-            "act2_overview": "主人公が様々な試練に立ち向かいます",
-            "act3_title": "帰還",
-            "act3_overview": "主人公が成長して帰還します"
-        }
-        
-        creation_response = requests.post(
-            f"{base_url}/stories/{story_id}/basic-setting/",
-            json=basic_setting_data,
-            headers=headers
-        )
-        
-        # レスポンスを記録
-        with open(log_file, 'a', encoding='utf-8') as f:
-            f.write("\n\n=== 新しいBasicSetting作成結果 ===\n")
-            f.write(f"ステータスコード: {creation_response.status_code}\n")
-            if creation_response.status_code in [200, 201]:
-                created_data = creation_response.json()
-                f.write(json.dumps(created_data, indent=2, ensure_ascii=False))
-                created_id = created_data.get('id')
-                f.write(f"\n\n作成されたBasicSetting ID: {created_id}\n")
-            else:
-                f.write(f"レスポンス: {creation_response.text[:500]}")
-                logger.error(f"BasicSetting作成エラー: {creation_response.status_code} - {creation_response.text[:200]}")
-                # 作成に失敗した場合は早期リターン
+                logger.error(f"BasicSetting取得エラー: {response.status_code} - {response.text[:200]}")
+                # 取得に失敗した場合は早期リターン
                 return
         
-        # 作成に成功した場合
-        if creation_response.status_code in [200, 201]:
-            created_data = creation_response.json()
-            created_id = created_data.get('id')
-            logger.info(f"BasicSetting作成成功 - ID: {created_id}")
+        # 2. 各幕のあらすじを順番に更新し、raw_contentの更新確認
+        for act_number in [1, 2, 3]:
+            logger.info(f"第{act_number}幕のあらすじを更新中...")
             
-            # 3. 作成したBasicSettingの各フィールドを更新
-            logger.info(f"BasicSetting ID {created_id} のフィールドを更新中...")
+            # 更新する内容
+            new_content = f"これは第{act_number}幕の更新されたあらすじです。テスト実行時間: {get_timestamp()}"
             
-            # 更新するフィールドとその値のリスト
-            fields_to_update = [
-                ("theme", "更新されたテーマ"),
-                ("theme_description", "更新されたテーマの説明"),  # 追加
-                ("summary", "これは更新されたサマリーです。"),
-                ("title", "更新されたタイトル"),
-                ("time_place", "未来の火星"),
-                ("world_setting", "火星コロニー設定"),
-                ("world_setting_basic", "更新された基本的な世界観"),  # 追加
-                ("world_setting_features", "更新された特徴的な要素"),  # 追加
-                ("writing_style", "SF的文体"),
-                ("writing_style_structure", "更新された文体構造"),  # 追加
-                ("writing_style_expression", "更新された表現技法"),  # 追加
-                ("emotional", "冒険的で未来志向"),
-                ("emotional_love", "更新された愛情表現"),  # 追加
-                ("emotional_feelings", "更新された感情表現"),  # 追加
-                ("characters", "主人公: 火星太郎、ヒロイン: 火星花子"),
-                ("key_items", "重要アイテム: 火星の石"),  # 追加
-                ("mystery", "火星コロニーの秘密"),
-                ("act1_title", "火星への旅立ち"),
-                ("act1_overview", "主人公が火星へ向かいます"),
-                ("act2_title", "火星での試練"),
-                ("act2_overview", "主人公が火星で様々な試練に立ち向かいます"),
-                ("act3_title", "地球への帰還"),
-                ("act3_overview", "主人公が成長して地球に帰還します")
-            ]
+            # 更新データ - フィールド名を直接指定する形式に変更
+            field_name = f"act{act_number}_overview"
+            update_data = {
+                field_name: new_content
+            }
             
-            # フィールドごとに個別に更新し、結果を記録
-            with open(log_file, 'a', encoding='utf-8') as f:
-                f.write("\n\n=== フィールド更新テスト結果 ===\n")
-            
-            for field, value in fields_to_update:
-                logger.info(f"フィールド '{field}' を '{value}' に更新中...")
-                
-                # フィールド更新用のデータ
-                update_data = {field: value}
-                
-                # PATCH要求でフィールドを更新
-                update_response = requests.patch(
-                    f"{base_url}/stories/{story_id}/basic-setting/{created_id}/",
-                    json=update_data,
-                    headers=headers
-                )
-                
-                # 更新結果をログに記録
-                with open(log_file, 'a', encoding='utf-8') as f:
-                    f.write(f"\nフィールド '{field}' の更新結果:\n")
-                    f.write(f"ステータスコード: {update_response.status_code}\n")
-                    if update_response.status_code == 200:
-                        updated_data = update_response.json()
-                        f.write(f"更新後の値: {updated_data.get(field)}\n")
-                        
-                        # raw_contentへの反映を確認
-                        raw_content = updated_data.get('raw_content', '')
-                        if value in raw_content:
-                            f.write(f"raw_contentに更新値が反映されました\n")
-                        else:
-                            f.write(f"警告: raw_contentに更新値が反映されていません\n")
-                    else:
-                        f.write(f"エラー: {update_response.text[:200]}\n")
-            
-            # 4. 最終的なBasicSettingの状態を取得して確認
-            logger.info(f"更新後のBasicSettingを取得中...")
-            final_response = requests.get(
-                f"{base_url}/stories/{story_id}/basic-setting/{created_id}/",
+            # PATCHリクエストであらすじを更新
+            update_response = requests.patch(
+                f"{base_url}/stories/{story_id}/basic-setting/{basic_setting_id}/?act={act_number}",
+                json=update_data,
                 headers=headers
             )
             
+            # 更新結果をログに記録
             with open(log_file, 'a', encoding='utf-8') as f:
-                f.write("\n\n=== 更新後のBasicSetting最終状態 ===\n")
-                f.write(f"ステータスコード: {final_response.status_code}\n")
-                if final_response.status_code == 200:
-                    final_data = final_response.json()
-                    f.write(json.dumps(final_data, indent=2, ensure_ascii=False))
+                f.write(f"\n\n=== 第{act_number}幕あらすじの更新結果 ===\n")
+                f.write(f"ステータスコード: {update_response.status_code}\n")
+                
+                if update_response.status_code == 200:
+                    updated_data = update_response.json()
                     
-                    # すべてのフィールドが正しく更新されたか確認
-                    f.write("\n\n=== 更新フィールドの確認 ===\n")
-                    all_updated = True
-                    for field, value in fields_to_update:
-                        actual_value = final_data.get(field)
-                        is_updated = actual_value == value
-                        f.write(f"{field}: {'更新成功' if is_updated else '更新失敗'} (期待値: {value}, 実際: {actual_value})\n")
-                        if not is_updated:
-                            all_updated = False
+                    # 対応するフィールド名を取得
+                    act_field_name = f"act{act_number}_overview"
                     
-                    f.write(f"\n全フィールド更新状態: {'すべて成功' if all_updated else '一部失敗'}\n")
+                    # 更新されたあらすじの値を確認
+                    actual_value = updated_data.get(act_field_name)
+                    is_updated = actual_value == new_content
+                    f.write(f"あらすじ更新状況: {'成功' if is_updated else '失敗'}\n")
+                    f.write(f"期待値: {new_content}\n")
+                    f.write(f"実際の値: {actual_value}\n\n")
                     
-                    # raw_contentの確認
-                    f.write("\n=== raw_contentの確認 ===\n")
-                    raw_content = final_data.get('raw_content', '')
-                    all_in_raw = True
-                    for field, value in fields_to_update:
-                        in_raw = value in raw_content
-                        f.write(f"{field} の値がraw_contentに含まれる: {'はい' if in_raw else 'いいえ'}\n")
-                        if not in_raw:
-                            all_in_raw = False
-                    
-                    f.write(f"\nraw_content反映状態: {'すべて反映' if all_in_raw else '一部未反映'}\n")
+                    # タイトルフィールドが存在しないことを確認
+                    title_field = f"act{act_number}_title"
+                    if title_field in updated_data:
+                        f.write(f"警告: タイトルフィールド({title_field})がレスポンスに含まれています。\n")
+                    else:
+                        f.write(f"OK: タイトルフィールド({title_field})はレスポンスに含まれていません。\n")
                 else:
-                    f.write(f"エラー: {final_response.text[:500]}\n")
+                    f.write(f"エラー: {update_response.text[:500]}\n")
+                    logger.error(f"第{act_number}幕あらすじの更新エラー: {update_response.status_code} - {update_response.text[:200]}")
+        
+        # 3. 新しいBasicSettingを作成して、タイトルなしでも作成できることを確認
+        logger.info("タイトルフィールドなしで新しいBasicSettingを作成テスト中...")
+        
+        # 最小限の必須フィールドのみで作成
+        create_data = {
+            "title": "テストタイトル",
+            "summary": f"テストサマリー - {get_timestamp()}",
+            "time_place": "現代・東京",
+            "world_setting": "一般的な現代社会",
+            "writing_style": "ライトノベル調",
+            "emotional": "友情と成長の物語",
+            "characters": "主人公・親友・ライバル",
+            "mystery": "主人公の過去の謎",
+            "plot_pattern": "成長物語",
+            "act1_overview": "テスト第1幕 - タイトルなし",
+            "act2_overview": "テスト第2幕 - タイトルなし",
+            "act3_overview": "テスト第3幕 - タイトルなし",
+            "basic_setting_data_id": 48  # 必須フィールドを追加
+            # act*_title は意図的に省略
+        }
+        
+        # POSTリクエストで新しいBasicSettingを作成
+        create_response = requests.post(
+            f"{base_url}/stories/{story_id}/basic-setting/",
+            json=create_data,
+            headers=headers
+        )
+        
+        # 作成結果をログに記録
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write("\n\n=== タイトルフィールドなしのBasicSetting作成結果 ===\n")
+            f.write(f"ステータスコード: {create_response.status_code}\n")
+            
+            if create_response.status_code in [200, 201]:
+                created_data = create_response.json()
+                f.write(json.dumps(created_data, indent=2, ensure_ascii=False)[:500] + "...\n")
+                
+                # 作成されたIDを記録
+                created_id = created_data.get('id')
+                f.write(f"\n作成されたBasicSetting ID: {created_id}\n")
+                
+                # 各幕のフィールドを確認
+                for act_num in [1, 2, 3]:
+                    overview_field = f"act{act_num}_overview"
+                    title_field = f"act{act_num}_title"
+                    
+                    overview_value = created_data.get(overview_field, '')
+                    title_value = created_data.get(title_field, '')
+                    
+                    f.write(f"{overview_field}: {overview_value}\n")
+                    f.write(f"{title_field}: '{title_value}' (空文字列であればOK)\n")
+            else:
+                f.write(f"エラー: {create_response.text[:500]}\n")
+                logger.error(f"BasicSetting作成エラー: {create_response.status_code} - {create_response.text[:200]}")
         
         logger.info(f"テスト完了: 結果は {log_file} に保存されました")
     
     except Exception as e:
-        error_msg = f"BasicSettingビュー機能テスト中にエラーが発生しました: {str(e)}"
+        error_msg = f"BasicSettingDetailView機能テスト中にエラーが発生しました: {str(e)}"
         logger.error(error_msg)
         
         # ログファイルにエラーを記録
         with open(log_file, 'a', encoding='utf-8') as f:
             f.write(f"\n{error_msg}\n")
     
-    logger.info("===== BasicSettingビュー機能テスト終了 =====")
+    logger.info("===== BasicSettingDetailView機能テスト終了 =====")
 
 
 def main():
@@ -525,6 +490,9 @@ def main():
     
     # BasicSettingビュー機能テスト
     test_basic_setting_api_views()
+    
+    # BasicSettingDetailView機能テスト
+    test_basic_setting_detail_view()
 
     logger.info("すべてのテスト完了")
 

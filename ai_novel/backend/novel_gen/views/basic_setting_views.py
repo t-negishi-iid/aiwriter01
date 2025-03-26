@@ -177,7 +177,7 @@ class BasicSettingCreateView(views.APIView):
             '主な固有名詞': 'key_items',
             '物語の背景となる過去の謎': 'mystery',
             'プロットパターン': 'plot_pattern',
-            'あらすじ': 'plot',
+            'あらすじ': 'plot', # パース時の一時的なバッファ
             '第1幕': 'act1_overview',
             '第2幕': 'act2_overview',
             '第3幕': 'act3_overview',
@@ -571,122 +571,45 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Response(serializer.data)
 
     def _generate_raw_content(self, instance):
-        """
-        BasicSettingの全フィールドをMarkdown形式で連結してraw_contentを生成する
-
-        Args:
-            instance: BasicSettingインスタンス
-
-        Returns:
-            str: Markdown形式の文字列
-        """
-        md_content = "# 作品設定\n\n"
-
-        # タイトル
-        md_content += "## タイトル\n"
-        md_content += f"{instance.title}\n\n"
-
-        # サマリー
-        md_content += "## サマリー\n"
-        md_content += f"{instance.summary}\n\n"
-
-        # テーマ（主題）
-        md_content += "## テーマ（主題）\n"
-        md_content += f"{instance.theme}\n\n"
-
-        # テーマ（主題）の説明
-        if instance.theme_description:
-            md_content += "### テーマ（主題）の説明\n"
-            md_content += f"{instance.theme_description}\n\n"
-
-        # 時代と場所
-        md_content += "## 時代と場所\n"
-        md_content += f"{instance.time_place}\n\n"
-
-        # 作品世界と舞台設定
-        md_content += "## 作品世界と舞台設定\n"
-        md_content += f"{instance.world_setting}\n\n"
-
-        # 作品世界と舞台設定の説明
-        if instance.world_setting_basic:
-            md_content += "### 基本的な世界観\n"
-            md_content += f"{instance.world_setting_basic}\n\n"
-
-        # 作品世界の特徴
-        if instance.world_setting_features:
-            md_content += "### 特徴的な要素\n"
-            md_content += f"{instance.world_setting_features}\n\n"
-
-        # 参考とする作風
-        md_content += "## 参考とする作風\n"
-        md_content += f"{instance.writing_style}\n\n"
-
-        # 文体と構造的特徴
-        if instance.writing_style_structure:
-            md_content += "### 文体と構造的特徴\n"
-            md_content += f"{instance.writing_style_structure}\n\n"
-
-        # 表現技法
-        if instance.writing_style_expression:
-            md_content += "### 表現技法\n"
-            md_content += f"{instance.writing_style_expression}\n\n"
-
-        # テーマと主題
-        if instance.writing_style_theme:
-            md_content += "### テーマと主題\n"
-            md_content += f"{instance.writing_style_theme}\n\n"
-
-        # 情緒的・感覚的要素
-        md_content += "## 情緒的・感覚的要素\n"
-        md_content += f"{instance.emotional}\n\n"
-
-        # 愛情表現
-        if instance.emotional_love:
-            md_content += "### 愛情表現\n"
-            md_content += f"{instance.emotional_love}\n\n"
-
-        # 感情表現
-        if instance.emotional_feelings:
-            md_content += "### 感情表現\n"
-            md_content += f"{instance.emotional_feelings}\n\n"
-
-        # 雰囲気演出
-        if instance.emotional_atmosphere:
-            md_content += "### 雰囲気演出\n"
-            md_content += f"{instance.emotional_atmosphere}\n\n"
-
-        # 官能的表現
-        if instance.emotional_sensuality:
-            md_content += "### 官能的表現\n"
-            md_content += f"{instance.emotional_sensuality}\n\n"
-
-        # 主な登場人物
-        md_content += "## 主な登場人物\n"
-        md_content += f"{instance.characters}\n\n"
-
-        # 物語の背景となる過去の謎
-        md_content += "## 物語の背景となる過去の謎\n"
-        md_content += f"{instance.mystery}\n\n"
-
-        # 主な固有名詞
-        md_content += "## 主な固有名詞\n"
-        md_content += f"{instance.key_items}\n\n"
-
-        # プロットパターン
-        md_content += "## プロットパターン\n"
-        md_content += f"{instance.plot_pattern}\n\n"
-
-        # 各幕の構成
-        md_content += "## 第1幕\n"
-        md_content += f"{instance.act1_overview}\n\n"
-
-        md_content += "## 第2幕\n"
-        md_content += f"{instance.act2_overview}\n\n"
-
-        md_content += "## 第3幕\n"
-        md_content += f"{instance.act3_overview}\n\n"
-
-        return md_content
+        """オブジェクトの各フィールドからMarkdown形式のraw_contentを生成"""
+        
+        # セクションタイトルのマッピング（_get_section_keyの逆マッピング）
+        section_titles = {
+            'title': 'タイトル',
+            'summary': 'サマリー',
+            'theme': 'テーマ（主題）',
+            'time_place': '時代と場所',
+            'world_setting': '作品世界と舞台設定',
+            'writing_style': '参考とする作風',
+            'emotional': '情緒的・感覚的要素',
+            'characters': '主な登場人物',
+            'key_items': '主な固有名詞',
+            'mystery': '物語の背景となる過去の謎',
+            'plot_pattern': 'プロットパターン',
+        }
+        
+        # 生成するMarkdownテキスト
+        content_parts = ["# 作品設定\n"]
+        
+        # 通常のセクションを処理
+        for field, title in section_titles.items():
+            field_value = getattr(instance, field, '')
+            if field_value:
+                content_parts.append(f"## {title}\n{field_value}\n")
+        
+        # あらすじセクションの特別処理
+        plot_parts = []
+        for act_num in [1, 2, 3]:
+            act_content = getattr(instance, f'act{act_num}_overview', '')
+            if act_content:
+                plot_parts.append(f"### 第{act_num}幕\n{act_content}")
+        
+        # あらすじセクションがあれば追加
+        if plot_parts:
+            content_parts.append("## あらすじ\n" + "\n\n".join(plot_parts) + "\n")
+        
+        # すべてのパーツを結合
+        return "\n".join(content_parts)
 
 
 class LatestBasicSettingView(views.APIView):

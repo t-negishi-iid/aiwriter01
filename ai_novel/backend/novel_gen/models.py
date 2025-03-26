@@ -149,26 +149,26 @@ class BasicSetting(TimeStampedModel):
     title = models.TextField(_('タイトル'))
     summary = models.TextField(_('サマリー'))
     theme = models.TextField(_('テーマ（主題）'), blank=True)
-    theme_description = models.TextField(_('テーマ（主題）の説明'), blank=True)
+    theme_description = models.TextField(_('テーマ（主題）の説明'), blank=True) # 未使用 常に空文字
     time_place = models.TextField(_('時代と場所'), blank=True)
 
     # 世界設定
     world_setting = models.TextField(_('作品世界と舞台設定'), blank=True)
-    world_setting_basic = models.TextField(_('基本的な世界観'), blank=True)
-    world_setting_features = models.TextField(_('特徴的な要素'), blank=True)
+    world_setting_basic = models.TextField(_('基本的な世界観'), blank=True) # 未使用 常に空文字
+    world_setting_features = models.TextField(_('特徴的な要素'), blank=True) # 未使用 常に空文字
 
     # 作風・表現
     writing_style = models.TextField(_('参考とする作風'), blank=True)
-    writing_style_structure = models.TextField(_('文体と構造的特徴'), blank=True)
-    writing_style_expression = models.TextField(_('表現技法'), blank=True)
-    writing_style_theme = models.TextField(_('テーマと主題'), blank=True)
+    writing_style_structure = models.TextField(_('文体と構造的特徴'), blank=True) # 未使用 常に空文字
+    writing_style_expression = models.TextField(_('表現技法'), blank=True) # 未使用 常に空文字
+    writing_style_theme = models.TextField(_('テーマと主題'), blank=True) # 未使用 常に空文字
 
     # 情緒要素
     emotional = models.TextField(_('情緒的・感覚的要素'), blank=True)
-    emotional_love = models.TextField(_('愛情表現'), blank=True)
-    emotional_feelings = models.TextField(_('感情表現'), blank=True)
-    emotional_atmosphere = models.TextField(_('雰囲気演出'), blank=True)
-    emotional_sensuality = models.TextField(_('官能的表現'), blank=True)
+    emotional_love = models.TextField(_('愛情表現'), blank=True) # 未使用 常に空文字
+    emotional_feelings = models.TextField(_('感情表現'), blank=True) # 未使用 常に空文字
+    emotional_atmosphere = models.TextField(_('雰囲気演出'), blank=True) # 未使用 常に空文字
+    emotional_sensuality = models.TextField(_('官能的表現'), blank=True) # 未使用 常に空文字
 
     # 登場人物・固有名詞
     characters = models.TextField(_('主な登場人物'), blank=True)

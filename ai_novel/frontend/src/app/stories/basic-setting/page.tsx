@@ -31,20 +31,20 @@ interface WorkSettingData {
   title: string;              // タイトル
   summary: string;            // サマリー
   theme: string;              // テーマ（主題）
-  themeDescription: string;   // テーマ（主題）の説明
+  themeDescription: string;   // テーマ（主題）の説明：未使用
   timePlace: string;          // 時代と場所
   worldSetting: string;       // 作品世界と舞台設定
-  worldSettingBasic: string;  // 基本的な世界観
-  worldSettingFeatures: string;// 特徴的な要素
+  worldSettingBasic: string;  // 基本的な世界観：未使用
+  worldSettingFeatures: string;// 特徴的な要素：未使用
   writingStyle: string;       // 参考とする作風
-  writingStyleStructure: string;// 文体と構造的特徴
-  writingStyleExpression: string;// 表現技法
-  writingStyleTheme: string;  // テーマと主題
+  writingStyleStructure: string;// 文体と構造的特徴：未使用
+  writingStyleExpression: string;// 表現技法：未使用
+  writingStyleTheme: string;  // テーマと主題：未使用
   emotional: string;          // 情緒的・感覚的要素
-  emotionalLove: string;      // 愛情表現
-  emotionalFeelings: string;  // 感情表現
-  emotionalAtmosphere: string;// 雰囲気演出
-  emotionalSensuality: string;// 官能的表現
+  emotionalLove: string;      // 愛情表現：未使用
+  emotionalFeelings: string;  // 感情表現：未使用
+  emotionalAtmosphere: string;// 雰囲気演出：未使用
+  emotionalSensuality: string;// 官能的表現：未使用
   characters: string;         // 主な登場人物
   keyItems: string;           // 主な固有名詞
   mystery: string;            // 物語の背景となる過去の謎
@@ -412,11 +412,6 @@ export default function BasicSettingPage() {
 
   // 作品設定のコンテンツ
   const WorkSettingContent = () => {
-    const [showMainSettings, setShowMainSettings] = useState(true);
-    const [showWorldSettings, setShowWorldSettings] = useState(false);
-    const [showWritingStyle, setShowWritingStyle] = useState(false);
-    const [showEmotional, setShowEmotional] = useState(false);
-    const [showCharacters, setShowCharacters] = useState(false);
     const [showActs, setShowActs] = useState(false);
 
     // WorldSettingSelectorと同様のスタイル
@@ -455,344 +450,190 @@ export default function BasicSettingPage() {
           <CardDescription>小説の世界観や設定情報</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* グループ1: 主要設定フォーム */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowMainSettings(!showMainSettings)}
-            >
-              <span style={expandIconStyle}>
-                {showMainSettings ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>基本情報</h3>
+
+          <div className="space-y-4 mt-4">
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">タイトル</h3>
+              <textarea
+                id="title"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                placeholder="タイトルを入力してください"
+                value={workSettingData.title || ''}
+                onChange={handleWorkSettingChange('title')}
+                rows={2}
+              />
             </div>
 
-            {showMainSettings && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">タイトル</h3>
-                  <textarea
-                    id="title"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-50"
-                    placeholder="タイトルを入力してください"
-                    value={workSettingData.title || ''}
-                    onChange={handleWorkSettingChange('title')}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">サマリー</h3>
-                  <textarea
-                    id="summary"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="サマリーを入力してください"
-                    value={workSettingData.summary || ''}
-                    onChange={handleWorkSettingChange('summary')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">テーマ（主題）</h3>
-                  <textarea
-                    id="theme"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="テーマを入力してください"
-                    value={workSettingData.theme || ''}
-                    onChange={handleWorkSettingChange('theme')}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">テーマ（主題）の説明</h3>
-                  <textarea
-                    id="theme-description"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="テーマの説明を入力してください"
-                    value={workSettingData.themeDescription || ''}
-                    onChange={handleWorkSettingChange('themeDescription')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">時代と場所</h3>
-                  <textarea
-                    id="time-place"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="時代と場所を入力してください"
-                    value={workSettingData.timePlace || ''}
-                    onChange={handleWorkSettingChange('timePlace')}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* グループ2: 世界設定 */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowWorldSettings(!showWorldSettings)}
-            >
-              <span style={expandIconStyle}>
-                {showWorldSettings ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>世界設定</h3>
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">サマリー</h3>
+              <textarea
+                id="summary"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
+                placeholder="サマリーを入力してください"
+                value={workSettingData.summary || ''}
+                onChange={handleWorkSettingChange('summary')}
+                rows={4}
+              />
             </div>
 
-            {showWorldSettings && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">作品世界と舞台設定</h3>
-                  <textarea
-                    id="world-setting"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="作品世界と舞台設定を入力してください"
-                    value={workSettingData.worldSetting || ''}
-                    onChange={handleWorkSettingChange('worldSetting')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">基本的な世界観</h3>
-                  <textarea
-                    id="world-setting-basic"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="基本的な世界観を入力してください"
-                    value={workSettingData.worldSettingBasic || ''}
-                    onChange={handleWorkSettingChange('worldSettingBasic')}
-                    rows={5}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">特徴的な要素</h3>
-                  <textarea
-                    id="world-setting-features"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="特徴的な要素を入力してください"
-                    value={workSettingData.worldSettingFeatures || ''}
-                    onChange={handleWorkSettingChange('worldSettingFeatures')}
-                    rows={5}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* グループ3: 作風・表現 */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowWritingStyle(!showWritingStyle)}
-            >
-              <span style={expandIconStyle}>
-                {showWritingStyle ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>作風・表現</h3>
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">テーマ（主題）</h3>
+              <textarea
+                id="theme"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                placeholder="テーマを入力してください"
+                value={workSettingData.theme || ''}
+                onChange={handleWorkSettingChange('theme')}
+                rows={3}
+              />
             </div>
 
-            {showWritingStyle && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">参考とする作風</h3>
-                  <textarea
-                    id="writing-style"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="参考とする作風を入力してください"
-                    value={workSettingData.writingStyle || ''}
-                    onChange={handleWorkSettingChange('writingStyle')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">文体と構造的特徴</h3>
-                  <textarea
-                    id="writing-style-structure"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="文体と構造的特徴を入力してください"
-                    value={workSettingData.writingStyleStructure || ''}
-                    onChange={handleWorkSettingChange('writingStyleStructure')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">表現技法</h3>
-                  <textarea
-                    id="writing-style-expression"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="表現技法を入力してください"
-                    value={workSettingData.writingStyleExpression || ''}
-                    onChange={handleWorkSettingChange('writingStyleExpression')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">テーマと主題</h3>
-                  <textarea
-                    id="writing-style-theme"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="テーマと主題を入力してください"
-                    value={workSettingData.writingStyleTheme || ''}
-                    onChange={handleWorkSettingChange('writingStyleTheme')}
-                    rows={4}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* グループ4: 情緒要素 */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowEmotional(!showEmotional)}
-            >
-              <span style={expandIconStyle}>
-                {showEmotional ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>情緒要素</h3>
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">時代と場所</h3>
+              <textarea
+                id="time-place"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                placeholder="時代と場所を入力してください"
+                value={workSettingData.timePlace || ''}
+                onChange={handleWorkSettingChange('timePlace')}
+                rows={3}
+              />
             </div>
 
-            {showEmotional && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">情緒的・感覚的要素</h3>
-                  <textarea
-                    id="emotional"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="情緒的・感覚的要素を入力してください"
-                    value={workSettingData.emotional || ''}
-                    onChange={handleWorkSettingChange('emotional')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">愛情表現</h3>
-                  <textarea
-                    id="emotional-love"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="愛情表現を入力してください"
-                    value={workSettingData.emotionalLove || ''}
-                    onChange={handleWorkSettingChange('emotionalLove')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">感情表現</h3>
-                  <textarea
-                    id="emotional-feelings"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="感情表現を入力してください"
-                    value={workSettingData.emotionalFeelings || ''}
-                    onChange={handleWorkSettingChange('emotionalFeelings')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">雰囲気演出</h3>
-                  <textarea
-                    id="emotional-atmosphere"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="雰囲気演出を入力してください"
-                    value={workSettingData.emotionalAtmosphere || ''}
-                    onChange={handleWorkSettingChange('emotionalAtmosphere')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">官能的表現</h3>
-                  <textarea
-                    id="emotional-sensuality"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
-                    placeholder="官能的表現を入力してください"
-                    value={workSettingData.emotionalSensuality || ''}
-                    onChange={handleWorkSettingChange('emotionalSensuality')}
-                    rows={4}
-                  />
-                </div>
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">作品世界と舞台設定</h3>
+                <textarea
+                  id="world-setting"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="作品世界と舞台設定を入力してください"
+                  value={workSettingData.worldSetting || ''}
+                  onChange={handleWorkSettingChange('worldSetting')}
+                  rows={6}
+                />
               </div>
-            )}
-          </div>
-
-          {/* グループ5: 登場人物・背景 */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              style={leftAlignedHeaderStyle}
-              onClick={() => setShowCharacters(!showCharacters)}
-            >
-              <span style={expandIconStyle}>
-                {showCharacters ? '▼' : '▶'}
-              </span>
-              <h3 style={categoryTitleStyle}>登場人物・背景・設定</h3>
             </div>
 
-            {showCharacters && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">主な登場人物</h3>
-                  <textarea
-                    id="characters"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
-                    placeholder="主な登場人物を入力してください"
-                    value={workSettingData.characters || ''}
-                    onChange={handleWorkSettingChange('characters')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">主な固有名詞</h3>
-                  <textarea
-                    id="key-items"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
-                    placeholder="主な固有名詞を入力してください"
-                    value={workSettingData.keyItems || ''}
-                    onChange={handleWorkSettingChange('keyItems')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">物語の背景となる過去の謎</h3>
-                  <textarea
-                    id="mystery"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="物語の背景となる過去の謎を入力してください"
-                    value={workSettingData.mystery || ''}
-                    onChange={handleWorkSettingChange('mystery')}
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">プロットパターン</h3>
-                  <textarea
-                    id="plot-pattern"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-50"
-                    placeholder="プロットパターンを入力してください"
-                    value={workSettingData.plotPattern || ''}
-                    onChange={handleWorkSettingChange('plotPattern')}
-                    rows={4}
-                  />
-                </div>
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">参考とする作風</h3>
+                <textarea
+                  id="writing-style"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
+                  placeholder="参考とする作風を入力してください"
+                  value={workSettingData.writingStyle || ''}
+                  onChange={handleWorkSettingChange('writingStyle')}
+                  rows={4}
+                />
               </div>
-            )}
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">情緒的・感覚的要素</h3>
+                <textarea
+                  id="emotional"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
+                  placeholder="情緒的・感覚的要素を入力してください"
+                  value={workSettingData.emotional || ''}
+                  onChange={handleWorkSettingChange('emotional')}
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">主な登場人物</h3>
+                <textarea
+                  id="characters"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="主な登場人物を入力してください"
+                  value={workSettingData.characters || ''}
+                  onChange={handleWorkSettingChange('characters')}
+                  rows={6}
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">主な固有名詞</h3>
+                <textarea
+                  id="key-items"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="主な固有名詞を入力してください"
+                  value={workSettingData.keyItems || ''}
+                  onChange={handleWorkSettingChange('keyItems')}
+                  rows={4}
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">物語の背景となる過去の謎</h3>
+                <textarea
+                  id="mystery"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="物語の背景となる過去の謎を入力してください"
+                  value={workSettingData.mystery || ''}
+                  onChange={handleWorkSettingChange('mystery')}
+                  rows={4}
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">プロットパターン</h3>
+                <textarea
+                  id="plot-pattern"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                  placeholder="プロットパターンを入力してください"
+                  value={workSettingData.plotPattern || ''}
+                  onChange={handleWorkSettingChange('plotPattern')}
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第1幕概要</h3>
+                <textarea
+                  id="act1-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第1幕の概要を入力してください"
+                  value={workSettingData.act1Overview || ''}
+                  onChange={handleWorkSettingChange('act1Overview')}
+                  rows={6}
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第2幕概要</h3>
+                <textarea
+                  id="act2-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第2幕の概要を入力してください"
+                  value={workSettingData.act2Overview || ''}
+                  onChange={handleWorkSettingChange('act2Overview')}
+                  rows={6}
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第3幕概要</h3>
+                <textarea
+                  id="act3-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第3幕の概要を入力してください"
+                  value={workSettingData.act3Overview || ''}
+                  onChange={handleWorkSettingChange('act3Overview')}
+                  rows={6}
+                />
+              </div>
+            </div>
+
           </div>
 
-          {/* グループ6: 各幕の構成 */}
+
+          {/* 生データ */}
           <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
             <div
               style={leftAlignedHeaderStyle}
@@ -801,63 +642,24 @@ export default function BasicSettingPage() {
               <span style={expandIconStyle}>
                 {showActs ? '▼' : '▶'}
               </span>
-              <h3 style={categoryTitleStyle}>各幕の構成</h3>
+              <h3 style={categoryTitleStyle}>生データ</h3>
             </div>
 
             {showActs && (
-              <div className="space-y-4 mt-4">
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第1幕概要</h3>
-                  <textarea
-                    id="act1-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第1幕の概要を入力してください"
-                    value={workSettingData.act1Overview || ''}
-                    onChange={handleWorkSettingChange('act1Overview')}
-                    rows={6}
-                  />
-                </div>
 
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第2幕概要</h3>
-                  <textarea
-                    id="act2-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第2幕の概要を入力してください"
-                    value={workSettingData.act2Overview || ''}
-                    onChange={handleWorkSettingChange('act2Overview')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">第3幕概要</h3>
-                  <textarea
-                    id="act3-overview"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="第3幕の概要を入力してください"
-                    value={workSettingData.act3Overview || ''}
-                    onChange={handleWorkSettingChange('act3Overview')}
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-                  <h3 className="text-md font-medium p-4">生データ</h3>
-                  <textarea
-                    id="raw-content"
-                    className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
-                    placeholder="生データを入力してください"
-                    value={workSettingData.rawContent || ''}
-                    onChange={handleWorkSettingChange('act3Overview')}
-                    rows={6}
-                  />
-                </div>
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <textarea
+                  id="raw-content"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  value={workSettingData.rawContent || ''}
+                  rows={6}
+                  aria-label="作品設定の生データ"
+                />
               </div>
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card >
     );
   };
 

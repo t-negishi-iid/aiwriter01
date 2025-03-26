@@ -61,97 +61,201 @@ class BasicSettingCreateView(views.APIView):
         try:
             # 初期化
             result = {
-                'story_setting': '',
+                'title': '',
+                'summary': '',
+                'theme': '',
+                'theme_description': '',
+                'time_place': '',
+                'world_setting': '',
+                'world_setting_basic': '',
+                'world_setting_features': '',
+                'writing_style': '',
+                'writing_style_structure': '',
+                'writing_style_expression': '',
+                'writing_style_theme': '',
+                'emotional': '',
+                'emotional_love': '',
+                'emotional_feelings': '',
+                'emotional_atmosphere': '',
+                'emotional_sensuality': '',
                 'characters': '',
-                'plot_overview': '',
+                'key_items': '',
+                'mystery': '',
+                'plot_pattern': '',
+                'act1_title': '',
                 'act1_overview': '',
+                'act2_title': '',
                 'act2_overview': '',
+                'act3_title': '',
                 'act3_overview': '',
             }
 
             # 文字列を行に分割
             lines = content.split('\n')
-
-            # セクションの開始と終了位置を特定
+            
+            # 現在処理中のセクション
             current_section = None
-            sections = {}
-            section_start = 0
-
+            current_subsection = None
+            section_content = []
+            
+            # 各セクションの開始行と終了行のインデックスを格納
+            section_data = {}
+            
             for i, line in enumerate(lines):
-                # 主要セクションを検出
-                if line.startswith('## 作品世界と舞台設定') or line.startswith('## 時代と場所'):
+                # 主要セクションを検出 (## で始まるもの)
+                if line.startswith('## '):
+                    # 前のセクションの内容を保存
                     if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'story_setting'
-                    section_start = i
-                elif line.startswith('## 主な登場人物'):
-                    if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'characters'
-                    section_start = i
-                elif line.startswith('## 主な固有名詞') or line.startswith('## 固有名詞'):
-                    # 登場人物セクションを終了し、固有名詞セクションは別途処理
-                    if current_section and current_section == 'characters':
-                        sections[current_section] = (section_start, i)
-                    # 固有名詞セクションは現在は無視
-                    current_section = None
-                elif line.startswith('## あらすじ'):
-                    if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'plot_overview'
-                    section_start = i
-                elif line.startswith('### 第1幕'):
-                    if current_section != 'act1_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act1_overview'
-                        section_start = i
-                elif line.startswith('### 第2幕'):
-                    if current_section != 'act2_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act2_overview'
-                        section_start = i
-                elif line.startswith('### 第3幕'):
-                    if current_section != 'act3_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act3_overview'
-                        section_start = i
-
-            # 最後のセクションを追加
-            if current_section:
-                sections[current_section] = (section_start, len(lines))
-
-            # 各セクションの内容を抽出
-            for section, (start, end) in sections.items():
-                if section in result:
-                    result[section] = '\n'.join(lines[start:end])
-
-            # あらすじ全体が見つからない場合は、各幕の情報を総合的にあらすじとして使用
-            if not result['plot_overview'] and (result['act1_overview'] or result['act2_overview'] or result['act3_overview']):
-                combined_acts = []
-                if result['act1_overview']:
-                    combined_acts.append(result['act1_overview'])
-                if result['act2_overview']:
-                    combined_acts.append(result['act2_overview'])
-                if result['act3_overview']:
-                    combined_acts.append(result['act3_overview'])
-                result['plot_overview'] = '\n\n'.join(combined_acts)
-
+                        section_content_text = '\n'.join(section_content).strip()
+                        if current_section in result:
+                            result[current_section] = section_content_text
+                    
+                    # 新しいセクションを設定
+                    section_title = line[3:].strip()
+                    current_section = self._get_section_key(section_title)
+                    current_subsection = None
+                    section_content = []
+                    continue
+                
+                # サブセクションを検出 (### で始まるもの)
+                elif line.startswith('### '):
+                    # 前のサブセクションの内容を保存
+                    if current_subsection:
+                        section_content_text = '\n'.join(section_content).strip()
+                        if current_subsection in result:
+                            result[current_subsection] = section_content_text
+                    
+                    # 新しいサブセクションを設定
+                    subsection_title = line[4:].strip()
+                    
+                    # 各幕の処理
+                    if '第1幕' in subsection_title:
+                        # タイトルが「第1幕タイトル」の場合
+                        if current_section == 'act1_overview':
+                            result['act1_title'] = subsection_title.replace('第1幕', '').strip()
+                        current_subsection = 'act1_overview'
+                    elif '第2幕' in subsection_title:
+                        if current_section == 'act2_overview':
+                            result['act2_title'] = subsection_title.replace('第2幕', '').strip()
+                        current_subsection = 'act2_overview'
+                    elif '第3幕' in subsection_title:
+                        if current_section == 'act3_overview':
+                            result['act3_title'] = subsection_title.replace('第3幕', '').strip()
+                        current_subsection = 'act3_overview'
+                    
+                    # 世界観の詳細
+                    elif current_section == 'world_setting':
+                        if '基本的な世界観' in subsection_title:
+                            current_subsection = 'world_setting_basic'
+                        elif '特徴的な要素' in subsection_title:
+                            current_subsection = 'world_setting_features'
+                        else:
+                            current_subsection = current_section
+                    
+                    # 作風の詳細
+                    elif current_section == 'writing_style':
+                        if '文体と構造的特徴' in subsection_title:
+                            current_subsection = 'writing_style_structure'
+                        elif '表現技法' in subsection_title:
+                            current_subsection = 'writing_style_expression'
+                        elif 'テーマと主題' in subsection_title:
+                            current_subsection = 'writing_style_theme'
+                        else:
+                            current_subsection = current_section
+                    
+                    # 情緒的要素の詳細
+                    elif current_section == 'emotional':
+                        if '愛情表現' in subsection_title:
+                            current_subsection = 'emotional_love'
+                        elif '感情表現' in subsection_title:
+                            current_subsection = 'emotional_feelings'
+                        elif '雰囲気演出' in subsection_title:
+                            current_subsection = 'emotional_atmosphere'
+                        elif '官能的表現' in subsection_title:
+                            current_subsection = 'emotional_sensuality'
+                        else:
+                            current_subsection = current_section
+                    
+                    # テーマの説明
+                    elif current_section == 'theme' and 'テーマ（主題）の説明' in subsection_title:
+                        current_subsection = 'theme_description'
+                    else:
+                        current_subsection = current_section
+                    
+                    section_content = []
+                    continue
+                
+                # 現在のセクションまたはサブセクションにコンテンツを追加
+                if current_subsection:
+                    section_content.append(line)
+                elif current_section:
+                    section_content.append(line)
+            
+            # 最後のセクション/サブセクションの内容を保存
+            if current_subsection and section_content:
+                section_content_text = '\n'.join(section_content).strip()
+                if current_subsection in result:
+                    result[current_subsection] = section_content_text
+            elif current_section and section_content:
+                section_content_text = '\n'.join(section_content).strip()
+                if current_section in result:
+                    result[current_section] = section_content_text
+            
             return result
         except Exception as e:
             logger.error(f"Error parsing basic setting content: {str(e)}")
             write_to_debug_log(f"Error parsing basic setting content: {str(e)}")
-            # エラー時はコンテンツ全体を各フィールドに設定
+            # エラー時は空の結果を返す
             return {
-                'story_setting': content,
-                'characters': content,
-                'plot_overview': content,
-                'act1_overview': content,
-                'act2_overview': content,
-                'act3_overview': content,
+                'title': '',
+                'summary': '',
+                'theme': '',
+                'theme_description': '',
+                'time_place': '',
+                'world_setting': '',
+                'world_setting_basic': '',
+                'world_setting_features': '',
+                'writing_style': '',
+                'writing_style_structure': '',
+                'writing_style_expression': '',
+                'writing_style_theme': '',
+                'emotional': '',
+                'emotional_love': '',
+                'emotional_feelings': '',
+                'emotional_atmosphere': '',
+                'emotional_sensuality': '',
+                'characters': '',
+                'key_items': '',
+                'mystery': '',
+                'plot_pattern': '',
+                'act1_title': '',
+                'act1_overview': '',
+                'act2_title': '',
+                'act2_overview': '',
+                'act3_title': '',
+                'act3_overview': '',
             }
+    
+    def _get_section_key(self, section_title):
+        """セクションタイトルからモデルフィールド名に変換"""
+        mapping = {
+            'タイトル': 'title',
+            'サマリー': 'summary',
+            'テーマ（主題）': 'theme',
+            '時代と場所': 'time_place',
+            '作品世界と舞台設定': 'world_setting',
+            '参考とする作風': 'writing_style',
+            '参考とする作風パターン': 'writing_style',  
+            '情緒的・感覚的要素': 'emotional',
+            '主な登場人物': 'characters',
+            '主な固有名詞': 'key_items',
+            '物語の背景となる過去の謎': 'mystery',
+            'プロットパターン': 'plot_pattern',  
+            '第1幕': 'act1_overview',
+            '第2幕': 'act2_overview',
+            '第3幕': 'act3_overview',
+        }
+        return mapping.get(section_title, 'unknown')
 
     def get(self, request, *args, **kwargs):
         """基本設定を取得"""
@@ -164,19 +268,19 @@ class BasicSettingCreateView(views.APIView):
         logger.debug(f"Request method: {request.method}")
         logger.debug(f"Request headers: {dict(request.headers)}")
 
-        story_id = self.kwargs.get('story_id')
-        logger.debug(f"Story ID: {story_id}")
-        write_to_debug_log(f"Story ID: {story_id}")
+        story_id = kwargs.get('story_id')
+        logger.debug(f"AIStory ID: {story_id}")
+        write_to_debug_log(f"AIStory ID: {story_id}")
 
         try:
             # ユーザーの小説を取得
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
-            logger.debug(f"Found story: {story.id} - {story.title}")
-            write_to_debug_log(f"Found story: {story.id} - {story.title}")
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            logger.debug(f"Found AIStory: {ai_story.id} - {ai_story.title}")
+            write_to_debug_log(f"Found AIStory: {ai_story.id} - {ai_story.title}")
 
             # 基本設定を取得
             try:
-                basic_setting = BasicSetting.objects.get(ai_story=story)
+                basic_setting = BasicSetting.objects.get(ai_story=ai_story)
                 logger.debug(f"Found basic setting: {basic_setting.id}")
                 write_to_debug_log(f"Found basic setting: {basic_setting.id}")
 
@@ -186,8 +290,8 @@ class BasicSettingCreateView(views.APIView):
                 write_to_debug_log("Returning basic setting")
                 return Response(serializer.data)
             except BasicSetting.DoesNotExist:
-                logger.error(f"Basic setting not found for story: {story.id}")
-                write_to_debug_log(f"Basic setting not found for story: {story.id}")
+                logger.error(f"Basic setting not found for AIStory: {ai_story.id}")
+                write_to_debug_log(f"Basic setting not found for AIStory: {ai_story.id}")
                 return Response(
                     {'error': '基本設定が見つかりません'},
                     status=status.HTTP_404_NOT_FOUND
@@ -218,14 +322,14 @@ class BasicSettingCreateView(views.APIView):
         logger.debug(f"Request method: {request.method}")
         logger.debug(f"Request headers: {dict(request.headers)}")
 
-        story_id = self.kwargs.get('story_id')
-        logger.debug(f"Story ID: {story_id}")
-        write_to_debug_log(f"Story ID: {story_id}")
+        story_id = kwargs.get('story_id')
+        logger.debug(f"AIStory ID: {story_id}")
+        write_to_debug_log(f"AIStory ID: {story_id}")
 
         try:
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
-            logger.debug(f"Found story: {story.id} - {story.title}")
-            write_to_debug_log(f"Found story: {story.id} - {story.title}")
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            logger.debug(f"Found AIStory: {ai_story.id} - {ai_story.title}")
+            write_to_debug_log(f"Found AIStory: {ai_story.id} - {ai_story.title}")
 
             # リクエストの検証
             logger.debug("Validating request data")
@@ -256,7 +360,7 @@ class BasicSettingCreateView(views.APIView):
             try:
                 basic_setting_data = BasicSettingData.objects.get(
                     id=basic_setting_data_id,
-                    ai_story=story
+                    ai_story=ai_story
                 )
                 logger.debug(f"Found basic setting data: {basic_setting_data.id}")
                 write_to_debug_log(f"Found basic setting data: {basic_setting_data.id}")
@@ -271,10 +375,10 @@ class BasicSettingCreateView(views.APIView):
             # 既存の基本設定を確認し、存在する場合は削除
             # 1つの小説には1つの基本設定のみ許可する
             try:
-                existing_settings = BasicSetting.objects.filter(ai_story=story)
+                existing_settings = BasicSetting.objects.filter(ai_story=ai_story)
                 if existing_settings.exists():
-                    logger.debug(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
-                    write_to_debug_log(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
+                    logger.debug(f"Deleting {existing_settings.count()} existing basic settings for AIStory {ai_story.id}")
+                    write_to_debug_log(f"Deleting {existing_settings.count()} existing basic settings for AIStory {ai_story.id}")
                     existing_settings.delete()
             except Exception as e:
                 logger.error(f"Error deleting existing basic settings: {str(e)}")
@@ -295,7 +399,7 @@ class BasicSettingCreateView(views.APIView):
             api_log = APIRequestLog.objects.create(
                 user=request.user,
                 request_type='basic_setting',
-                ai_story=story,
+                ai_story=ai_story,
                 parameters={'basic_setting_data_id': basic_setting_data_id},
                 credit_cost=1
             )
@@ -334,13 +438,34 @@ class BasicSettingCreateView(views.APIView):
                         
                         # BasicSettingを保存
                         basic_setting = BasicSetting.objects.create(
-                            ai_story=story,
+                            ai_story=ai_story,
                             setting_data=basic_setting_data,
-                            story_setting=parsed_content.get('story_setting', ''),
+                            title=parsed_content.get('title', ''),
+                            summary=parsed_content.get('summary', ''),
+                            theme=parsed_content.get('theme', ''),
+                            theme_description=parsed_content.get('theme_description', ''),
+                            time_place=parsed_content.get('time_place', ''),
+                            world_setting=parsed_content.get('world_setting', ''),
+                            world_setting_basic=parsed_content.get('world_setting_basic', ''),
+                            world_setting_features=parsed_content.get('world_setting_features', ''),
+                            writing_style=parsed_content.get('writing_style', ''),
+                            writing_style_structure=parsed_content.get('writing_style_structure', ''),
+                            writing_style_expression=parsed_content.get('writing_style_expression', ''),
+                            writing_style_theme=parsed_content.get('writing_style_theme', ''),
+                            emotional=parsed_content.get('emotional', ''),
+                            emotional_love=parsed_content.get('emotional_love', ''),
+                            emotional_feelings=parsed_content.get('emotional_feelings', ''),
+                            emotional_atmosphere=parsed_content.get('emotional_atmosphere', ''),
+                            emotional_sensuality=parsed_content.get('emotional_sensuality', ''),
                             characters=parsed_content.get('characters', ''),
-                            plot_overview=parsed_content.get('plot_overview', ''),
+                            key_items=parsed_content.get('key_items', ''),
+                            mystery=parsed_content.get('mystery', ''),
+                            plot_pattern=parsed_content.get('plot_pattern', ''),
+                            act1_title=parsed_content.get('act1_title', ''),
                             act1_overview=parsed_content.get('act1_overview', ''),
+                            act2_title=parsed_content.get('act2_title', ''),
                             act2_overview=parsed_content.get('act2_overview', ''),
+                            act3_title=parsed_content.get('act3_title', ''),
                             act3_overview=parsed_content.get('act3_overview', ''),
                             raw_content=markdown_content
                         )
@@ -456,7 +581,7 @@ class LatestBasicSettingView(views.APIView):
 
         try:
             # ストーリーの存在確認
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
             # 最新の基本設定を取得
             basic_setting = BasicSetting.objects.filter(
@@ -501,7 +626,7 @@ class BasicSettingActUpdateView(views.APIView):
 
         try:
             # ストーリーの存在確認
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
             # 最新の基本設定を取得
             basic_setting = BasicSetting.objects.filter(

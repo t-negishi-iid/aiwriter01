@@ -12,6 +12,7 @@ import { useStoryContext } from '@/components/story/StoryProvider';
 interface EpisodeContentFormProps {
   storyId: string;
   selectedEpisode: EpisodeDetail | null;
+  // エピソード概要（詳細）用の状態変数
   editedContent: string;
   setEditedContent: (content: string) => void;
   editedTitle: string;
@@ -241,7 +242,7 @@ export default function EpisodeContentForm({
       // エピソード詳細APIを呼び出し - 正しいエンドポイントを使用
       const response = await episodeApi.updateEpisodeDetail(
         storyId,
-        selectedEpisode.id,
+        selectedActNumber,
         selectedEpisode.episode_number,
         episodeData
       );
@@ -502,11 +503,16 @@ export default function EpisodeContentForm({
             >
               <Card className="w-full">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">
-                    <Blocks className="h-4 w-4 mr-2" />
-                    エピソード本文
+                  <CardTitle className="text-lg float-both">
+                    <div className="flex w-50 float-left">
+                      <Blocks className="h-4 w-4 mr-2" />
+                      エピソード本文
+                    </div>
+                    <div className="flex float-right">
+                      <span className="text-sm ml-auto">{episodeContent.length}文字</span>
+                    </div>
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 clearfix">
                     {!isFullscreenContent && (
                       <Button
                         onClick={handleApplyGenerated}

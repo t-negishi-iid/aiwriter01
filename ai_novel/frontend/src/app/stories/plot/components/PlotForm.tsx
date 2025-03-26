@@ -12,7 +12,7 @@ import { fetchApi } from '@/lib/api-client';
 
 interface PlotFormProps {
   plot: PlotData;
-  basicSetting?: BasicSetting | null;
+  basicSetting: BasicSetting;
   isSaving: boolean;
   isGenerating: boolean;
   onSave: (plot: PlotData) => Promise<boolean>;
@@ -55,14 +55,18 @@ export function PlotForm({
     if (storyId && currentAct) {
       try {
         console.log(`基本設定の第${currentAct}幕あらすじを更新リクエスト:`, formData.content.substring(0, 200) + '...');
+        console.log('basicSetting.id:', basicSetting.id);
 
         // 特定の幕のあらすじを更新するAPIを呼び出し
-        const response = await fetchApi(`/stories/${storyId}/basic-setting-act/${currentAct}/`, {
+        const response = await fetchApi(`/stories/${storyId}/basic-setting/acts/${currentAct}/`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ content: formData.content }),
+          body: JSON.stringify({
+            basic_setting_id: basicSetting.id,
+            content: formData.content
+          }),
         });
 
         console.log(`基本設定の第${currentAct}幕あらすじを更新レスポンス:`, response);

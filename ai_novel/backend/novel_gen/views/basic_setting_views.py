@@ -465,9 +465,41 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     指定された小説の基本設定を取得、更新、または削除します。
     """
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = BasicSettingSerializer
-    lookup_url_kwarg = 'pk'
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """
+        オブジェクトを取得するメソッド
+        
+        URLパスに'pk'が存在しない場合（/acts/エンドポイント）、リクエストデータから
+        basic_setting_idを取得してオブジェクトを特定します。
+        """
+        # URLパスから'pk'が提供されている場合（通常のエンドポイント）
+        if 'pk' in self.kwargs:
+            return super().get_object()
+            
+        # actsエンドポイントの場合（'pk'がない）
+        # リクエストデータからbasic_setting_idを取得
+        if self.request.method in ['PUT', 'PATCH'] and 'basic_setting_id' in self.request.data:
+            basic_setting_id = self.request.data.get('basic_setting_id')
+            story_id = self.kwargs.get('story_id')
+            
+            # ストーリーIDとbasic_setting_idでフィルタリング
+            queryset = BasicSetting.objects.filter(
+                id=basic_setting_id,
+                ai_story_id=story_id,
+                ai_story__user=self.request.user
+            )
+            
+            # オブジェクトが存在するか確認
+            if not queryset.exists():
+                raise Http404("指定されたBasicSettingが見つかりません")
+                
+            return queryset.first()
+        
+        # どの条件にも合わない場合は404エラー
+        raise Http404("指定されたBasicSettingが見つかりません")
 
     def get_queryset(self):
         """指定された小説の基本設定を取得"""
@@ -515,16 +547,31 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
 
-        # act番号が指定されている場合、対応するフィールドのみを更新
-        act_number = request.query_params.get('act')
-        if act_number in ['1', '2', '3']:
+        # act番号の取得（URLパスパラメータまたはクエリパラメータから）
+        act_number = kwargs.get('act_number')
+        if act_number is None:
+            act_number = request.query_params.get('act')
+        
+        # 数字文字列なら整数に変換
+        act_num = None
+        if act_number and str(act_number) in ['1', '2', '3']:
             act_num = int(act_number)
+        
+        # act番号が指定されている場合、対応するフィールドのみを更新
+        if act_num:
             field_name = f'act{act_num}_overview'
             title_field = f'act{act_num}_title'
-
+            
+            # リクエストデータからコンテンツを取得（キー名に関わらず対応）
+            content = None
             if field_name in request.data:
+                content = request.data[field_name]
+            elif 'content' in request.data:
+                content = request.data['content']
+                
+            if content is not None:
                 # 該当する幕のフィールドのみを更新
-                setattr(instance, field_name, request.data[field_name])
+                setattr(instance, field_name, content)
                 # タイトルフィールドに空文字を設定
                 setattr(instance, title_field, '')
                 instance.save()
@@ -562,7 +609,7 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         # raw_contentを更新して保存
         updated_instance.raw_content = raw_content
         updated_instance.save()
-
+        
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.

@@ -79,7 +79,9 @@ urlpatterns = [
     # ストーリーの最新の作品設定を取得する（New）
     path('stories/<int:story_id>/basic-setting/latest/',
          LatestBasicSettingView.as_view(), name='latest-basic-setting'),
-    # BasicSettingの幕あらすじの更新はDetailViewのクエリパラメータで対応
+    # BasicSettingの幕あらすじの更新
+    path('stories/<int:story_id>/basic-setting/acts/<int:act_number>/',
+         views.BasicSettingDetailView.as_view(), name='basic-setting-act-update'),
 
     # キャラクター詳細関連
     # 指定されたストーリーのキャラクター詳細一覧を取得、または新規キャラクター詳細を作成する

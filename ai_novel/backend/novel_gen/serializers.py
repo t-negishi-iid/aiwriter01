@@ -81,7 +81,17 @@ class BasicSettingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BasicSetting
-        fields = ('id', 'ai_story', 'story_setting', 'characters', 'plot_overview', 'act1_overview', 'act2_overview', 'act3_overview', 'raw_content', 'is_edited', 'created_at', 'updated_at')
+        fields = (
+            'id', 'ai_story', 
+            'title', 'summary', 'theme', 'theme_description', 'time_place',
+            'world_setting', 'world_setting_basic', 'world_setting_features',
+            'writing_style', 'writing_style_structure', 'writing_style_expression', 'writing_style_theme',
+            'emotional', 'emotional_love', 'emotional_feelings', 'emotional_atmosphere', 'emotional_sensuality',
+            'characters', 'key_items', 'mystery',
+            'plot_pattern',
+            'act1_title', 'act1_overview', 'act2_title', 'act2_overview', 'act3_title', 'act3_overview',
+            'raw_content', 'is_edited', 'created_at', 'updated_at'
+        )
         read_only_fields = ('id', 'ai_story', 'created_at', 'updated_at')
 
 

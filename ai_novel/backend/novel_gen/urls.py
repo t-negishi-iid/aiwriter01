@@ -11,7 +11,7 @@ from . import views
 from .views.connectivity import is_live
 from .views.is_live_views import StoryIsLiveView
 from .views.integrated_setting_creator_views import IntegratedSettingCreatorView, IntegratedSettingCreatorDetailView
-from .views.basic_setting_views import LatestBasicSettingView, BasicSettingActUpdateView
+from .views.basic_setting_views import LatestBasicSettingView
 from .views.content_views import CreateEpisodeContentView, EpisodeContentListView, EpisodeContentDetailView
 
 app_name = 'novel_gen'
@@ -79,12 +79,7 @@ urlpatterns = [
     # ストーリーの最新の作品設定を取得する（New）
     path('stories/<int:story_id>/basic-setting/latest/',
          LatestBasicSettingView.as_view(), name='latest-basic-setting'),
-    # BasicSetting.act(1-3)_overview 更新専用（Old）
-    path('stories/<int:story_id>/basic-setting-act/<int:act_number>/',
-         BasicSettingActUpdateView.as_view(), name='basic-setting-act-update'),
-    # BasicSetting.act(1-3)_overview 更新専用（New）
-    path('stories/<int:story_id>/basic-setting/<int:act_number>/act/',
-         BasicSettingActUpdateView.as_view(), name='basic-setting-act-update-new'),
+    # BasicSettingの幕あらすじの更新はDetailViewのクエリパラメータで対応
 
     # キャラクター詳細関連
     # 指定されたストーリーのキャラクター詳細一覧を取得、または新規キャラクター詳細を作成する

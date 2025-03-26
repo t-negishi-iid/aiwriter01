@@ -122,7 +122,7 @@ class BasicSettingData(TimeStampedModel):
     theme_data = models.JSONField(_('テーマデータ'), blank=True, null=True)
     time_place_data = models.JSONField(_('時代と場所データ'), blank=True, null=True)
     world_setting_data = models.JSONField(_('世界観データ'), blank=True, null=True)
-    style_data = models.JSONField(_('文体データ'), blank=True, null=True)
+    style_data = models.JSONField(_('作風データ'), blank=True, null=True)
     emotional_data = models.JSONField(_('情緒的要素データ'), blank=True, null=True)
     mystery_data = models.JSONField(_('謎データ'), blank=True, null=True)
     plot_data = models.JSONField(_('プロットデータ'), blank=True, null=True)
@@ -144,12 +144,51 @@ class BasicSetting(TimeStampedModel):
     """基本設定（作品設定、あらすじ、登場人物）"""
     ai_story = models.OneToOneField(AIStory, on_delete=models.CASCADE, related_name='basic_setting')
     setting_data = models.ForeignKey(BasicSettingData, on_delete=models.SET_NULL, null=True, related_name='basic_settings')
-    story_setting = models.TextField(_('作品設定'))
-    characters = models.TextField(_('登場人物設定'))
-    plot_overview = models.TextField(_('あらすじ概要'))
-    act1_overview = models.TextField(_('第1幕概要'))
-    act2_overview = models.TextField(_('第2幕概要'))
-    act3_overview = models.TextField(_('第3幕概要'))
+
+    # 基本情報
+    title = models.TextField(_('タイトル'))
+    summary = models.TextField(_('サマリー'))
+    theme = models.TextField(_('テーマ（主題）'), blank=True)
+    theme_description = models.TextField(_('テーマ（主題）の説明'), blank=True)
+    time_place = models.TextField(_('時代と場所'), blank=True)
+
+    # 世界設定
+    world_setting = models.TextField(_('作品世界と舞台設定'), blank=True)
+    world_setting_basic = models.TextField(_('基本的な世界観'), blank=True)
+    world_setting_features = models.TextField(_('特徴的な要素'), blank=True)
+
+    # 作風・表現
+    writing_style = models.TextField(_('参考とする作風'), blank=True)
+    writing_style_structure = models.TextField(_('文体と構造的特徴'), blank=True)
+    writing_style_expression = models.TextField(_('表現技法'), blank=True)
+    writing_style_theme = models.TextField(_('テーマと主題'), blank=True)
+
+    # 情緒要素
+    emotional = models.TextField(_('情緒的・感覚的要素'), blank=True)
+    emotional_love = models.TextField(_('愛情表現'), blank=True)
+    emotional_feelings = models.TextField(_('感情表現'), blank=True)
+    emotional_atmosphere = models.TextField(_('雰囲気演出'), blank=True)
+    emotional_sensuality = models.TextField(_('官能的表現'), blank=True)
+
+    # 登場人物・固有名詞
+    characters = models.TextField(_('主な登場人物'), blank=True)
+    key_items = models.TextField(_('主な固有名詞'), blank=True)
+
+    # 物語背景
+    mystery = models.TextField(_('物語の背景となる過去の謎'), blank=True)
+
+    # プロット構造
+    plot_pattern = models.TextField(_('プロットパターン'), blank=True)
+
+    # 各幕の構成
+    act1_title = models.TextField(_('第1幕タイトル'), blank=True) # 未使用 常に空文字
+    act1_overview = models.TextField(_('第1幕概要'), blank=True)
+    act2_title = models.TextField(_('第2幕タイトル'), blank=True) # 未使用 常に空文字
+    act2_overview = models.TextField(_('第2幕概要'), blank=True)
+    act3_title = models.TextField(_('第3幕タイトル'), blank=True) # 未使用 常に空文字
+    act3_overview = models.TextField(_('第3幕概要'), blank=True)
+
+    # 元データ・編集状態
     raw_content = models.TextField(_('生データ'))  # APIから返ってきたそのままのテキスト
     is_edited = models.BooleanField(_('編集済み'), default=False)
 

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Book } from 'lucide-react';
+import { Blocks, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { StoryProvider } from '@/components/story/StoryProvider';
@@ -28,12 +28,30 @@ interface WorkSettingData {
   id?: number;                // 作品設定ID
   storyId: string | null;     // 小説ID
   basicSettingDataId: number; // 基本設定データID
-  storySettings: string;      // 作品世界と舞台設定
+  title: string;              // タイトル
+  summary: string;            // サマリー
+  theme: string;              // テーマ（主題）
+  themeDescription: string;   // テーマ（主題）の説明：未使用
+  timePlace: string;          // 時代と場所
+  worldSetting: string;       // 作品世界と舞台設定
+  worldSettingBasic: string;  // 基本的な世界観：未使用
+  worldSettingFeatures: string;// 特徴的な要素：未使用
+  writingStyle: string;       // 参考とする作風
+  writingStyleStructure: string;// 文体と構造的特徴：未使用
+  writingStyleExpression: string;// 表現技法：未使用
+  writingStyleTheme: string;  // テーマと主題：未使用
+  emotional: string;          // 情緒的・感覚的要素
+  emotionalLove: string;      // 愛情表現：未使用
+  emotionalFeelings: string;  // 感情表現：未使用
+  emotionalAtmosphere: string;// 雰囲気演出：未使用
+  emotionalSensuality: string;// 官能的表現：未使用
   characters: string;         // 主な登場人物
-  plotOverview: string;       // あらすじ
-  act1Overview: string;       // 第1幕
-  act2Overview: string;       // 第2幕
-  act3Overview: string;       // 第3幕
+  keyItems: string;           // 主な固有名詞
+  mystery: string;            // 物語の背景となる過去の謎
+  plotPattern: string;        // プロットパターン
+  act1Overview: string;       // 第1幕概要
+  act2Overview: string;       // 第2幕概要
+  act3Overview: string;       // 第3幕概要
   rawContent: string;         // 生成された元の内容全体
   createdAt?: string;         // 作成日時
   updatedAt?: string;         // 更新日時
@@ -74,14 +92,51 @@ export default function BasicSettingPage() {
   const [workSettingData, setWorkSettingData] = useState<WorkSettingData>({
     storyId: storyId,
     basicSettingDataId: 0,
-    storySettings: '',
+    title: '',
+    summary: '',
+    theme: '',
+    themeDescription: '',
+    timePlace: '',
+    worldSetting: '',
+    worldSettingBasic: '',
+    worldSettingFeatures: '',
+    writingStyle: '',
+    writingStyleStructure: '',
+    writingStyleExpression: '',
+    writingStyleTheme: '',
+    emotional: '',
+    emotionalLove: '',
+    emotionalFeelings: '',
+    emotionalAtmosphere: '',
+    emotionalSensuality: '',
     characters: '',
-    plotOverview: '',
+    keyItems: '',
+    mystery: '',
+    plotPattern: '',
     act1Overview: '',
     act2Overview: '',
     act3Overview: '',
     rawContent: ''
   });
+
+  // テキストエリアへの参照
+  const refs = {
+    title: useRef<HTMLTextAreaElement>(null),
+    summary: useRef<HTMLTextAreaElement>(null),
+    theme: useRef<HTMLTextAreaElement>(null),
+    timePlace: useRef<HTMLTextAreaElement>(null),
+    worldSetting: useRef<HTMLTextAreaElement>(null),
+    writingStyle: useRef<HTMLTextAreaElement>(null),
+    emotional: useRef<HTMLTextAreaElement>(null),
+    characters: useRef<HTMLTextAreaElement>(null),
+    keyItems: useRef<HTMLTextAreaElement>(null),
+    mystery: useRef<HTMLTextAreaElement>(null),
+    plotPattern: useRef<HTMLTextAreaElement>(null),
+    act1Overview: useRef<HTMLTextAreaElement>(null),
+    act2Overview: useRef<HTMLTextAreaElement>(null),
+    act3Overview: useRef<HTMLTextAreaElement>(null),
+    rawContent: useRef<HTMLTextAreaElement>(null)
+  };
 
   useEffect(() => {
     // 画面サイズを検出して、モバイルかどうかを判定
@@ -143,9 +198,27 @@ export default function BasicSettingPage() {
             setWorkSettingData({
               storyId: storyId,
               basicSettingDataId: basicSettingDataId || 0,
-              storySettings: basicSettingResponse.story_setting || '',
+              title: basicSettingResponse.title || '',
+              summary: basicSettingResponse.summary || '',
+              theme: basicSettingResponse.theme || '',
+              themeDescription: basicSettingResponse.theme_description || '',
+              timePlace: basicSettingResponse.time_place || '',
+              worldSetting: basicSettingResponse.world_setting || '',
+              worldSettingBasic: basicSettingResponse.world_setting_basic || '',
+              worldSettingFeatures: basicSettingResponse.world_setting_features || '',
+              writingStyle: basicSettingResponse.writing_style || '',
+              writingStyleStructure: basicSettingResponse.writing_style_structure || '',
+              writingStyleExpression: basicSettingResponse.writing_style_expression || '',
+              writingStyleTheme: basicSettingResponse.writing_style_theme || '',
+              emotional: basicSettingResponse.emotional || '',
+              emotionalLove: basicSettingResponse.emotional_love || '',
+              emotionalFeelings: basicSettingResponse.emotional_feelings || '',
+              emotionalAtmosphere: basicSettingResponse.emotional_atmosphere || '',
+              emotionalSensuality: basicSettingResponse.emotional_sensuality || '',
               characters: basicSettingResponse.characters || '',
-              plotOverview: basicSettingResponse.plot_overview || '',
+              keyItems: basicSettingResponse.key_items || '',
+              mystery: basicSettingResponse.mystery || '',
+              plotPattern: basicSettingResponse.plot_pattern || '',
               act1Overview: basicSettingResponse.act1_overview || '',
               act2Overview: basicSettingResponse.act2_overview || '',
               act3Overview: basicSettingResponse.act3_overview || '',
@@ -192,9 +265,27 @@ export default function BasicSettingPage() {
         setWorkSettingData({
           storyId: storyId,
           basicSettingDataId: basicSettingDataId,
-          storySettings: response.story_setting || '',
+          title: response.title || '',
+          summary: response.summary || '',
+          theme: response.theme || '',
+          themeDescription: response.theme_description || '',
+          timePlace: response.time_place || '',
+          worldSetting: response.world_setting || '',
+          worldSettingBasic: response.world_setting_basic || '',
+          worldSettingFeatures: response.world_setting_features || '',
+          writingStyle: response.writing_style || '',
+          writingStyleStructure: response.writing_style_structure || '',
+          writingStyleExpression: response.writing_style_expression || '',
+          writingStyleTheme: response.writing_style_theme || '',
+          emotional: response.emotional || '',
+          emotionalLove: response.emotional_love || '',
+          emotionalFeelings: response.emotional_feelings || '',
+          emotionalAtmosphere: response.emotional_atmosphere || '',
+          emotionalSensuality: response.emotional_sensuality || '',
           characters: response.characters || '',
-          plotOverview: response.plot_overview || '',
+          keyItems: response.key_items || '',
+          mystery: response.mystery || '',
+          plotPattern: response.plot_pattern || '',
           act1Overview: response.act1_overview || '',
           act2Overview: response.act2_overview || '',
           act3Overview: response.act3_overview || '',
@@ -232,32 +323,73 @@ export default function BasicSettingPage() {
       return;
     }
 
+    // 保存前に全てのフォームの値を取得して状態を更新
+    const updatedWorkSettingData = {
+      ...workSettingData,
+      title: refs.title.current?.value || '',
+      summary: refs.summary.current?.value || '',
+      theme: refs.theme.current?.value || '',
+      timePlace: refs.timePlace.current?.value || '',
+      worldSetting: refs.worldSetting.current?.value || '',
+      writingStyle: refs.writingStyle.current?.value || '',
+      emotional: refs.emotional.current?.value || '',
+      characters: refs.characters.current?.value || '',
+      keyItems: refs.keyItems.current?.value || '',
+      mystery: refs.mystery.current?.value || '',
+      plotPattern: refs.plotPattern.current?.value || '',
+      act1Overview: refs.act1Overview.current?.value || '',
+      act2Overview: refs.act2Overview.current?.value || '',
+      act3Overview: refs.act3Overview.current?.value || '',
+      rawContent: refs.rawContent.current?.value || ''
+    };
+
+    // 状態を更新
+    setWorkSettingData(updatedWorkSettingData);
+
     setIsSaving(true);
     try {
       // 保存処理を実装（既存のAPIを使用）
       const data = {
         story_id: storyId,
-        basic_setting_data_id: workSettingData.basicSettingDataId,
-        story_setting: workSettingData.storySettings,
-        characters: workSettingData.characters,
-        plot_overview: workSettingData.plotOverview,
-        act1_overview: workSettingData.act1Overview,
-        act2_overview: workSettingData.act2Overview,
-        act3_overview: workSettingData.act3Overview,
-        raw_content: workSettingData.rawContent
+        basic_setting_data_id: updatedWorkSettingData.basicSettingDataId,
+        title: updatedWorkSettingData.title,
+        summary: updatedWorkSettingData.summary,
+        theme: updatedWorkSettingData.theme,
+        theme_description: updatedWorkSettingData.themeDescription,
+        time_place: updatedWorkSettingData.timePlace,
+        world_setting: updatedWorkSettingData.worldSetting,
+        world_setting_basic: updatedWorkSettingData.worldSettingBasic,
+        world_setting_features: updatedWorkSettingData.worldSettingFeatures,
+        writing_style: updatedWorkSettingData.writingStyle,
+        writing_style_structure: updatedWorkSettingData.writingStyleStructure,
+        writing_style_expression: updatedWorkSettingData.writingStyleExpression,
+        writing_style_theme: updatedWorkSettingData.writingStyleTheme,
+        emotional: updatedWorkSettingData.emotional,
+        emotional_love: updatedWorkSettingData.emotionalLove,
+        emotional_feelings: updatedWorkSettingData.emotionalFeelings,
+        emotional_atmosphere: updatedWorkSettingData.emotionalAtmosphere,
+        emotional_sensuality: updatedWorkSettingData.emotionalSensuality,
+        characters: updatedWorkSettingData.characters,
+        key_items: updatedWorkSettingData.keyItems,
+        mystery: updatedWorkSettingData.mystery,
+        plot_pattern: updatedWorkSettingData.plotPattern,
+        act1_overview: updatedWorkSettingData.act1Overview,
+        act2_overview: updatedWorkSettingData.act2Overview,
+        act3_overview: updatedWorkSettingData.act3Overview,
+        raw_content: updatedWorkSettingData.rawContent
       };
 
       // 既存のデータがある場合は更新、なければ新規作成
       let response;
-      if (workSettingData.id) {
+      if (updatedWorkSettingData.id) {
         // IDを含めてデータを更新
         const updateData = {
           ...data,
-          id: workSettingData.id
+          id: updatedWorkSettingData.id
         };
         response = await basicSettingApi.updateBasicSetting(storyId, updateData);
       } else {
-        response = await basicSettingApi.generateBasicSetting(storyId, workSettingData.basicSettingDataId);
+        response = await basicSettingApi.generateBasicSetting(storyId, updatedWorkSettingData.basicSettingDataId);
       }
 
       console.log("作品設定保存結果:", response);
@@ -278,14 +410,6 @@ export default function BasicSettingPage() {
     }
   };
 
-  // 作品設定テキストエリアの変更ハンドラ
-  const handleWorkSettingChange = (field: keyof WorkSettingData) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setWorkSettingData(prev => ({
-      ...prev,
-      [field]: e.target.value
-    }));
-  };
-
   if (!storyId) {
     return <div>小説IDが指定されていません</div>;
   }
@@ -294,8 +418,11 @@ export default function BasicSettingPage() {
   const BasicSettingContent = () => (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>作品設定</CardTitle>
-        <CardDescription>「基本設定」を元に作品のオリジナルな設定を生成／編集します。
+        <CardTitle>
+          <Blocks className="h-6 w-6" />
+          基本設定
+        </CardTitle>
+        <CardDescription>「基本設定」を元に作品のオリジナルな設定を自動生成します。
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -340,6 +467,7 @@ export default function BasicSettingPage() {
   const WorkSettingContent = () => {
     // ステートの定義
     const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
+    const [showActs, setShowActs] = useState(false);
 
     // フルスクリーン表示用のref
     const fullscreenRef = useRef<HTMLDivElement>(null);
@@ -404,7 +532,10 @@ export default function BasicSettingPage() {
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle>作品設定</CardTitle>
+          <CardTitle>
+            <Blocks className="h-6 w-6" />
+            作品設定
+          </CardTitle>
           <CardDescription>小説の世界観や設定情報</CardDescription>
           <div className="flex justify-end">
             <Button onClick={toggleFullscreen}>
@@ -413,34 +544,230 @@ export default function BasicSettingPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* 作品設定コンテンツ */}
-          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
-            <div
-              ref={fullscreenRef}
-              className={`mt-4 ${isFullscreenEdit ? "absolute top-0 left-0 right-0 bottom-0 w-screen h-screen z-[9999] overflow-auto bg-white p-4" : ""}`}
-            >
-              {isFullscreenEdit && (
-                <div className="flex justify-end mb-4">
-                  <Button onClick={toggleFullscreen}>
-                    全画面モード解除
-                  </Button>
-                </div>
-              )}
-              {/* テキストエリア */}
-              <div className="bg-white border border-gray-200 rounded-md p-4 overflow-y-auto w-full">
+          <div className="space-y-4 mt-4">
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">タイトル</h3>
+              <textarea
+                id="title"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                placeholder="タイトルを入力してください"
+                defaultValue={workSettingData.title || ''}
+                ref={refs.title}
+                rows={2}
+                aria-label="タイトル"
+              />
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">サマリー</h3>
+              <textarea
+                id="summary"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-100"
+                placeholder="サマリーを入力してください"
+                defaultValue={workSettingData.summary || ''}
+                ref={refs.summary}
+                rows={4}
+                aria-label="サマリー"
+              />
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">テーマ（主題）</h3>
+              <textarea
+                id="theme"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                placeholder="テーマを入力してください"
+                defaultValue={workSettingData.theme || ''}
+                ref={refs.theme}
+                rows={3}
+                aria-label="テーマ（主題）"
+              />
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+              <h3 className="text-md font-medium p-4">時代と場所</h3>
+              <textarea
+                id="time-place"
+                className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                placeholder="時代と場所を入力してください"
+                defaultValue={workSettingData.timePlace || ''}
+                ref={refs.timePlace}
+                rows={3}
+                aria-label="時代と場所"
+              />
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">作品世界と舞台設定</h3>
                 <textarea
-                  id="raw-content"
-                  className="w-full border-none bg-transparent resize-none outline-none story-textarea th-1200"
-                  placeholder="作品設定内容を入力してください"
-                  value={workSettingData.rawContent}
-                  onChange={handleWorkSettingChange('rawContent')}
-                  rows={12}
+                  id="world-setting"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="作品世界と舞台設定を入力してください"
+                  defaultValue={workSettingData.worldSetting || ''}
+                  ref={refs.worldSetting}
+                  rows={6}
+                  aria-label="作品世界と舞台設定"
                 />
               </div>
             </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">参考とする作風</h3>
+                <textarea
+                  id="writing-style"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
+                  placeholder="参考とする作風を入力してください"
+                  defaultValue={workSettingData.writingStyle || ''}
+                  ref={refs.writingStyle}
+                  rows={4}
+                  aria-label="参考とする作風"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">情緒的・感覚的要素</h3>
+                <textarea
+                  id="emotional"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-300"
+                  placeholder="情緒的・感覚的要素を入力してください"
+                  defaultValue={workSettingData.emotional || ''}
+                  ref={refs.emotional}
+                  rows={4}
+                  aria-label="情緒的・感覚的要素"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">主な登場人物</h3>
+                <textarea
+                  id="characters"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="主な登場人物を入力してください"
+                  defaultValue={workSettingData.characters || ''}
+                  ref={refs.characters}
+                  rows={6}
+                  aria-label="主な登場人物"
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">主な固有名詞</h3>
+                <textarea
+                  id="key-items"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-400"
+                  placeholder="主な固有名詞を入力してください"
+                  defaultValue={workSettingData.keyItems || ''}
+                  ref={refs.keyItems}
+                  rows={4}
+                  aria-label="主な固有名詞"
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">物語の背景となる過去の謎</h3>
+                <textarea
+                  id="mystery"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="物語の背景となる過去の謎を入力してください"
+                  defaultValue={workSettingData.mystery || ''}
+                  ref={refs.mystery}
+                  rows={4}
+                  aria-label="物語の背景となる過去の謎"
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">プロットパターン</h3>
+                <textarea
+                  id="plot-pattern"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
+                  placeholder="プロットパターンを入力してください"
+                  defaultValue={workSettingData.plotPattern || ''}
+                  ref={refs.plotPattern}
+                  rows={4}
+                  aria-label="プロットパターン"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 mt-4">
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第1幕概要</h3>
+                <textarea
+                  id="act1-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第1幕の概要を入力してください"
+                  defaultValue={workSettingData.act1Overview || ''}
+                  ref={refs.act1Overview}
+                  rows={6}
+                  aria-label="第1幕概要"
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第2幕概要</h3>
+                <textarea
+                  id="act2-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第2幕の概要を入力してください"
+                  defaultValue={workSettingData.act2Overview || ''}
+                  ref={refs.act2Overview}
+                  rows={6}
+                  aria-label="第2幕概要"
+                />
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <h3 className="text-md font-medium p-4">第3幕概要</h3>
+                <textarea
+                  id="act3-overview"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-200"
+                  placeholder="第3幕の概要を入力してください"
+                  defaultValue={workSettingData.act3Overview || ''}
+                  ref={refs.act3Overview}
+                  rows={6}
+                  aria-label="第3幕概要"
+                />
+              </div>
+            </div>
+
+          </div>
+
+
+          {/* 生データ */}
+          <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
+            <div
+              style={leftAlignedHeaderStyle}
+              onClick={() => setShowActs(!showActs)}
+            >
+              <span style={expandIconStyle}>
+                {showActs ? '▼' : '▶'}
+              </span>
+              <h3 style={categoryTitleStyle}>生データ</h3>
+            </div>
+
+            {showActs && (
+
+              <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
+                <textarea
+                  id="raw-content"
+                  className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-1200"
+                  defaultValue={workSettingData.rawContent || ''}
+                  ref={refs.rawContent}
+                  rows={6}
+                  aria-label="作品設定の生データ"
+                />
+              </div>
+            )}
           </div>
         </CardContent>
-      </Card>
+      </Card >
     );
   };
 

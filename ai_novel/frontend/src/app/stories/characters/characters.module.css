@@ -16,7 +16,7 @@
 }
 
 .characterHeaderExpanded {
-  border-bottom: 1px solid #ccc;
+  background-color: #f9fafb;
 }
 
 /* セクションヘッダー用のスタイルを追加 */

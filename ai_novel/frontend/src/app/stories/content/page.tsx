@@ -36,6 +36,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
   const [selectedAct, setSelectedAct] = useState<ActDetail | null>(null);
   const [selectedEpisode, setSelectedEpisode] = useState<EpisodeDetail | null>(null);
   const [editedContent, setEditedContent] = useState<string>('');
+  const [editedTitle, setEditedTitle] = useState<string>('');
   const [selectedActNumber, setSelectedActNumber] = useState<string>('');
   const [isMobile, setIsMobile] = useState(false);
 
@@ -81,6 +82,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
               selectedEpisode={selectedEpisode}
               setSelectedEpisode={setSelectedEpisode}
               setEditedContent={setEditedContent}
+              setEditedTitle={setEditedTitle}
               selectedActNumber={selectedActNumber}
               setSelectedActNumber={setSelectedActNumber}
             />
@@ -92,6 +94,8 @@ function ContentPageInner({ storyId }: { storyId: string }) {
               selectedEpisode={selectedEpisode}
               editedContent={editedContent}
               setEditedContent={setEditedContent}
+              editedTitle={editedTitle}
+              setEditedTitle={setEditedTitle}
               selectedActNumber={selectedActNumber}
             />
           </TabsContent>
@@ -109,6 +113,7 @@ function ContentPageInner({ storyId }: { storyId: string }) {
                 selectedEpisode={selectedEpisode}
                 setSelectedEpisode={setSelectedEpisode}
                 setEditedContent={setEditedContent}
+                setEditedTitle={setEditedTitle}
                 selectedActNumber={selectedActNumber}
                 setSelectedActNumber={setSelectedActNumber}
               />
@@ -121,6 +126,8 @@ function ContentPageInner({ storyId }: { storyId: string }) {
                 selectedEpisode={selectedEpisode}
                 editedContent={editedContent}
                 setEditedContent={setEditedContent}
+                editedTitle={editedTitle}
+                setEditedTitle={setEditedTitle}
                 selectedActNumber={selectedActNumber}
               />
             </div>

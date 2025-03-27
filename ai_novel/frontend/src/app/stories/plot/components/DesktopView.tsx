@@ -43,64 +43,66 @@ export function DesktopView({
   handleEditAct
 }: DesktopViewProps) {
   return (
-    <div className={styles.container}>
-      {/* 左パネル：基本設定 */}
-      <div className={styles.leftPanel}>
-        {isLoading ? (
-          <div className={styles.loadingContainer}>
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-500">読み込み中...</span>
-          </div>
-        ) : error ? (
-          <div className={styles.errorContainer}>
-            <p className="text-red-500">{error}</p>
-            <Button
-              variant="outline"
-              className={styles.refreshButton}
-              onClick={refreshPlots}
-            >
-              再読み込み
-            </Button>
-          </div>
-        ) : (
-          <div className={styles.plotListContainer}>
-            {/* 作品設定ブロック */}
-            <BasicSettingBlock
-              basicSetting={basicSetting}
-              onEditAct={handleEditAct}
-            />
-          </div>
-        )}
-      </div>
+    <div className="panel-container">
+      <div className="panel-row">
+        {/* 左パネル：基本設定 */}
+        <div className="panel-half panel-scroll">
+          {isLoading ? (
+            <div className={styles.loadingContainer}>
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-2 text-gray-500">読み込み中...</span>
+            </div>
+          ) : error ? (
+            <div className={styles.errorContainer}>
+              <p className="text-red-500">{error}</p>
+              <Button
+                variant="outline"
+                className={styles.refreshButton}
+                onClick={refreshPlots}
+              >
+                再読み込み
+              </Button>
+            </div>
+          ) : (
+            <div className={styles.plotListContainer}>
+              {/* 作品設定ブロック */}
+              <BasicSettingBlock
+                basicSetting={basicSetting}
+                onEditAct={handleEditAct}
+              />
+            </div>
+          )}
+        </div>
 
-      {/* 右パネル：あらすじフォーム */}
-      <div className={styles.rightPanel}>
-        {isLoading ? (
-          <div className={styles.loadingContainer}>
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            <span className="ml-2 text-gray-500">読み込み中...</span>
-          </div>
-        ) : error ? (
-          <div className={styles.errorContainer}>
-            <p className="text-red-500">{error}</p>
-          </div>
-        ) : selectedPlot ? (
-          <PlotForm
-            plot={selectedPlot}
-            basicSetting={basicSetting}
-            isSaving={isSaving}
-            isGenerating={isGenerating}
-            onSave={handleSavePlot}
-            onGenerate={handleGenerateDetailedPlot}
-            onCancel={handleCancelForm}
-            refreshBasicSetting={refreshBasicSetting}
-            storyId={storyId}
-          />
-        ) : (
-          <div className="text-center p-4">
-            <p className="text-gray-500">あらすじを選択してください</p>
-          </div>
-        )}
+        {/* 右パネル：あらすじフォーム */}
+        <div className="panel-half panel-scroll">
+          {isLoading ? (
+            <div className={styles.loadingContainer}>
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-2 text-gray-500">読み込み中...</span>
+            </div>
+          ) : error ? (
+            <div className={styles.errorContainer}>
+              <p className="text-red-500">{error}</p>
+            </div>
+          ) : selectedPlot ? (
+            <PlotForm
+              plot={selectedPlot}
+              basicSetting={basicSetting}
+              isSaving={isSaving}
+              isGenerating={isGenerating}
+              onSave={handleSavePlot}
+              onGenerate={handleGenerateDetailedPlot}
+              onCancel={handleCancelForm}
+              refreshBasicSetting={refreshBasicSetting}
+              storyId={storyId}
+            />
+          ) : (
+            <div className="text-center p-4">
+              <p className="text-gray-500">あらすじを選択してください</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

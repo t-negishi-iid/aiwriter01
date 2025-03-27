@@ -82,6 +82,11 @@ class DifyNovelAPI:
             "Content-Type": "application/json"
         }
 
+    """
+    ブロッキングモード API呼び出し
+
+    """
+
     def _make_api_request(
         self,
         api_type: str,
@@ -210,6 +215,14 @@ class DifyNovelAPI:
             logger.error(f"Failed to process response: {str(e)}")
             return {"error": f"Failed to process response: {str(e)}"}
 
+
+    """
+
+    アプリケーションメソッド
+    実際にDifyのAPIを呼び出して
+    サービスを
+
+    """
     def create_basic_setting(
         self,
         basic_setting_data: str,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import styles from '../characters.module.css';
-import { Loader2, Plus } from 'lucide-react';
+import { Blocks, Loader2, Plus } from 'lucide-react';
 import { CharacterData } from '../lib/types';
 
 interface BasicSettingCharacterListProps {
@@ -28,7 +28,10 @@ export function BasicSettingCharacterList({
         <span className={styles.expandIcon} aria-hidden="true">
           {showList ? '▼' : '▶'}
         </span>
-        <h2 className="text-xl font-semibold">作品設定の登場人物</h2>
+        <h2 className="text-xl font-semibold">
+          <Blocks className="mr-2 h-4 w-4" />
+          作品設定の登場人物
+        </h2>
       </div>
 
       {showList && (

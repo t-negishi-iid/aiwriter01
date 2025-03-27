@@ -1,0 +1,45 @@
+/* 読書ビューアのスタイル */
+.readerContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentContainer {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  width: 100%;
+  height: calc(100vh - 160px);
+}
+
+.verticalWriting {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+/* テーマスタイル */
+.lightTheme {
+  background-color: #fff;
+  color: #333;
+}
+
+.sepiaTheme {
+  background-color: #f5f1e6;
+  color: #5f4b32;
+}
+
+.darkTheme {
+  background-color: #222;
+  color: #ddd;
+}
+
+.paragraph {
+  margin-bottom: 1rem;
+}
+
+.verticalParagraph {
+  margin-top: 1.5rem;
+}

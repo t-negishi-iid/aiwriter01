@@ -48,7 +48,7 @@ export default function HomePage() {
     <div className="space-y-12 py-6">
       {/* ヒーローセクション */}
       <section className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">AIノベルライター</h1>
+        <h1 className="text-4xl font-bold tracking-tight">AIブロック小説エディタ</h1>
         <p className="text-xl text-muted-foreground max-w-[700px] mx-auto">
           AIを活用した小説執筆支援システムで、あなたのアイデアを物語に変えましょう
         </p>

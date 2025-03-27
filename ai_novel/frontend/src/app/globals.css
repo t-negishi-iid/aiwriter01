@@ -141,6 +141,17 @@
   line-height: 1.8;
 }
 
+.mp-0 {
+  margin: 0;
+  padding: 0;
+}
+
+.th-30 {
+  height: 30px;
+  min-height: 30px;
+  padding: 3px 20px;
+}
+
 .th-50 {
   height: 60px;
   min-height: 60px;
@@ -193,6 +204,43 @@
 .y-m-20 {
   margin: 20px 0;
 }
+
+.x-r-5 {
+  margin-right: 5px;
+}
+
+.x-r-10 {
+  margin-right: 10px;
+}
+
+.x-r-15 {
+  margin-right: 15px;
+}
+
+.x-r-20 {
+  margin-right: 20px;
+}
+
+.float-right {
+  float: right;
+}
+
+.float-left {
+  float: left;
+}
+
+.float-both {
+  float: both;
+}
+
+.clearfix {
+  clear: both;
+}
+
+.w-50 {
+  width: 50%;
+}
+
 
 /* セレクトボックスのカスタマイズ */
 [data-radix-select-trigger] {

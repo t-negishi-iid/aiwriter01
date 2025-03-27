@@ -14,6 +14,7 @@ from ..serializers import (
     PlotDetailRequestSerializer
 )
 from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 logger = logging.getLogger(__name__)
@@ -133,9 +134,6 @@ class CreatePlotDetailView(views.APIView):
         if not success:
             return Response({'error': message}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
-        # APIリクエスト
-        api = DifyNovelAPI()
-
         # キャラクター詳細データの準備（raw_contentの配列）
         all_characters_array = [char.raw_content for char in character_details]
 
@@ -164,37 +162,30 @@ class CreatePlotDetailView(views.APIView):
             logger.debug(f"DEBUG - CreatePlotDetailView - basic_setting.raw_content: {basic_setting.raw_content[:200]}")
             logger.debug(f"DEBUG - CreatePlotDetailView - all_characters (first 200 chars): {all_characters[:200]}")
 
-            # 同期APIリクエスト
-            response = api.create_plot_detail(
+            # ストリーミングAPIクライアントの初期化
+            api = DifyStreamingAPI()
+            
+            # 最後のチャンクを保持する変数
+            last_chunk = None
+            
+            # ストリーミングAPIリクエストを実行し、すべてのチャンクを内部で処理
+            for chunk in api.create_plot_detail_stream(
                 basic_setting=basic_setting.raw_content,
                 all_characters=all_characters,
-                user_id=str(request.user.id),
-                blocking=True
-            )
-
-            # レスポンスの検証
-            logger.debug(f"DEBUG - CreatePlotDetailView - API response: {response}")
-
-            if 'error' in response:
-                api_log.is_success = False
-                api_log.response_data = {'error': response['error']}
-                api_log.save()
-                return Response({'error': 'あらすじ詳細の生成に失敗しました', 'details': response['error']},
-                               status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            # resultキーがない場合のチェック
-            if 'result' not in response:
-                logger.error(f"DEBUG - CreatePlotDetailView - 'result' key not found in response: {response}")
-                api_log.is_success = False
-                api_log.response_data = {'error': 'APIレスポンスに結果が含まれていません'}
-                api_log.save()
-                return Response(
-                    {'error': 'CreatePlotDetailView  - あらすじ詳細の生成に失敗しました', 'details': 'APIレスポンスにresultキーが含まれていません'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            content = response['result']
-
+                user_id=str(request.user.id)
+            ):
+                # 最後のチャンクを更新
+                last_chunk = chunk
+            
+            # デバッグ用ログ
+            logger.debug(f"DEBUG - CreatePlotDetailView - Received all chunks, processing final result")
+            
+            # 最後のチャンクからMarkdownコンテンツを抽出
+            if not last_chunk:
+                raise ValueError("有効なレスポンスが取得できませんでした")
+                
+            content = get_markdown_from_last_chunk(last_chunk)
+            
             # デバッグ用にコンテンツの先頭部分をログに出力
             logger.debug(f"DEBUG - CreatePlotDetailView - content (first 200 chars): {content[:200]}")
 

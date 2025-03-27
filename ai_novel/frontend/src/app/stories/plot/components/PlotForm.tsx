@@ -12,7 +12,7 @@ import { fetchApi } from '@/lib/api-client';
 
 interface PlotFormProps {
   plot: PlotData;
-  basicSetting?: BasicSetting | null;
+  basicSetting: BasicSetting;
   isSaving: boolean;
   isGenerating: boolean;
   onSave: (plot: PlotData) => Promise<boolean>;
@@ -55,14 +55,18 @@ export function PlotForm({
     if (storyId && currentAct) {
       try {
         console.log(`基本設定の第${currentAct}幕あらすじを更新リクエスト:`, formData.content.substring(0, 200) + '...');
+        console.log('basicSetting.id:', basicSetting.id);
 
         // 特定の幕のあらすじを更新するAPIを呼び出し
-        const response = await fetchApi(`/stories/${storyId}/basic-setting-act/${currentAct}/`, {
+        const response = await fetchApi(`/stories/${storyId}/basic-setting/acts/${currentAct}/`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ content: formData.content }),
+          body: JSON.stringify({
+            basic_setting_id: basicSetting.id,
+            content: formData.content
+          }),
         });
 
         console.log(`基本設定の第${currentAct}幕あらすじを更新レスポンス:`, response);
@@ -105,7 +109,7 @@ export function PlotForm({
     if (generatedPlot) {
       console.log('PlotForm - 生成後のPlot:', generatedPlot);
       console.log('PlotForm - 生成後のraw_content:', generatedPlot.raw_content ? '存在します' : 'なし');
-      
+
       // 基本あらすじを保持したまま、詳細あらすじ（raw_content）だけを更新
       setFormData(prev => ({
         ...prev,
@@ -136,39 +140,6 @@ export function PlotForm({
     }
   }, [plot]);
 
-  // 現在の幕に基づいて基本あらすじを表示
-  const renderBasicOverview = () => {
-    if (!basicSetting) {
-      return (
-        <Textarea
-          name="content"
-          value={formData.content}
-          onChange={handleChange}
-          rows={5}
-          placeholder="基本あらすじを入力してください"
-          className={styles.textareaStyle}
-        />
-      );
-    }
-
-    return (
-      <div>
-        <div className="flex items-center space-x-4 mb-2">
-          <div className="text-sm font-medium">
-            現在編集中: 第{currentAct}幕
-          </div>
-        </div>
-        <Textarea
-          name="content"
-          value={formData.content}
-          onChange={handleChange}
-          rows={3}
-          className={styles.textareaStyle}
-        />
-      </div>
-    );
-  };
-
   return (
     <form className={styles.formContainer}>
       <Card>
@@ -198,37 +169,38 @@ export function PlotForm({
         <CardContent>
           <div className="space-y-4">
 
-            <div>
-              <label className="block text-sm font-medium mb-3">基本あらすじ</label>
-              {renderBasicOverview()}
+            <div className="block mb-10 y-m-10">
+              <label className="block text-sm font-medium mb-3">
+                基本あらすじ
+              </label>
             </div>
-
-            <div className={styles.formButtons}>
-              <div className={styles.formButtonsRight}>
-                <Button type="button" onClick={handleSubmit} disabled={isSaving}>
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      保存中...
-                    </>
-                  ) : (
-                    '保存'
-                  )}
-                </Button>
+            <div className="block mb-10 y-m-20">
+              <div>
+                <div className={styles.formButtonsRight}>
+                  <Button type="button" onClick={handleSubmit} disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        保存中...
+                      </>
+                    ) : (
+                      '保存'
+                    )}
+                  </Button>
+                </div>
+                <Textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  rows={3}
+                  className={styles.textareaStyle}
+                />
               </div>
             </div>
 
             <div className={styles.detailFormContainer}>
               <label className="block text-sm font-medium mb-10">詳細あらすじ</label>
-              <Textarea
-                name="raw_content"
-                value={formData.raw_content || ''}
-                onChange={handleChange}
-                rows={10}
-                placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
-                className={styles.textareaStyle}
-              />
-              <div className={styles.detailFormButtons}>
+              <div className={styles.formButtons}>
                 <Button
                   type="button"
                   onClick={handleSaveDetailOnly}
@@ -240,10 +212,18 @@ export function PlotForm({
                       保存中...
                     </>
                   ) : (
-                    '詳細を保存'
+                    '保存'
                   )}
                 </Button>
               </div>
+              <Textarea
+                name="raw_content"
+                value={formData.raw_content || ''}
+                onChange={handleChange}
+                rows={10}
+                placeholder="詳細あらすじはまだ生成されていません。「詳細あらすじを生成」ボタンをクリックして生成してください。"
+                className={styles.textareaStyle}
+              />
             </div>
           </div>
         </CardContent>

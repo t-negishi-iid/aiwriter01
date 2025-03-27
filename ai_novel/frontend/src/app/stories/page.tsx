@@ -59,30 +59,30 @@ export default function StoriesPage() {
           updated_at: string;
           status?: string;
         }
-        
+
         interface ApiResponse {
           results: StoryItem[];
           count: number;
           next: string | null;
           previous: string | null;
         }
-        
+
         // APIを呼び出してレスポンスを取得（unknownとして扱う）
         const response = await unifiedStoryApi.getStories() as unknown;
         console.log('小説一覧データ:', response);
-        
+
         // レスポンスの型チェック
         const validateStoriesResponse = (data: unknown): data is ApiResponse => {
           if (data === null || typeof data !== 'object') return false;
-          
+
           const obj = data as Record<string, unknown>;
           return 'results' in obj && Array.isArray(obj.results);
         };
-        
+
         if (!validateStoriesResponse(response)) {
           throw new Error('APIレスポンスの形式が不正です');
         }
-        
+
         // バリデーション済みのデータをセット
         setStories(response.results.map((item) => ({
           id: item.id,
@@ -93,7 +93,7 @@ export default function StoriesPage() {
           updated_at: item.updated_at,
           status: item.status
         })));
-        
+
       } catch (err) {
         console.error('小説一覧の取得に失敗:', err);
         setError('小説一覧の取得に失敗しました');
@@ -102,7 +102,7 @@ export default function StoriesPage() {
         setIsLoading(false);
       }
     };
-    
+
     // IDがない場合のみ小説一覧を取得
     if (!id) {
       fetchStories();

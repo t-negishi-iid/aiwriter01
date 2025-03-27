@@ -11,7 +11,7 @@ const fontSans = FontSans({
 })
 
 export const metadata: Metadata = {
-  title: "AIノベルライター",
+  title: "AIブロックノベルエディタ",
   description: "AIを活用した小説執筆支援システム",
 }
 
@@ -37,9 +37,9 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1 container py-4">{children}</main>
-            <footer className="border-t py-4">
+            <footer className="border-t py-4 y-m-20">
               <div className="container text-center text-sm text-muted-foreground">
-                © {new Date().getFullYear()} AIノベルライター
+                ブロックノベルAIエディタ © {new Date().getFullYear()} 株式会社イード
               </div>
             </footer>
           </div>

@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Edit, Trash, Book } from 'lucide-react';
+import { Blocks, Loader2, Edit, Trash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  CardContent,
+  CardDescription,
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { unifiedStoryApi } from '@/lib/unified-api-client';
@@ -141,39 +142,52 @@ export default function StorySummaryPage() {
           <div className="mt-6">
             <Card className="overflow-hidden border-none shadow-md">
               <CardHeader className="pb-2">
-                {storyDetail.catchphrase && (
-                  <CardDescription className="text-sm font-medium text-primary/80 mb-1">
-                    {storyDetail.catchphrase.length > 60
+                <CardTitle>
+                  <Blocks className="h-4 w-4 mr-2" />
+                  小説の概要
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold y-m-10">
+                  タイトル：「{storyDetail.title}」
+                </div>
+                {storyDetail.catchphrase ? (
+                  <div className="text-sm font-medium text-primary/80 y-m-10">
+                    キャッチフレーズ：{storyDetail.catchphrase.length > 60
                       ? `${storyDetail.catchphrase.substring(0, 60)}...`
                       : storyDetail.catchphrase}
-                  </CardDescription>
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-primary/80 y-m-10">
+                    キャッチフレーズ：未設定
+                  </div>
                 )}
-                <CardTitle className="text-2xl font-bold mb-3">{storyDetail.title}</CardTitle>
-                <div className="space-y-4">
+                <div className="space-y-4 y-m-10 mt-4">
                   {storyDetail.summary ? (
                     <div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap bg-muted/30 p-4 rounded-md">
-                      {storyDetail.summary}
+                      サマリー：{storyDetail.summary}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground italic">概要はありません</p>
+                    <p className="text-sm text-muted-foreground italic">
+                      サマリー：未設定
+                    </p>
                   )}
                 </div>
-                <div className="flex text-xs text-muted-foreground mt-4 border-t pt-3">
+                <div className="space-y-4 y-m-10 mt-4">
                   <div className="mr-6 flex items-center">
-                    <span className="font-medium mr-1">作成:</span>
+                    <span className="font-sm mr-2">作成:</span>
                     {new Date(storyDetail.created_at).toLocaleDateString('ja-JP')}
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-medium mr-1">更新:</span>
+                    <span className="font-sm mr-2">&nbsp;|&nbsp;</span>
+                    <span className="font-sm mr-2">更新:</span>
                     {new Date(storyDetail.updated_at).toLocaleDateString('ja-JP')}
                   </div>
                 </div>
-              </CardHeader>
+              </CardContent>
               <CardFooter className="flex justify-end py-4 px-6 bg-muted/10 gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-sm font-medium"
+                  className="text-sm font-medium x-r-5"
                   onClick={() => router.push(`/stories/${storyDetail.id}/edit`)}
                   data-testid="story-detail-edit-button"
                 >
@@ -202,6 +216,38 @@ export default function StorySummaryPage() {
                 </Button>
               </CardFooter>
             </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>
+                  <Blocks className="h-4 w-4 mr-2" />
+                  小説の組み立て方
+                </CardTitle>
+                <CardDescription>AIブロック小説エディタを使った小説の「組み立て方」の説明です。</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <h4>積み木やブロックを組むように小説を書く</h4>
+                  <p>「AIブロック小説エディタ」では、積み木やブロックのように、必要なブロックを組み合わせることで、誰でも小説を執筆できます。</p>
+                  <p>書きたい小説の要素を組み合わせて「基本設定」を作成し、そこから必要な要素（ブロック）をエディタの手助けを借りて少しずつ組み上げていきます。</p>
+                </div>
+                <div className="space-y-4">
+                  <h4>3幕構成</h4>
+                  <p>「AIブロック小説エディタ」では、3幕構成で小説を書きます。3幕構成は、映画脚本などで一般的に使われる物語の構造を作る手法です。</p>
+                  <p>3幕構成は、出会いと事件が起きる1幕、新たな展開で物語に変化と奥行きを与える2幕、クライマックを経て物語を締めくくる3幕の構造です。</p>
+                </div>
+                <div className="y-m-10 mt-4">
+                  <h4>小説を組み立てる6つのステップ</h4>
+                  <ol>
+                    <li>基本設定</li>
+                    <li>作品設定</li>
+                    <li>人物設定</li>
+                    <li>あらすじ詳細化</li>
+                    <li>エピソードに分割</li>
+                    <li>本文執筆</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <Alert className="mt-4 border-none shadow-sm">
@@ -210,6 +256,6 @@ export default function StorySummaryPage() {
           </Alert>
         )}
       </div>
-    </StoryProvider>
+    </StoryProvider >
   );
 }

@@ -10,7 +10,7 @@ from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from django.http import Http404
+from django.http import Http404, StreamingHttpResponse
 from django.db import transaction
 
 from ..models import AIStory, BasicSettingData, BasicSetting, APIRequestLog
@@ -19,6 +19,7 @@ from ..serializers import (
     BasicSettingRequestSerializer, DifyResponseSerializer
 )
 from ..dify_api import DifyNovelAPI
+from ..dify_streaming_api import DifyStreamingAPI, get_markdown_from_last_chunk
 from ..utils import check_and_consume_credit
 
 # ロガーの設定
@@ -58,99 +59,130 @@ class BasicSettingCreateView(views.APIView):
             dict: パースされた各セクションのデータ
         """
         try:
-            # 初期化
-            result = {
-                'story_setting': '',
-                'characters': '',
-                'plot_overview': '',
-                'act1_overview': '',
-                'act2_overview': '',
-                'act3_overview': '',
-            }
-
             # 文字列を行に分割
             lines = content.split('\n')
 
-            # セクションの開始と終了位置を特定
+            # セクション処理用の変数
             current_section = None
+            section_content = []
             sections = {}
-            section_start = 0
 
-            for i, line in enumerate(lines):
-                # 主要セクションを検出
-                if line.startswith('## 作品世界と舞台設定') or line.startswith('## 時代と場所'):
-                    if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'story_setting'
-                    section_start = i
-                elif line.startswith('## 主な登場人物'):
-                    if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'characters'
-                    section_start = i
-                elif line.startswith('## 主な固有名詞') or line.startswith('## 固有名詞'):
-                    # 登場人物セクションを終了し、固有名詞セクションは別途処理
-                    if current_section and current_section == 'characters':
-                        sections[current_section] = (section_start, i)
-                    # 固有名詞セクションは現在は無視
-                    current_section = None
-                elif line.startswith('## あらすじ'):
-                    if current_section:
-                        sections[current_section] = (section_start, i)
-                    current_section = 'plot_overview'
-                    section_start = i
-                elif line.startswith('### 第1幕'):
-                    if current_section != 'act1_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act1_overview'
-                        section_start = i
-                elif line.startswith('### 第2幕'):
-                    if current_section != 'act2_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act2_overview'
-                        section_start = i
-                elif line.startswith('### 第3幕'):
-                    if current_section != 'act3_overview':
-                        if current_section:
-                            sections[current_section] = (section_start, i)
-                        current_section = 'act3_overview'
-                        section_start = i
+            result = {}
 
-            # 最後のセクションを追加
-            if current_section:
-                sections[current_section] = (section_start, len(lines))
+            # 処理1：メインセクション（##）の分割
+            for line in lines:
+                # 新しいセクションの開始を検出
+                if line.startswith('## '):
+                    # 前のセクションの内容を保存
+                    if current_section and section_content:
+                        sections[current_section] = '\n'.join(section_content).strip()
 
-            # 各セクションの内容を抽出
-            for section, (start, end) in sections.items():
-                if section in result:
-                    result[section] = '\n'.join(lines[start:end])
+                    # 新しいセクションの開始
+                    section_title = line[3:].strip()
+                    current_section = self._get_section_key(section_title)
+                    section_content = []
+                else:
+                    # セクションコンテンツに追加
+                    if current_section and line != '---' and line != '--':  # "---"と"--"の行は無視
+                        section_content.append(line)
 
-            # あらすじ全体が見つからない場合は、各幕の情報を総合的にあらすじとして使用
-            if not result['plot_overview'] and (result['act1_overview'] or result['act2_overview'] or result['act3_overview']):
-                combined_acts = []
-                if result['act1_overview']:
-                    combined_acts.append(result['act1_overview'])
-                if result['act2_overview']:
-                    combined_acts.append(result['act2_overview'])
-                if result['act3_overview']:
-                    combined_acts.append(result['act3_overview'])
-                result['plot_overview'] = '\n\n'.join(combined_acts)
+            # 最後のセクションの内容を保存
+            if current_section and section_content:
+                sections[current_section] = '\n'.join(section_content).strip()
+
+            # セクション内容を結果辞書にコピー
+            for key, content in sections.items():
+                if key != 'plot':  # あらすじセクション以外をそのまま保存
+                    result[key] = content
+
+            # 処理2：あらすじセクションのサブセクション（###）処理
+            if 'plot' in sections:
+                content = sections['plot']
+                lines = content.split('\n')
+
+                current_section = None
+                section_content = []
+
+                # プロット文の処理と同じ流れでサブセクションを処理
+                for line in lines:
+                    # 新しいセクションの開始を検出
+                    if line.startswith('### '):
+                        # 前のセクションの内容を保存
+                        if current_section and section_content:
+                            sections[current_section] = '\n'.join(section_content).strip()
+
+                        # 新しいセクションの開始
+                        section_title = line[4:].strip()
+                        current_section = self._get_section_key(section_title)
+                        section_content = []
+                    else:
+                        # セクションコンテンツに追加
+                        if current_section and line != '---' and line != '--':  # "---"と"--"の行は無視
+                            section_content.append(line)
+
+            # 最後のセクションの内容を保存
+            if current_section and section_content:
+                sections[current_section] = '\n'.join(section_content).strip()
+
+            # セクション内容を結果辞書にコピー
+            for key, content in sections.items():
+                result[key] = content
 
             return result
         except Exception as e:
             logger.error(f"Error parsing basic setting content: {str(e)}")
             write_to_debug_log(f"Error parsing basic setting content: {str(e)}")
-            # エラー時はコンテンツ全体を各フィールドに設定
+            # エラー時は空の結果を返す
             return {
-                'story_setting': content,
-                'characters': content,
-                'plot_overview': content,
-                'act1_overview': content,
-                'act2_overview': content,
-                'act3_overview': content,
+                'title': '',
+                'summary': '',
+                'theme': '',
+                'theme_description': '',
+                'time_place': '',
+                'world_setting': '',
+                'world_setting_basic': '',
+                'world_setting_features': '',
+                'writing_style': '',
+                'writing_style_structure': '',
+                'writing_style_expression': '',
+                'writing_style_theme': '',
+                'emotional': '',
+                'emotional_love': '',
+                'emotional_feelings': '',
+                'emotional_atmosphere': '',
+                'emotional_sensuality': '',
+                'characters': '',
+                'key_items': '',
+                'mystery': '',
+                'plot_pattern': '',
+                'act1_title': '',
+                'act1_overview': '',
+                'act2_title': '',
+                'act2_overview': '',
+                'act3_title': '',
+                'act3_overview': '',
             }
+
+    def _get_section_key(self, section_title):
+        """セクションタイトルからモデルフィールド名に変換"""
+        mapping = {
+            'タイトル': 'title',
+            'サマリー': 'summary',
+            'テーマ（主題）': 'theme',
+            '時代と場所': 'time_place',
+            '作品世界と舞台設定': 'world_setting',
+            '参考とする作風': 'writing_style',
+            '情緒的・感覚的要素': 'emotional',
+            '主な登場人物': 'characters',
+            '主な固有名詞': 'key_items',
+            '物語の背景となる過去の謎': 'mystery',
+            'プロットパターン': 'plot_pattern',
+            'あらすじ': 'plot', # パース時の一時的なバッファ
+            '第1幕': 'act1_overview',
+            '第2幕': 'act2_overview',
+            '第3幕': 'act3_overview',
+        }
+        return mapping.get(section_title, 'unknown')
 
     def get(self, request, *args, **kwargs):
         """基本設定を取得"""
@@ -163,19 +195,19 @@ class BasicSettingCreateView(views.APIView):
         logger.debug(f"Request method: {request.method}")
         logger.debug(f"Request headers: {dict(request.headers)}")
 
-        story_id = self.kwargs.get('story_id')
-        logger.debug(f"Story ID: {story_id}")
-        write_to_debug_log(f"Story ID: {story_id}")
+        story_id = kwargs.get('story_id')
+        logger.debug(f"AIStory ID: {story_id}")
+        write_to_debug_log(f"AIStory ID: {story_id}")
 
         try:
             # ユーザーの小説を取得
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
-            logger.debug(f"Found story: {story.id} - {story.title}")
-            write_to_debug_log(f"Found story: {story.id} - {story.title}")
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            logger.debug(f"Found AIStory: {ai_story.id} - {ai_story.title}")
+            write_to_debug_log(f"Found AIStory: {ai_story.id} - {ai_story.title}")
 
             # 基本設定を取得
             try:
-                basic_setting = BasicSetting.objects.get(ai_story=story)
+                basic_setting = BasicSetting.objects.get(ai_story=ai_story)
                 logger.debug(f"Found basic setting: {basic_setting.id}")
                 write_to_debug_log(f"Found basic setting: {basic_setting.id}")
 
@@ -185,8 +217,8 @@ class BasicSettingCreateView(views.APIView):
                 write_to_debug_log("Returning basic setting")
                 return Response(serializer.data)
             except BasicSetting.DoesNotExist:
-                logger.error(f"Basic setting not found for story: {story.id}")
-                write_to_debug_log(f"Basic setting not found for story: {story.id}")
+                logger.error(f"Basic setting not found for AIStory: {ai_story.id}")
+                write_to_debug_log(f"Basic setting not found for AIStory: {ai_story.id}")
                 return Response(
                     {'error': '基本設定が見つかりません'},
                     status=status.HTTP_404_NOT_FOUND
@@ -217,14 +249,14 @@ class BasicSettingCreateView(views.APIView):
         logger.debug(f"Request method: {request.method}")
         logger.debug(f"Request headers: {dict(request.headers)}")
 
-        story_id = self.kwargs.get('story_id')
-        logger.debug(f"Story ID: {story_id}")
-        write_to_debug_log(f"Story ID: {story_id}")
+        story_id = kwargs.get('story_id')
+        logger.debug(f"AIStory ID: {story_id}")
+        write_to_debug_log(f"AIStory ID: {story_id}")
 
         try:
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
-            logger.debug(f"Found story: {story.id} - {story.title}")
-            write_to_debug_log(f"Found story: {story.id} - {story.title}")
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            logger.debug(f"Found AIStory: {ai_story.id} - {ai_story.title}")
+            write_to_debug_log(f"Found AIStory: {ai_story.id} - {ai_story.title}")
 
             # リクエストの検証
             logger.debug("Validating request data")
@@ -255,7 +287,7 @@ class BasicSettingCreateView(views.APIView):
             try:
                 basic_setting_data = BasicSettingData.objects.get(
                     id=basic_setting_data_id,
-                    ai_story=story
+                    ai_story=ai_story
                 )
                 logger.debug(f"Found basic setting data: {basic_setting_data.id}")
                 write_to_debug_log(f"Found basic setting data: {basic_setting_data.id}")
@@ -270,10 +302,10 @@ class BasicSettingCreateView(views.APIView):
             # 既存の基本設定を確認し、存在する場合は削除
             # 1つの小説には1つの基本設定のみ許可する
             try:
-                existing_settings = BasicSetting.objects.filter(ai_story=story)
+                existing_settings = BasicSetting.objects.filter(ai_story=ai_story)
                 if existing_settings.exists():
-                    logger.debug(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
-                    write_to_debug_log(f"Deleting {existing_settings.count()} existing basic settings for story {story.id}")
+                    logger.debug(f"Deleting {existing_settings.count()} existing basic settings for AIStory {ai_story.id}")
+                    write_to_debug_log(f"Deleting {existing_settings.count()} existing basic settings for AIStory {ai_story.id}")
                     existing_settings.delete()
             except Exception as e:
                 logger.error(f"Error deleting existing basic settings: {str(e)}")
@@ -290,17 +322,11 @@ class BasicSettingCreateView(views.APIView):
             logger.debug("Credit check successful")
             write_to_debug_log("Credit check successful")
 
-            # APIリクエスト
-            api = DifyNovelAPI()
-            formatted_content = basic_setting_data.get_formatted_content()
-            logger.debug(f"Formatted content: {formatted_content[:100]}...")
-            write_to_debug_log(f"Formatted content: {formatted_content[:100]}...")
-
             # APIログの作成
             api_log = APIRequestLog.objects.create(
                 user=request.user,
                 request_type='basic_setting',
-                ai_story=story,
+                ai_story=ai_story,
                 parameters={'basic_setting_data_id': basic_setting_data_id},
                 credit_cost=1
             )
@@ -308,68 +334,103 @@ class BasicSettingCreateView(views.APIView):
             write_to_debug_log(f"Created API log: {api_log.id}")
 
             try:
-                # 同期APIリクエスト
-                logger.debug("Sending API request")
-                write_to_debug_log("Sending API request")
-                response = api.create_basic_setting(
-                    basic_setting_data=formatted_content,
-                    user_id=str(request.user.id),
-                    blocking=True
-                )
-                logger.debug(f"API response received: {str(response)[:100]}...")
-                write_to_debug_log(f"API response received: {str(response)[:100]}...")
+                # ストリーミングAPIリクエスト
+                logger.debug("Sending streaming API request")
+                write_to_debug_log("Sending streaming API request")
 
-                # レスポンスの検証
-                if 'error' in response:
-                    logger.error(f"API error: {response.get('error')}")
-                    write_to_debug_log(f"API error: {response.get('error')}")
+                # DifyStreamingAPIを初期化
+                api = DifyStreamingAPI()
+                formatted_content = basic_setting_data.get_formatted_content()
+
+                # 最後のチャンクを保持する変数
+                last_chunk = None
+
+                # ストリーミングAPIリクエストを実行し、すべてのチャンクを内部で処理
+                for chunk in api.create_basic_setting_stream(
+                    basic_setting_data=formatted_content,
+                    user_id=str(request.user.id)
+                ):
+                    # 最後のチャンクを更新
+                    last_chunk = chunk
+                    # ログにチャンク情報を記録（デバッグ用）
+                    logger.debug(f"Received chunk: {json.dumps(chunk, ensure_ascii=False)[:100]}...")
+
+                # 最後のチャンクからMarkdownコンテンツを抽出
+                if last_chunk:
+                    try:
+                        markdown_content = get_markdown_from_last_chunk(last_chunk)
+
+                        # パースしてBasicSettingを作成
+                        parsed_content = self._parse_basic_setting_content(markdown_content)
+
+                        # BasicSettingを保存
+                        basic_setting = BasicSetting.objects.create(
+                            ai_story=ai_story,
+                            setting_data=basic_setting_data,
+                            title=parsed_content.get('title', ''),
+                            summary=parsed_content.get('summary', ''),
+                            theme=parsed_content.get('theme', ''),
+                            theme_description=parsed_content.get('theme_description', ''),
+                            time_place=parsed_content.get('time_place', ''),
+                            world_setting=parsed_content.get('world_setting', ''),
+                            world_setting_basic=parsed_content.get('world_setting_basic', ''),
+                            world_setting_features=parsed_content.get('world_setting_features', ''),
+                            writing_style=parsed_content.get('writing_style', ''),
+                            writing_style_structure=parsed_content.get('writing_style_structure', ''),
+                            writing_style_expression=parsed_content.get('writing_style_expression', ''),
+                            writing_style_theme=parsed_content.get('writing_style_theme', ''),
+                            emotional=parsed_content.get('emotional', ''),
+                            emotional_love=parsed_content.get('emotional_love', ''),
+                            emotional_feelings=parsed_content.get('emotional_feelings', ''),
+                            emotional_atmosphere=parsed_content.get('emotional_atmosphere', ''),
+                            emotional_sensuality=parsed_content.get('emotional_sensuality', ''),
+                            characters=parsed_content.get('characters', ''),
+                            key_items=parsed_content.get('key_items', ''),
+                            mystery=parsed_content.get('mystery', ''),
+                            plot_pattern=parsed_content.get('plot_pattern', ''),
+                            act1_title=parsed_content.get('act1_title', ''),
+                            act1_overview=parsed_content.get('act1_overview', ''),
+                            act2_title=parsed_content.get('act2_title', ''),
+                            act2_overview=parsed_content.get('act2_overview', ''),
+                            act3_title=parsed_content.get('act3_title', ''),
+                            act3_overview=parsed_content.get('act3_overview', ''),
+                            raw_content=markdown_content
+                        )
+
+                        # APIログを更新
+                        api_log.is_success = True
+                        api_log.response = markdown_content
+                        api_log.save()
+
+                        logger.debug(f"Basic setting created: {basic_setting.id}")
+                        write_to_debug_log(f"Basic setting created: {basic_setting.id}")
+
+                        # レスポンスを返す（従来の形式を維持）
+                        result_serializer = BasicSettingSerializer(basic_setting)
+                        logger.debug("Returning successful response")
+                        write_to_debug_log("Returning successful response")
+                        return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+                    except Exception as e:
+                        error_msg = f"Error processing final chunk: {str(e)}"
+                        logger.error(error_msg)
+                        write_to_debug_log(error_msg)
+                        api_log.is_success = False
+                        api_log.response = f"Error: {str(e)}"
+                        api_log.save()
+                        return Response(
+                            {'error': '基本設定の生成に失敗しました', 'details': str(e)},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                        )
+                else:
+                    logger.error("No response chunks received from API")
+                    write_to_debug_log("No response chunks received from API")
                     api_log.is_success = False
-                    api_log.response = str(response)
+                    api_log.response = "No response chunks received"
                     api_log.save()
                     return Response(
-                        {'error': '基本設定の生成に失敗しました', 'details': response},
+                        {'error': '基本設定の生成に失敗しました', 'details': 'APIからのレスポンスがありませんでした'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
-
-                content = response['result']
-                logger.debug(f"API content received: {content[:100]}...")
-                write_to_debug_log(f"API content received: {content[:100]}...")
-
-                # コンテンツをパースして各セクションに分割
-                logger.debug("Parsing basic setting content")
-                write_to_debug_log("Parsing basic setting content")
-                parsed_content = self._parse_basic_setting_content(content)
-
-                # パースした内容を保存
-                logger.debug("Creating basic setting")
-                write_to_debug_log("Creating basic setting")
-                basic_setting = BasicSetting.objects.create(
-                    ai_story=story,
-                    setting_data=basic_setting_data,
-                    story_setting=parsed_content.get('story_setting', ''),
-                    characters=parsed_content.get('characters', ''),
-                    plot_overview=parsed_content.get('plot_overview', ''),
-                    act1_overview=parsed_content.get('act1_overview', ''),
-                    act2_overview=parsed_content.get('act2_overview', ''),
-                    act3_overview=parsed_content.get('act3_overview', ''),
-                    raw_content=content
-                )
-                logger.debug(f"Basic setting created: {basic_setting.id}")
-                write_to_debug_log(f"Basic setting created: {basic_setting.id}")
-
-                # APIログの更新
-                api_log.is_success = True
-                api_log.response = content
-                api_log.save()
-                logger.debug("API log updated")
-                write_to_debug_log("API log updated")
-
-                # レスポンスを返す
-                result_serializer = BasicSettingSerializer(basic_setting)
-                logger.debug("Returning successful response")
-                write_to_debug_log("Returning successful response")
-                return Response(result_serializer.data, status=status.HTTP_201_CREATED)
-
             except Exception as e:
                 # エラーログ
                 error_msg = f"Exception in API request: {str(e)}"
@@ -404,9 +465,41 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     指定された小説の基本設定を取得、更新、または削除します。
     """
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = BasicSettingSerializer
-    lookup_url_kwarg = 'pk'
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        """
+        オブジェクトを取得するメソッド
+        
+        URLパスに'pk'が存在しない場合（/acts/エンドポイント）、リクエストデータから
+        basic_setting_idを取得してオブジェクトを特定します。
+        """
+        # URLパスから'pk'が提供されている場合（通常のエンドポイント）
+        if 'pk' in self.kwargs:
+            return super().get_object()
+            
+        # actsエンドポイントの場合（'pk'がない）
+        # リクエストデータからbasic_setting_idを取得
+        if self.request.method in ['PUT', 'PATCH'] and 'basic_setting_id' in self.request.data:
+            basic_setting_id = self.request.data.get('basic_setting_id')
+            story_id = self.kwargs.get('story_id')
+            
+            # ストーリーIDとbasic_setting_idでフィルタリング
+            queryset = BasicSetting.objects.filter(
+                id=basic_setting_id,
+                ai_story_id=story_id,
+                ai_story__user=self.request.user
+            )
+            
+            # オブジェクトが存在するか確認
+            if not queryset.exists():
+                raise Http404("指定されたBasicSettingが見つかりません")
+                
+            return queryset.first()
+        
+        # どの条件にも合わない場合は404エラー
+        raise Http404("指定されたBasicSettingが見つかりません")
 
     def get_queryset(self):
         """指定された小説の基本設定を取得"""
@@ -421,14 +514,149 @@ class BasicSettingDetailView(generics.RetrieveUpdateDestroyAPIView):
         オブジェクトを取得するメソッド
 
         データが存在しない場合は204 No Contentを返します。
+        特定の幕(act)のみの取得もサポートしています。
         """
         try:
             instance = self.get_object()
+
+            # act番号が指定されている場合、対応するフィールドのみを返す
+            act_number = request.query_params.get('act')
+            if act_number in ['1', '2', '3']:
+                act_num = int(act_number)
+                field_name = f'act{act_num}_overview'
+
+                return Response({
+                    'id': instance.id,
+                    field_name: getattr(instance, field_name, '')
+                })
+
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
         except Http404:
             # データが存在しない場合は204 No Contentを返す
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        """
+        オブジェクトを更新するメソッド
+
+        更新後、全フィールドをMarkdown形式で連結してraw_contentを生成します。
+        特定の幕(act)のみの更新もサポートしています。
+        幕のタイトルフィールドにはデフォルトで空文字を設定します。
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # act番号の取得（URLパスパラメータまたはクエリパラメータから）
+        act_number = kwargs.get('act_number')
+        if act_number is None:
+            act_number = request.query_params.get('act')
+        
+        # 数字文字列なら整数に変換
+        act_num = None
+        if act_number and str(act_number) in ['1', '2', '3']:
+            act_num = int(act_number)
+        
+        # act番号が指定されている場合、対応するフィールドのみを更新
+        if act_num:
+            field_name = f'act{act_num}_overview'
+            title_field = f'act{act_num}_title'
+            
+            # リクエストデータからコンテンツを取得（キー名に関わらず対応）
+            content = None
+            if field_name in request.data:
+                content = request.data[field_name]
+            elif 'content' in request.data:
+                content = request.data['content']
+                
+            if content is not None:
+                # 該当する幕のフィールドのみを更新
+                setattr(instance, field_name, content)
+                # タイトルフィールドに空文字を設定
+                setattr(instance, title_field, '')
+                instance.save()
+
+                # Markdownフォーマットでraw_contentを更新
+                raw_content = self._generate_raw_content(instance)
+                instance.raw_content = raw_content
+                instance.save()
+
+                return Response({
+                    'id': instance.id,
+                    field_name: getattr(instance, field_name)
+                })
+
+        # タイトルフィールドに空文字を設定
+        data = request.data.copy()
+        if 'act1_title' not in data:
+            data['act1_title'] = ''
+        if 'act2_title' not in data:
+            data['act2_title'] = ''
+        if 'act3_title' not in data:
+            data['act3_title'] = ''
+
+        # 通常の更新処理
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # 更新後のインスタンスを取得
+        updated_instance = self.get_object()
+
+        # Markdownフォーマットでraw_contentを生成
+        raw_content = self._generate_raw_content(updated_instance)
+
+        # raw_contentを更新して保存
+        updated_instance.raw_content = raw_content
+        updated_instance.save()
+        
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def _generate_raw_content(self, instance):
+        """オブジェクトの各フィールドからMarkdown形式のraw_contentを生成"""
+
+        # セクションタイトルのマッピング（_get_section_keyの逆マッピング）
+        section_titles = {
+            'title': 'タイトル',
+            'summary': 'サマリー',
+            'theme': 'テーマ（主題）',
+            'time_place': '時代と場所',
+            'world_setting': '作品世界と舞台設定',
+            'writing_style': '参考とする作風',
+            'emotional': '情緒的・感覚的要素',
+            'characters': '主な登場人物',
+            'key_items': '主な固有名詞',
+            'mystery': '物語の背景となる過去の謎',
+            'plot_pattern': 'プロットパターン',
+        }
+
+        # 生成するMarkdownテキスト
+        content_parts = ["# 作品設定\n"]
+
+        # 通常のセクションを処理
+        for field, title in section_titles.items():
+            field_value = getattr(instance, field, '')
+            if field_value:
+                content_parts.append(f"## {title}\n{field_value}\n")
+
+        # あらすじセクションの特別処理
+        plot_parts = []
+        for act_num in [1, 2, 3]:
+            act_content = getattr(instance, f'act{act_num}_overview', '')
+            if act_content:
+                plot_parts.append(f"### 第{act_num}幕\n{act_content}")
+
+        # あらすじセクションがあれば追加
+        if plot_parts:
+            content_parts.append("## あらすじ\n" + "\n\n".join(plot_parts) + "\n")
+
+        # すべてのパーツを結合
+        return "\n".join(content_parts)
 
 
 class LatestBasicSettingView(views.APIView):
@@ -447,7 +675,7 @@ class LatestBasicSettingView(views.APIView):
 
         try:
             # ストーリーの存在確認
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
+            ai_story = get_object_or_404(AIStory, id=story_id, user=request.user)
 
             # 最新の基本設定を取得
             basic_setting = BasicSetting.objects.filter(
@@ -465,68 +693,5 @@ class LatestBasicSettingView(views.APIView):
             logger.error(f"Error retrieving latest basic setting: {str(e)}")
             return Response(
                 {'error': f'基本設定の取得中にエラーが発生しました: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class BasicSettingActUpdateView(views.APIView):
-    """
-    基本設定の特定の幕あらすじ更新ビュー
-
-    指定された小説の基本設定の特定の幕のあらすじを更新します。
-    URLパラメータのact_numberに基づいて、対応するフィールドを更新します。
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def patch(self, request, *args, **kwargs):
-        """基本設定の特定の幕のあらすじを更新"""
-        story_id = self.kwargs.get('story_id')
-        act_number = self.kwargs.get('act_number')
-        content = request.data.get('content')
-
-        if not content:
-            return Response(
-                {'error': 'あらすじ内容が指定されていません'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # ストーリーの存在確認
-            story = get_object_or_404(AIStory, id=story_id, user=request.user)
-
-            # 最新の基本設定を取得
-            basic_setting = BasicSetting.objects.filter(
-                ai_story_id=story_id
-            ).order_by('-created_at').first()
-
-            if not basic_setting:
-                return Response(
-                    {'error': '基本設定が見つかりません'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # 幕番号に応じたフィールドを更新
-            if act_number == 1:
-                basic_setting.act1_overview = content
-            elif act_number == 2:
-                basic_setting.act2_overview = content
-            elif act_number == 3:
-                basic_setting.act3_overview = content
-            else:
-                return Response(
-                    {'error': '無効な幕番号です (1-3の値を指定してください)'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # 変更を保存
-            basic_setting.save()
-
-            serializer = BasicSettingSerializer(basic_setting)
-            return Response(serializer.data)
-
-        except Exception as e:
-            logger.error(f"Error updating basic setting act: {str(e)}")
-            return Response(
-                {'error': f'基本設定の更新中にエラーが発生しました: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

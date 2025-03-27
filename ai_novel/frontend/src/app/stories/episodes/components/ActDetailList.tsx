@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { unifiedFetchApi, ActDetail, ApiError } from '@/lib/unified-api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Blocks, Ungroup, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useStoryContext } from '@/components/story/StoryProvider';
@@ -79,6 +79,12 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">
+          <Blocks className="h-6 w-6" />
+          各幕の設定
+        </h2>
+      </div>
       {acts.map((act) => (
         <Card key={act.id} className="shadow-sm">
           <CardHeader className="pb-2">
@@ -87,9 +93,10 @@ export const ActDetailList = ({ storyId }: ActDetailListProps) => {
               {/* 幕を選択するボタンを付ける。押すとそのActでsetSelectedActtする。 */}
               <Button
                 onClick={() => setSelectedAct(act)}
-                className="ml-2"
+                className="ml-2 float-right x-r-20"
               >
-                選択
+                <Ungroup className="h-6 w-6" />
+                分割
               </Button>
             </CardTitle>
           </CardHeader>

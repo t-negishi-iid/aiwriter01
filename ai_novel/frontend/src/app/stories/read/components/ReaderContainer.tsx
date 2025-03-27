@@ -262,20 +262,6 @@ export default function ReaderContainer({ storyId, initialAct, initialEpisode }:
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
-          <h1 className="ml-4 text-lg font-semibold truncate max-w-xs">
-            {story?.title || "読み込み中..."}
-          </h1>
-        </div>
-        <div>
-          <a
-            href="/stories"
-            className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-            aria-label="小説一覧に戻る"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"></path>
-            </svg>
-          </a>
         </div>
       </header>
 
@@ -293,13 +279,6 @@ export default function ReaderContainer({ storyId, initialAct, initialEpisode }:
 
       {/* メインコンテンツ */}
       <main className="flex-grow flex flex-col overflow-hidden">
-        {/* エピソードタイトル */}
-        {content && (
-          <div className="text-center py-4">
-            <h2 className="text-xl font-semibold">{content.title}</h2>
-          </div>
-        )}
-
         {/* 本文コンテンツ */}
         <div
           ref={contentRef}
@@ -320,6 +299,9 @@ export default function ReaderContainer({ storyId, initialAct, initialEpisode }:
             </div>
           ) : (
             <div className={isVertical ? 'min-h-full' : ''}>
+              {/* エピソードタイトル */}
+              <h2 className="text-xl font-semibold text-center py-4 mb-4">{content.title}</h2>
+
               {content.content.split('\n').map((paragraph, index) => (
                 <p key={index} className={isVertical ? styles.verticalParagraph : styles.paragraph}>{paragraph}</p>
               ))}

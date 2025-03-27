@@ -11,14 +11,10 @@ import {
   CardTitle,
   CardFooter,
 } from '@/components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import ReaderContainer from '@/app/stories/read/components/ReaderContainer';
 import { getStoryDetail, getActs, getEpisodes } from './utils/api-client';
+import { StoryTabs } from '@/components/story/StoryTabs';
+import { StoryProvider } from '@/components/story/StoryProvider';
 
 interface Act {
   id: number;
@@ -39,12 +35,11 @@ export default function ReadPage() {
   const actNumber = searchParams.get('act');
   const episodeNumber = searchParams.get('episode');
 
-  const [story, setStory] = useState<{id: number; title: string; catchphrase?: string} | null>(null);
+  const [story, setStory] = useState<{ id: number; title: string; catchphrase?: string } | null>(null);
   const [acts, setActs] = useState<Act[]>([]);
   const [episodes, setEpisodes] = useState<{ [key: number]: Episode[] }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedActs, setExpandedActs] = useState<string[]>([]);
 
   // 小説IDがない場合は /stories へリダイレクト
   useEffect(() => {
@@ -57,7 +52,7 @@ export default function ReadPage() {
     const fetchStoryData = async () => {
       try {
         setIsLoading(true);
-        
+
         // 小説情報の取得
         const storyDetail = await getStoryDetail(Number(storyId));
         setStory({
@@ -65,7 +60,7 @@ export default function ReadPage() {
           title: String(storyDetail.title),
           catchphrase: storyDetail.catchphrase ? String(storyDetail.catchphrase) : undefined
         });
-        
+
         // エピソード表示モードではない場合のみ幕とエピソード一覧を取得
         if (!(actNumber && episodeNumber)) {
           // 幕情報の取得
@@ -75,7 +70,7 @@ export default function ReadPage() {
           // act_numberでソート
           const sortedActs = [...actsArray].sort((a: Act, b: Act) => a.act_number - b.act_number);
           setActs(sortedActs);
-          
+
           // 各幕のエピソード取得
           const episodesMap: { [key: number]: Episode[] } = {};
           for (const act of sortedActs) {
@@ -88,13 +83,8 @@ export default function ReadPage() {
             );
           }
           setEpisodes(episodesMap);
-          
-          // デフォルトで第一幕を開く
-          if (sortedActs.length > 0) {
-            setExpandedActs([`act-${sortedActs[0].act_number}`]);
-          }
         }
-        
+
         setError(null);
       } catch (err) {
         console.error('小説データの取得に失敗:', err);
@@ -125,111 +115,116 @@ export default function ReadPage() {
   // 特定のエピソードを表示する場合
   if (storyId && actNumber && episodeNumber) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="mb-4">
-          <Button variant="ghost" onClick={handleBackToList} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            エピソード一覧に戻る
-          </Button>
+      <StoryProvider storyId={storyId}>
+        <div className="container mx-auto p-4">
+          <ReaderContainer
+            storyId={parseInt(storyId)}
+            initialAct={parseInt(actNumber)}
+            initialEpisode={parseInt(episodeNumber)}
+          />
         </div>
-        <ReaderContainer 
-          storyId={parseInt(storyId)} 
-          initialAct={parseInt(actNumber)} 
-          initialEpisode={parseInt(episodeNumber)} 
-        />
-      </div>
+      </StoryProvider>
     );
   }
 
   // ローディング中の表示
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">小説情報を読み込み中...</p>
-      </div>
+      <StoryProvider storyId={storyId}>
+        <div className="container mx-auto py-6">
+          <StoryTabs storyId={storyId} activeTab="summary" />
+
+          <div className="flex flex-col items-center justify-center h-[30vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-sm text-muted-foreground">小説情報を読み込み中...</p>
+          </div>
+        </div>
+      </StoryProvider>
     );
   }
 
   // エラー表示
   if (error) {
     return (
-      <div className="container mx-auto p-4">
-        <Alert variant="destructive">
-          <AlertTitle>エラー</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <div className="flex justify-center mt-4">
-          <Button onClick={() => window.location.reload()}>
-            ページを再読み込み
-          </Button>
+      <StoryProvider storyId={storyId}>
+        <div className="container mx-auto py-6">
+          <StoryTabs storyId={storyId} activeTab="summary" />
+
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>エラー</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => window.location.reload()}>
+              ページを再読み込み
+            </Button>
+          </div>
         </div>
-      </div>
+      </StoryProvider>
     );
   }
 
   // 幕とエピソード一覧の表示
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{story?.title || '小説'} - エピソード一覧</h1>
-        <Button variant="outline" onClick={() => router.push('/stories')}>
-          小説一覧に戻る
-        </Button>
-      </div>
+    <StoryProvider storyId={storyId}>
+      <div className="container mx-auto py-6">
+        <StoryTabs storyId={storyId} activeTab="summary" />
 
-      {story?.catchphrase && (
-        <p className="text-lg italic mb-6">「{story.catchphrase}」</p>
-      )}
+        <div className="mt-6">
+          <div className="mb-6">
+            {story?.catchphrase && (
+              <p className="text-sm font-medium text-primary/80">「{story.catchphrase}」</p>
+            )}
+          </div>
 
-      {acts.length === 0 ? (
-        <div className="text-center p-8 border rounded-lg bg-muted/50">
-          <p className="text-lg text-muted-foreground mb-4">エピソードがまだありません</p>
+          {acts.length === 0 ? (
+            <div className="text-center p-8 border rounded-lg bg-muted/50">
+              <p className="text-lg text-muted-foreground mb-4">エピソードがまだありません</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {acts.map((act) => (
+                <div key={act.id} className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
+                    第{act.act_number}幕: {act.title}
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      ({episodes[act.act_number]?.length || 0}エピソード)
+                    </span>
+                  </h2>
+                  
+                  {(!episodes[act.act_number] || episodes[act.act_number].length === 0) ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      この幕にはまだエピソードがありません
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {episodes[act.act_number]?.map((episode) => (
+                        <Card
+                          key={episode.id}
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => handleSelectEpisode(act.act_number, episode.episode_number)}
+                        >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-base">
+                              第{episode.episode_number}話: {episode.title}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardFooter className="pt-2 border-t">
+                            <Button variant="ghost" size="sm" className="w-full">
+                              <BookOpen className="h-4 w-4 mr-2" />
+                              読む
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <Accordion type="multiple" value={expandedActs} onValueChange={setExpandedActs} className="mb-6">
-          {acts.map((act) => (
-            <AccordionItem key={act.id} value={`act-${act.act_number}`} className="border rounded-md mb-2">
-              <AccordionTrigger className="px-4 py-2 hover:bg-muted/30">
-                <div className="flex items-center">
-                  <span className="text-lg font-medium">第{act.act_number}幕: {act.title}</span>
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    ({episodes[act.act_number]?.length || 0}エピソード)
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 py-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {episodes[act.act_number]?.map((episode) => (
-                    <Card 
-                      key={episode.id} 
-                      className="cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => handleSelectEpisode(act.act_number, episode.episode_number)}
-                    >
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">
-                          第{episode.episode_number}話: {episode.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardFooter className="pt-2 border-t">
-                        <Button variant="ghost" size="sm" className="w-full">
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          読む
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-                {(!episodes[act.act_number] || episodes[act.act_number].length === 0) && (
-                  <p className="text-center text-muted-foreground py-4">
-                    この幕にはまだエピソードがありません
-                  </p>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      )}
-    </div>
+      </div>
+    </StoryProvider>
   );
 }

@@ -173,13 +173,6 @@ export function StoryProvider({ children, storyId }: StoryProviderProps) {
     <StoryContext.Provider value={contextValue}>
       <div className="container mx-auto py-10">
         <div className="mb-8">
-          <Link
-            href="/stories"
-            className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-2"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            小説一覧に戻る
-          </Link>
           <h1 className="text-3xl font-bold">{story?.title || "無題の小説"}</h1>
         </div>
 

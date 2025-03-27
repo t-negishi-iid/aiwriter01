@@ -229,6 +229,14 @@
   float: left;
 }
 
+.float-both {
+  float: both;
+}
+
+.clearfix {
+  clear: both;
+}
+
 .w-50 {
   width: 50%;
 }

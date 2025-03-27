@@ -78,6 +78,7 @@ class BasicSettingDataSerializer(serializers.ModelSerializer):
 class BasicSettingSerializer(serializers.ModelSerializer):
     """基本設定シリアライザ"""
     ai_story = AIStorySerializer(read_only=True)
+    raw_content = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = BasicSetting

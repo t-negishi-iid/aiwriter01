@@ -2,42 +2,58 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
-import ReaderContainer from '@/app/stories/read/components/ReaderContainer';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { getStoryDetail, getActs, getEpisodes } from './utils/api-client';
-import { StoryTabs } from '@/components/story/StoryTabs';
-import { StoryProvider } from '@/components/story/StoryProvider';
+
+// 型定義
+interface Story {
+  id: number;
+  title: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 interface Act {
   id: number;
   act_number: number;
   title: string;
+  story_id?: number;
 }
 
 interface Episode {
   id: number;
   episode_number: number;
   title: string;
+  act_id?: number;
 }
 
+interface ApiResponse<T> {
+  results: T[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+}
+
+// 型ガード関数
+function isStory(obj: any): obj is Story {
+  return obj && typeof obj.id === 'number' && typeof obj.title === 'string';
+}
+
+function isApiResponse<T>(obj: any): obj is ApiResponse<T> {
+  return obj && Array.isArray(obj.results);
+}
+
+// エピソード一覧表示ページ
 export default function ReadPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const storyId = searchParams.get('id');
-  const actNumber = searchParams.get('act');
-  const episodeNumber = searchParams.get('episode');
-
-  const [story, setStory] = useState<{ id: number; title: string; catchphrase?: string } | null>(null);
+  
+  const [story, setStory] = useState<Story | null>(null);
   const [acts, setActs] = useState<Act[]>([]);
-  const [episodes, setEpisodes] = useState<{ [key: number]: Episode[] }>({});
+  const [episodes, setEpisodes] = useState<Record<number, Episode[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,183 +64,115 @@ export default function ReadPage() {
       return;
     }
 
-    // 小説情報、幕、エピソード情報の取得
     const fetchStoryData = async () => {
       try {
         setIsLoading(true);
-
-        // 小説情報の取得
-        const storyDetail = await getStoryDetail(Number(storyId));
-        setStory({
-          id: Number(storyDetail.id),
-          title: String(storyDetail.title),
-          catchphrase: storyDetail.catchphrase ? String(storyDetail.catchphrase) : undefined
-        });
-
-        // エピソード表示モードではない場合のみ幕とエピソード一覧を取得
-        if (!(actNumber && episodeNumber)) {
-          // 幕情報の取得
-          const actsData = await getActs(Number(storyId));
-          // results配列を取得
-          const actsArray = Array.isArray(actsData.results) ? actsData.results : [];
-          // act_numberでソート
-          const sortedActs = [...actsArray].sort((a: Act, b: Act) => a.act_number - b.act_number);
-          setActs(sortedActs);
-
-          // 各幕のエピソード取得
-          const episodesMap: { [key: number]: Episode[] } = {};
-          for (const act of sortedActs) {
-            const episodesData = await getEpisodes(Number(storyId), act.act_number);
-            // results配列を取得
-            const episodesArray = Array.isArray(episodesData.results) ? episodesData.results : [];
-            // episode_numberでソート
-            episodesMap[act.act_number] = [...episodesArray].sort(
-              (a: Episode, b: Episode) => a.episode_number - b.episode_number
-            );
-          }
-          setEpisodes(episodesMap);
+        // 小説の詳細情報を取得
+        const storyData = await getStoryDetail(parseInt(storyId));
+        if (isStory(storyData)) {
+          setStory(storyData);
+        } else {
+          console.error('無効な小説データ形式:', storyData);
+          setError('小説データの形式が無効です');
+          return;
         }
+
+        // 幕（Act）情報を取得
+        const actsData = await getActs(parseInt(storyId));
+        if (isApiResponse<Act>(actsData)) {
+          setActs(actsData.results);
+        } else {
+          console.error('無効な幕データ形式:', actsData);
+          setError('幕データの形式が無効です');
+          return;
+        }
+
+        // 各幕のエピソード情報を取得
+        const episodesObj: Record<number, Episode[]> = {};
+        for (const act of actsData.results) {
+          const episodesData = await getEpisodes(parseInt(storyId), act.act_number);
+          if (isApiResponse<Episode>(episodesData)) {
+            episodesObj[act.act_number] = episodesData.results;
+          } else {
+            console.error(`幕${act.act_number}の無効なエピソードデータ形式:`, episodesData);
+          }
+        }
+        setEpisodes(episodesObj);
 
         setError(null);
       } catch (err) {
-        console.error('小説データの取得に失敗:', err);
-        setError('小説データの取得に失敗しました');
+        setError('小説情報の取得に失敗しました');
+        console.error('小説情報の取得エラー:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchStoryData();
-  }, [storyId, router, actNumber, episodeNumber]);
+  }, [storyId, router]);
 
-  // エピソードを選択
-  const handleSelectEpisode = (actNum: number, episodeNum: number) => {
-    router.push(`/stories/read?id=${storyId}&act=${actNum}&episode=${episodeNum}`);
-  };
-
-  // 一覧に戻る
-  const handleBackToList = () => {
-    router.push(`/stories/read?id=${storyId}`);
-  };
-
-  // リダイレクト処理中は何も表示しない
-  if (!storyId) {
-    return null;
-  }
-
-  // 特定のエピソードを表示する場合
-  if (storyId && actNumber && episodeNumber) {
-    return (
-      <StoryProvider storyId={storyId}>
-        <div className="container mx-auto p-4">
-          <ReaderContainer
-            storyId={parseInt(storyId)}
-            initialAct={parseInt(actNumber)}
-            initialEpisode={parseInt(episodeNumber)}
-          />
-        </div>
-      </StoryProvider>
-    );
-  }
-
-  // ローディング中の表示
   if (isLoading) {
     return (
-      <StoryProvider storyId={storyId}>
-        <div className="container mx-auto py-6">
-          <StoryTabs storyId={storyId} activeTab="summary" />
-
-          <div className="flex flex-col items-center justify-center h-[30vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="mt-2 text-sm text-muted-foreground">小説情報を読み込み中...</p>
-          </div>
-        </div>
-      </StoryProvider>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
-  // エラー表示
   if (error) {
     return (
-      <StoryProvider storyId={storyId}>
-        <div className="container mx-auto py-6">
-          <StoryTabs storyId={storyId} activeTab="summary" />
-
-          <Alert variant="destructive" className="mt-4">
-            <AlertTitle>エラー</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <div className="flex justify-center mt-4">
-            <Button onClick={() => window.location.reload()}>
-              ページを再読み込み
-            </Button>
-          </div>
+      <div className="container mx-auto p-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <strong className="font-bold">エラー: </strong>
+          <span className="block sm:inline">{error}</span>
         </div>
-      </StoryProvider>
+      </div>
     );
   }
 
-  // 幕とエピソード一覧の表示
-  return (
-    <StoryProvider storyId={storyId}>
-      <div className="container mx-auto py-6">
-        <StoryTabs storyId={storyId} activeTab="summary" />
-
-        <div className="mt-6">
-          <div className="mb-6">
-            {story?.catchphrase && (
-              <p className="text-sm font-medium text-primary/80">「{story.catchphrase}」</p>
-            )}
+  return storyId && story ? (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">{story.title}</h1>
+      
+      <div className="space-y-8">
+        {acts.map((act) => (
+          <div key={act.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              {act.title || `第${act.act_number}幕`}
+            </h2>
+            
+            <div className="space-y-2">
+              {episodes[act.act_number]?.length > 0 ? (
+                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {episodes[act.act_number].map((episode) => (
+                    <li key={episode.id} className="py-3">
+                      <Link
+                        href={`/stories/read/reader?id=${storyId}&act=${act.act_number}&episode=${episode.episode_number}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-between"
+                      >
+                        <span>
+                          {episode.title || `第${episode.episode_number}話`}
+                        </span>
+                        <span className="text-gray-500 text-sm">
+                          読む →
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">エピソードがありません</p>
+              )}
+            </div>
           </div>
-
-          {acts.length === 0 ? (
-            <div className="text-center p-8 border rounded-lg bg-muted/50">
-              <p className="text-lg text-muted-foreground mb-4">エピソードがまだありません</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {acts.map((act) => (
-                <div key={act.id} className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-4 border-b pb-2">
-                    第{act.act_number}幕: {act.title}
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      ({episodes[act.act_number]?.length || 0}エピソード)
-                    </span>
-                  </h2>
-                  
-                  {(!episodes[act.act_number] || episodes[act.act_number].length === 0) ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      この幕にはまだエピソードがありません
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {episodes[act.act_number]?.map((episode) => (
-                        <Card
-                          key={episode.id}
-                          className="cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => handleSelectEpisode(act.act_number, episode.episode_number)}
-                        >
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-base">
-                              第{episode.episode_number}話: {episode.title}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardFooter className="pt-2 border-t">
-                            <Button variant="ghost" size="sm" className="w-full">
-                              <BookOpen className="h-4 w-4 mr-2" />
-                              読む
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        ))}
+        
+        {acts.length === 0 && (
+          <div className="text-center p-8">
+            <p className="text-gray-500">この小説にはまだ幕が登録されていません</p>
+          </div>
+        )}
       </div>
-    </StoryProvider>
-  );
+    </div>
+  ) : null;
 }

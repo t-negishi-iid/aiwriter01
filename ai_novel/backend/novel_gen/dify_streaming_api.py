@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
     """
     最終チャンクからMarkdownコンテンツを抽出します。
-    
+
     Args:
         last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
         all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
-        
+
     Returns:
         str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
     """
@@ -31,11 +31,11 @@ def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Di
                 if isinstance(result, str) and result:
                     logger.debug("node_finishedイベントからMarkdownを抽出しました")
                     return result
-        
+
         # 次に優先：標準的なDify API形式からMarkdownを抽出
         if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
             result = last_chunk["data"]["outputs"]["result"]
-            
+
             # resultが文字列の場合はそのまま返す
             if isinstance(result, str):
                 logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
@@ -44,23 +44,23 @@ def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Di
             elif isinstance(result, list):
                 logger.debug("リスト形式のresultをJSON文字列に変換しました")
                 return json.dumps(result, ensure_ascii=False)
-                
+
         # text_chunkイベントからの抽出を試みる
         if all_chunks:
             last_text_chunks = [
-                chunk for chunk in all_chunks 
-                if chunk.get("event") == "text_chunk" 
-                and "data" in chunk 
+                chunk for chunk in all_chunks
+                if chunk.get("event") == "text_chunk"
+                and "data" in chunk
                 and "text" in chunk["data"]
             ]
-            
+
             if last_text_chunks:
                 # 最後のtext_chunkを使用
                 text_content = last_text_chunks[-1]["data"]["text"]
                 if text_content:
                     logger.debug("text_chunkイベントからMarkdownを抽出しました")
                     return text_content
-                
+
         logger.error("Markdownコンテンツの抽出に失敗しました")
         if last_chunk:
             logger.error(f"最終チャンク: {json.dumps(last_chunk, ensure_ascii=False)}")
@@ -224,28 +224,28 @@ class DifyStreamingAPI:
             if not line:
                 # 空行はスキップ
                 continue
-            
+
             try:
                 decoded_line = line.decode('utf-8')
-                
+
                 # 空のデコード行もスキップ
                 if not decoded_line.strip():
                     continue
-                
+
                 # SSE形式のデータ処理 (data: {...})
                 if decoded_line.startswith('data: '):
                     data_str = decoded_line[6:]  # 'data: ' を削除
-                    
+
                     # データ文字列が空の場合はスキップ
                     if not data_str.strip():
                         logger.warning("Empty data string received, skipping")
                         continue
-                    
+
                     # 特別なケース: [DONE]
                     if data_str.strip() == '[DONE]':
                         yield {'done': True}
                         continue
-                    
+
                     try:
                         data = json.loads(data_str)
                         yield data
@@ -271,12 +271,12 @@ class DifyStreamingAPI:
             except Exception as e:
                 logger.error(f"Unexpected error processing stream line: {e}")
                 continue
-    
+
     """
     アプリケーションメソッド
     実際にDifyのAPIを呼び出してサービスを提供
     """
-    
+
     def create_basic_setting_stream(
         self,
         basic_setting_data: str,
@@ -296,7 +296,7 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # 入力データの準備
         inputs = {
             "basic_setting_data": basic_setting_data
@@ -325,7 +325,7 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # 入力データの準備
         inputs = {
             "basic_setting": basic_setting,
@@ -355,7 +355,7 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # 入力データの準備
         inputs = {
             "basic_setting": basic_setting,
@@ -391,7 +391,7 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         all_act_details_str = json.dumps(all_act_details_list, ensure_ascii=False)
@@ -438,7 +438,7 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
         all_episode_details_str = json.dumps(all_episode_details_list, ensure_ascii=False)
@@ -460,7 +460,8 @@ class DifyStreamingAPI:
         self,
         basic_setting: str,
         all_characters_list: List[Dict[str, Any]],
-        plot_details: List[Dict[str, Any]],
+        all_act_details_list: List[Dict[str, Any]],
+        all_episode_details_list: List[Dict[str, Any]],
         target_content: str,
         target_type: str,
         user_id: str,
@@ -472,7 +473,8 @@ class DifyStreamingAPI:
         Args:
             basic_setting: 基本設定
             all_characters_list: キャラクター詳細リスト
-            plot_details: あらすじ詳細リスト
+            all_act_details_list: 幕詳細リスト
+            all_episode_details_list: エピソード詳細リスト
             target_content: ターゲットコンテンツ
             target_type: ターゲットタイプ（episode, act, novel）
             user_id: ユーザーID
@@ -483,15 +485,17 @@ class DifyStreamingAPI:
         """
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
-        
+
         # データをシリアライズ
         all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
-        plot_details_str = json.dumps(plot_details, ensure_ascii=False)
+        all_act_details_str = json.dumps(all_act_details_list, ensure_ascii=False)
+        all_episode_details_str = json.dumps(all_episode_details_list, ensure_ascii=False)
 
         inputs = {
             "basic_setting": basic_setting,
             "all_characters": all_characters_str,
-            "plot_details": plot_details_str,
+            "all_act_details": all_act_details_str,
+            "all_episode_details": all_episode_details_str,
             "target_content": target_content,
             "target_type": target_type
         }

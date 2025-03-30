@@ -124,7 +124,11 @@ class CreateEpisodeContentView(views.APIView):
                 all_chunks.append(chunk)
 
                 # 最終チャンクを更新
-                if 'done' in chunk and chunk['done']:
+                if 'event' in chunk and chunk['event'] == "workflow_finished":
+                    # workflow_finished イベントを最優先で検出
+                    last_chunk = chunk
+                    logger.debug(f"workflow_finished イベントを最終チャンクとして検出しました: {chunk}")
+                elif 'done' in chunk and chunk['done']:
                     last_chunk = chunk
                 elif 'event' in chunk and chunk['event'] == 'node_finished':
                     last_chunk = chunk

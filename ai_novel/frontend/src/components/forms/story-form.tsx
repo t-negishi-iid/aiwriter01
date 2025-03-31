@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { unifiedStoryApi } from "@/lib/unified-api-client"
 
 // ストーリー作成用のスキーマ
 const formSchema = z.object({
@@ -24,7 +25,7 @@ const formSchema = z.object({
 
 interface StoryFormProps {
   onSubmit: (data: z.infer<typeof formSchema>) => void
-  defaultValues?: Partial<z.infer<typeof formSchema>>
+  defaultValues?: Partial<z.infer<typeof formSchema>> & { id?: number | string }
   isSubmitting?: boolean
   submitButtonText?: string
   cancelButton?: React.ReactNode
@@ -38,19 +39,19 @@ export function StoryForm({
   cancelButton
 }: StoryFormProps) {
   const [submitting, setSubmitting] = useState(isSubmitting)
-  
+
   // タイトル関連の状態
   const [titleSuggestions, setTitleSuggestions] = useState<string[]>([])
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false)
   const [showTitleSuggestions, setShowTitleSuggestions] = useState(false)
   const [originalTitle, setOriginalTitle] = useState("")
-  
+
   // キャッチコピー関連の状態
   const [catchphraseSuggestions, setCatchphraseSuggestions] = useState<string[]>([])
   const [isGeneratingCatchphrases, setIsGeneratingCatchphrases] = useState(false)
   const [showCatchphraseSuggestions, setShowCatchphraseSuggestions] = useState(false)
   const [originalCatchphrase, setOriginalCatchphrase] = useState("")
-  
+
   // 概要関連の状態
   const [summarySuggestion, setSummarySuggestion] = useState<string>("")
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
@@ -91,28 +92,52 @@ export function StoryForm({
   const handleGenerateTitleSuggestions = async () => {
     setIsGeneratingTitles(true)
     try {
-      // TODO: 実際のAPIと連携する
-      // モックデータを使用（実際の実装では削除してください）
-      const mockTitles = [
-        "星空のシンフォニア",
-        "永遠の約束",
-        "彼方からの呼び声",
-        "光と影の協奏曲",
-        "記憶の迷宮"
-      ];
-      
-      // APIからデータを取得する処理を追加
-      // const response = await fetch('/api/generate-titles', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     summary: form.getValues('summary'),
-      //     catchphrase: form.getValues('catchphrase')
-      //   })
-      // });
-      // const data = await response.json();
-      // setTitleSuggestions(data.titles);
-      
-      setTitleSuggestions(mockTitles);
+      // APIからタイトル候補を取得
+      const storyId = defaultValues?.id;
+
+      // 数値IDがない場合は処理をスキップ
+      if (!storyId || isNaN(Number(storyId))) {
+        console.error("タイトル候補生成には有効なstory_idが必要です");
+        setIsGeneratingTitles(false);
+        return;
+      }
+
+      // 基本設定データの準備
+      const basicSettingData = JSON.stringify({
+        title: form.getValues('title'),
+        catchphrase: form.getValues('catchphrase'),
+        summary: form.getValues('summary')
+      });
+
+      const response = await unifiedStoryApi.generateTitleOrCatchphrase(storyId, {
+        basic_setting: basicSettingData,
+        target_content: "タイトル",
+        title_type: "タイトル"
+      });
+
+      // レスポンスデータを直接使用する
+      if (response && response.titles) {
+        // レスポンスが文字列の場合はJSONとしてパース
+        let titleArray: string[] = [];
+        
+        if (typeof response.titles === 'string') {
+          try {
+            titleArray = JSON.parse(response.titles);
+          } catch (e) {
+            console.error("タイトル候補のパースに失敗:", e);
+            titleArray = [response.titles]; // パース失敗時は文字列をそのまま1つの候補として使用
+          }
+        } else if (Array.isArray(response.titles)) {
+          titleArray = response.titles;
+        } else {
+          titleArray = [String(response.titles)];
+        }
+        
+        // 成功した場合は、タイトルリストを設定する
+        setTitleSuggestions(titleArray);
+      } else {
+        console.error("タイトル候補取得エラー: レスポンスデータが不正です");
+      }
     } catch (error) {
       console.error("タイトル候補生成エラー:", error);
     } finally {
@@ -135,7 +160,7 @@ export function StoryForm({
   const handleCloseTitleSuggestions = () => {
     setShowTitleSuggestions(false);
   };
-  
+
   // キャッチコピー候補Box表示ハンドラ
   const handleShowCatchphraseSuggestionsBox = () => {
     if (!showCatchphraseSuggestions) {
@@ -149,28 +174,52 @@ export function StoryForm({
   const handleGenerateCatchphraseSuggestions = async () => {
     setIsGeneratingCatchphrases(true)
     try {
-      // TODO: 実際のAPIと連携する
-      // モックデータを使用（実際の実装では削除してください）
-      const mockCatchphrases = [
-        "想像を超える冒険が、あなたを待っている",
-        "世界の謎が明かされる瞬間",
-        "運命に導かれし者たちの物語",
-        "愛と勇気が織りなす永遠の絆",
-        "心の奥底に眠る真実の物語"
-      ];
-      
-      // APIからデータを取得する処理を追加
-      // const response = await fetch('/api/generate-catchphrases', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     title: form.getValues('title'),
-      //     summary: form.getValues('summary')
-      //   })
-      // });
-      // const data = await response.json();
-      // setCatchphraseSuggestions(data.catchphrases);
-      
-      setCatchphraseSuggestions(mockCatchphrases);
+      // APIからキャッチコピー候補を取得
+      const storyId = defaultValues?.id;
+
+      // 数値IDがない場合は処理をスキップ
+      if (!storyId || isNaN(Number(storyId))) {
+        console.error("キャッチコピー候補生成には有効なstory_idが必要です");
+        setIsGeneratingCatchphrases(false);
+        return;
+      }
+
+      // 基本設定データの準備
+      const basicSettingData = JSON.stringify({
+        title: form.getValues('title'),
+        catchphrase: form.getValues('catchphrase'),
+        summary: form.getValues('summary')
+      });
+
+      const response = await unifiedStoryApi.generateTitleOrCatchphrase(storyId, {
+        basic_setting: basicSettingData,
+        target_content: "キャッチコピー",
+        title_type: "キャッチコピー"
+      });
+
+      // レスポンスデータを直接使用する
+      if (response && response.titles) {
+        // レスポンスが文字列の場合はJSONとしてパース
+        let catchphraseArray: string[] = [];
+        
+        if (typeof response.titles === 'string') {
+          try {
+            catchphraseArray = JSON.parse(response.titles);
+          } catch (e) {
+            console.error("キャッチコピー候補のパースに失敗:", e);
+            catchphraseArray = [response.titles]; // パース失敗時は文字列をそのまま1つの候補として使用
+          }
+        } else if (Array.isArray(response.titles)) {
+          catchphraseArray = response.titles;
+        } else {
+          catchphraseArray = [String(response.titles)];
+        }
+        
+        // 成功した場合は、キャッチコピーリストを設定する
+        setCatchphraseSuggestions(catchphraseArray);
+      } else {
+        console.error("キャッチコピー候補取得エラー: レスポンスデータが不正です");
+      }
     } catch (error) {
       console.error("キャッチコピー候補生成エラー:", error);
     } finally {
@@ -205,24 +254,31 @@ export function StoryForm({
 
   // 概要候補生成ハンドラ
   const handleGenerateSummarySuggestions = async () => {
-    setIsGeneratingSummary(true)
+    setIsGeneratingSummary(true);
     try {
-      // TODO: 実際のAPIと連携する
-      // モックデータを使用（実際の実装では削除してください）
-      const mockSummary = "このストーリーは、主人公が旅に出る物語です。";
-      
-      // APIからデータを取得する処理を追加
-      // const response = await fetch('/api/generate-summaries', {
-      //   method: 'POST',
-      //   body: JSON.stringify({
-      //     title: form.getValues('title'),
-      //     catchphrase: form.getValues('catchphrase')
-      //   })
-      // });
-      // const data = await response.json();
-      // setSummarySuggestion(data.summary);
-      
-      setSummarySuggestion(mockSummary);
+      // APIから概要候補を取得
+      const storyId = defaultValues?.id;
+
+      // 数値IDがない場合は処理をスキップ
+      if (!storyId || isNaN(Number(storyId))) {
+        console.error("概要候補生成には有効なstory_idが必要です");
+        setIsGeneratingSummary(false);
+        return;
+      }
+
+      // 概要生成APIを呼び出し
+      const response = await unifiedStoryApi.generateSummary(storyId, {
+        target_content: form.getValues('title') + "\n" + form.getValues('catchphrase'),
+        word_count: 100 // 概要の長さを100語に設定
+      });
+
+      // レスポンスデータを処理
+      if (response && response.summary) {
+        // 概要は1つだけなので文字列をそのまま使用
+        setSummarySuggestion(response.summary);
+      } else {
+        console.error("概要候補取得エラー: レスポンスデータが不正です");
+      }
     } catch (error) {
       console.error("概要候補生成エラー:", error);
     } finally {
@@ -246,6 +302,17 @@ export function StoryForm({
     setShowSummarySuggestion(false);
   };
 
+  // 有効なstory_idがあるかをチェックする関数
+  const hasValidStoryId = useCallback(() => {
+    const storyId = defaultValues?.id;
+    return storyId !== undefined && !isNaN(Number(storyId));
+  }, [defaultValues]);
+
+  useEffect(() => {
+    console.log("StoryForm defaultValues:", defaultValues);
+    console.log("hasValidStoryId result:", hasValidStoryId());
+  }, [defaultValues, hasValidStoryId]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8" data-testid="story-form">
@@ -266,18 +333,20 @@ export function StoryForm({
                     className="story-input"
                   />
                 </FormControl>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleShowTitleSuggestionsBox}
-                  disabled={submitting}
-                  className="w-full"
-                  data-testid="show-title-suggestions-button"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  タイトル候補生成
-                </Button>
-                
+                {hasValidStoryId() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShowTitleSuggestionsBox}
+                    disabled={submitting}
+                    className="w-full"
+                    data-testid="show-title-suggestions-button"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    タイトル候補生成
+                  </Button>
+                )}
+
                 {showTitleSuggestions && (
                   <Card className="mt-4">
                     <CardContent className="pt-4">
@@ -296,9 +365,9 @@ export function StoryForm({
                         </div>
 
                         <div className="flex space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="secondary" 
+                          <Button
+                            type="button"
+                            variant="secondary"
                             onClick={handleGenerateTitleSuggestions}
                             disabled={isGeneratingTitles}
                             className="flex-1"
@@ -306,7 +375,7 @@ export function StoryForm({
                             <Sparkles className="mr-2 h-4 w-4" />
                             {isGeneratingTitles ? "生成中..." : "候補を生成"}
                           </Button>
-                          
+
                           <Button
                             type="button"
                             variant="outline"
@@ -317,7 +386,7 @@ export function StoryForm({
                             リセット
                           </Button>
                         </div>
-                        
+
                         <div className="grid gap-2 mt-2">
                           {titleSuggestions.length > 0 ? (
                             titleSuggestions.map((title, index) => (
@@ -372,18 +441,20 @@ export function StoryForm({
                     className="story-textarea th-50"
                   />
                 </FormControl>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleShowCatchphraseSuggestionsBox}
-                  disabled={submitting}
-                  className="w-full"
-                  data-testid="show-catchphrase-suggestions-button"
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  キャッチコピー候補生成
-                </Button>
-                
+                {hasValidStoryId() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShowCatchphraseSuggestionsBox}
+                    disabled={submitting}
+                    className="w-full"
+                    data-testid="show-catchphrase-suggestions-button"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    キャッチコピー候補生成
+                  </Button>
+                )}
+
                 {showCatchphraseSuggestions && (
                   <Card className="mt-4">
                     <CardContent className="pt-4">
@@ -402,9 +473,9 @@ export function StoryForm({
                         </div>
 
                         <div className="flex space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="secondary" 
+                          <Button
+                            type="button"
+                            variant="secondary"
                             onClick={handleGenerateCatchphraseSuggestions}
                             disabled={isGeneratingCatchphrases}
                             className="flex-1"
@@ -412,7 +483,7 @@ export function StoryForm({
                             <Sparkles className="mr-2 h-4 w-4" />
                             {isGeneratingCatchphrases ? "生成中..." : "候補を生成"}
                           </Button>
-                          
+
                           <Button
                             type="button"
                             variant="outline"
@@ -423,7 +494,7 @@ export function StoryForm({
                             リセット
                           </Button>
                         </div>
-                        
+
                         <div className="grid gap-2 mt-2">
                           {catchphraseSuggestions.length > 0 ? (
                             catchphraseSuggestions.map((catchphrase, index) => (
@@ -451,7 +522,7 @@ export function StoryForm({
                     </CardContent>
                   </Card>
                 )}
-                
+
                 <FormDescription>
                   ストーリーを一言で表すキャッチコピーがあれば入力してください。
                 </FormDescription>
@@ -479,9 +550,9 @@ export function StoryForm({
                     className="story-textarea th-100"
                   />
                 </FormControl>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={handleShowSummarySuggestionsBox}
                   disabled={submitting}
                   className="w-full"
@@ -490,7 +561,7 @@ export function StoryForm({
                   <Sparkles className="mr-2 h-4 w-4" />
                   概要候補生成
                 </Button>
-                
+
                 {showSummarySuggestion && (
                   <Card className="mt-4">
                     <CardContent className="pt-4">
@@ -509,9 +580,9 @@ export function StoryForm({
                         </div>
 
                         <div className="flex space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="secondary" 
+                          <Button
+                            type="button"
+                            variant="secondary"
                             onClick={handleGenerateSummarySuggestions}
                             disabled={isGeneratingSummary}
                             className="flex-1"
@@ -519,7 +590,7 @@ export function StoryForm({
                             <Sparkles className="mr-2 h-4 w-4" />
                             {isGeneratingSummary ? "生成中..." : "候補を生成"}
                           </Button>
-                          
+
                           <Button
                             type="button"
                             variant="outline"
@@ -530,7 +601,7 @@ export function StoryForm({
                             リセット
                           </Button>
                         </div>
-                        
+
                         <div className="grid gap-2 mt-2">
                           {summarySuggestion ? (
                             <div className="flex items-center justify-between border p-2 rounded">
@@ -556,7 +627,7 @@ export function StoryForm({
                     </CardContent>
                   </Card>
                 )}
-                
+
                 <FormDescription>
                   ストーリーの概要や希望する要素があれば入力してください。
                   AI生成の参考にされます。

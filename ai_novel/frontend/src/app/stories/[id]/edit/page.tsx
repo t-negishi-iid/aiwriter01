@@ -124,6 +124,7 @@ export default function EditStoryPage() {
       {storyData && (
         <StoryForm
           defaultValues={{
+            id: storyData.id,
             title: storyData.title,
             catchphrase: storyData.catchphrase || '',
             summary: storyData.summary || ''

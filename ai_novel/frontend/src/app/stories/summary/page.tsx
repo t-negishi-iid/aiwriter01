@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Blocks, Loader2, Edit, Trash } from 'lucide-react';
+import { Blocks, Loader2, Captions } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -34,7 +34,6 @@ export default function StorySummaryPage() {
   const [storyDetail, setStoryDetail] = useState<Story | null>(null);
   const [detailLoading, setDetailLoading] = useState(true);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [deletingStoryId, setDeletingStoryId] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -97,26 +96,6 @@ export default function StorySummaryPage() {
 
     fetchStoryDetail();
   }, [id, router]);
-
-  const handleDetailDeleteClick = async () => {
-    if (!storyDetail) return;
-
-    // 削除確認
-    const confirmDelete = window.confirm(`「${storyDetail.title}」を削除しますか？この操作は元に戻せません。`);
-    if (!confirmDelete) return;
-
-    try {
-      setDeletingStoryId(storyDetail.id);
-      await unifiedStoryApi.deleteStory(storyDetail.id);
-      // 削除後、一覧ページに戻る
-      router.push('/stories');
-    } catch (err) {
-      console.error('小説の削除に失敗:', err);
-      alert('小説の削除に失敗しました: ' + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setDeletingStoryId(null);
-    }
-  };
 
   // idがない場合は何も表示しない（useEffectでリダイレクト処理済み）
   if (!id) {
@@ -191,28 +170,8 @@ export default function StorySummaryPage() {
                   onClick={() => router.push(`/stories/${storyDetail.id}/edit`)}
                   data-testid="story-detail-edit-button"
                 >
-                  <Edit className="h-3.5 w-3.5 mr-1.5" />
-                  編集
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="text-sm font-medium"
-                  onClick={handleDetailDeleteClick}
-                  disabled={deletingStoryId === storyDetail.id}
-                  data-testid="story-detail-delete-button"
-                >
-                  {deletingStoryId === storyDetail.id ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                      削除中...
-                    </>
-                  ) : (
-                    <>
-                      <Trash className="h-3.5 w-3.5 mr-1.5" />
-                      削除
-                    </>
-                  )}
+                  <Captions className="h-4 w-4 mr-2" />
+                  タイトル、キャッチ、サマリー修正
                 </Button>
               </CardFooter>
             </Card>

@@ -1,3 +1,7 @@
+/*
+ * Tailwind CSS Directives
+ * Suppress warnings for @tailwind directives in VSCode
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -90,7 +94,7 @@
   }
 }
 
-/* スクロールバーのカスタマイズ */
+/* Scrollbar Customization */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -110,7 +114,8 @@
   background: hsl(var(--foreground));
 }
 
-/* フォーム要素のカスタマイズ */
+/* Form Element Customization */
+/*
 .form-container {
   max-width: 800px;
   margin: 0 auto;
@@ -119,8 +124,9 @@
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
+*/
 
-/* テキストエリアのカスタマイズ */
+/* Text Area Customization */
 .story-input {
   width: 100%;
   height: 35px;
@@ -241,8 +247,7 @@
   width: 50%;
 }
 
-
-/* セレクトボックスのカスタマイズ */
+/* Select Box Customization */
 [data-radix-select-trigger] {
   background-color: white !important;
   border: 1px solid hsl(var(--border));
@@ -255,7 +260,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* セレクトボックスの選択肢の背景色を修正 */
+/* Select Box Options Background Fix */
 [data-radix-select-item],
 .select-item {
   background-color: white !important;
@@ -268,7 +273,7 @@
   background-color: hsl(var(--accent)) !important;
 }
 
-/* カードのカスタマイズ */
+/* Card Customization */
 .card {
   background-color: white;
   border: 1px solid hsl(var(--border));
@@ -277,7 +282,8 @@
   overflow: hidden;
 }
 
-/* フォームフィールドのカスタマイズ */
+/* Form Field Customization */
+/*
 .form-field {
   margin-bottom: 1.5rem;
 }
@@ -303,8 +309,10 @@
   color: hsl(var(--muted-foreground));
   margin-top: 0.25rem;
 }
+*/
 
-/* ボタンのカスタマイズ */
+/* Button Customization */
+/*
 .button {
   display: inline-flex;
   align-items: center;
@@ -323,8 +331,10 @@
 .button-primary:hover {
   background-color: hsl(var(--primary) / 0.9);
 }
+*/
 
-/* タブのカスタマイズ */
+
+/* Tab Customization */
 [role="tablist"] {
   background-color: white;
   border-radius: 8px;
@@ -342,7 +352,8 @@
   color: white;
 }
 
-/* フォームコンテンツのカスタマイズ */
+
+/* Form Content Customization */
 [data-radix-select-trigger],
 [data-radix-select-content],
 textarea,
@@ -351,7 +362,7 @@ input {
   border: 1px solid hsl(var(--border)) !important;
 }
 
-/* Selectコンポーネントの追加スタイル */
+/* Select Component Additional Styles */
 .select-content {
   background-color: white !important;
   border: 1px solid hsl(var(--border));
@@ -370,7 +381,7 @@ input {
   background-color: hsl(var(--accent)) !important;
 }
 
-/* レイアウト関連のクラス */
+/* Layout Related Classes */
 .panel-container {
   display: flex;
   flex-direction: column;

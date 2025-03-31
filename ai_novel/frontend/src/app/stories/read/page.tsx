@@ -39,12 +39,20 @@ interface ApiResponse<T> {
 }
 
 // 型ガード関数
-function isStory(obj: any): obj is Story {
-  return obj && typeof obj.id === 'number' && typeof obj.title === 'string';
+function isStory(obj: unknown): obj is Story {
+  return obj !== null && 
+         typeof obj === 'object' && 
+         'id' in obj && 
+         typeof (obj as Record<string, unknown>).id === 'number' && 
+         'title' in obj && 
+         typeof (obj as Record<string, unknown>).title === 'string';
 }
 
-function isApiResponse<T>(obj: any): obj is ApiResponse<T> {
-  return obj && Array.isArray(obj.results);
+function isApiResponse<T>(obj: unknown): obj is ApiResponse<T> {
+  return obj !== null && 
+         typeof obj === 'object' && 
+         'results' in obj && 
+         Array.isArray((obj as Record<string, unknown>).results);
 }
 
 // エピソード一覧表示ページ

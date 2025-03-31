@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, Loader2, Edit, Captions, PenTool, Trash } from 'lucide-react';
+import { PlusCircle, Loader2, Captions, PenTool, Trash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {

@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // リクエストタイムアウトを増やす
-  experimental: {
-    serverFetchTimeout: 30000, // 30秒
-  },
+  // タイムアウト設定はfetchOptons経由で行う
+  // experimental: {
+  //   serverFetchTimeout: 30000, // 30秒
+  // },
 
   // APIリクエストリライト
   async rewrites() {
@@ -25,6 +25,7 @@ const nextConfig = {
     NEXT_PUBLIC_API_DIRECT_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001',
     BACKEND_HOST: process.env.BACKEND_HOST || 'localhost',
     BACKEND_PORT: process.env.BACKEND_PORT || '8001',
+    FETCH_TIMEOUT: '30000', // タイムアウト値を環境変数として設定
   },
 
   // ビルド設定

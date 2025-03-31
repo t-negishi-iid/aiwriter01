@@ -13,6 +13,7 @@ from .views.is_live_views import StoryIsLiveView
 from .views.integrated_setting_creator_views import IntegratedSettingCreatorView, IntegratedSettingCreatorDetailView
 from .views.basic_setting_views import LatestBasicSettingView
 from .views.content_views import CreateEpisodeContentView, EpisodeContentListView, EpisodeContentDetailView
+from .views.story_views import TitleGenerationView, SummaryGenerationView
 
 app_name = 'novel_gen'
 
@@ -34,6 +35,7 @@ def api_root(request, format=None):
         'episodes-create': reverse('novel_gen:episodes-create', args=[1, 1], request=request,format=format),
         'content-create': reverse('novel_gen:content-create', args=[1, 1, 1], request=request,format=format),
         'title-generate': reverse('novel_gen:title-generate', args=[1], request=request,format=format),
+        'summary-generate': reverse('novel_gen:summary-generate', args=[1], request=request,format=format),
         'api-log-list': reverse('novel_gen:api-log-list', args=[1], request=request,format=format),
 
     })
@@ -134,8 +136,12 @@ urlpatterns = [
          EpisodeContentDetailView.as_view(), name='episode-content-detail'),
 
     # タイトル生成関連
+    # タイトル候補/キャッチコピー候補5つ生成
     path('stories/<int:story_id>/generate-title/',
-         views.GenerateTitleView.as_view(), name='title-generate'),
+         TitleGenerationView.as_view(), name='title-generate'),
+    # 小説全体サマリー生成
+    path('stories/<int:story_id>/generate-summary/',
+         SummaryGenerationView.as_view(), name='summary-generate'),
 
     # API履歴
     path('stories/<int:story_id>/api-logs/',

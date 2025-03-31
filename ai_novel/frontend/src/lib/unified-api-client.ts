@@ -803,21 +803,9 @@ export const unifiedStoryApi = {
       body: JSON.stringify({ basic_setting_id: basicSettingId }),
     }),
 
-  /**
-   * 小説全体のタイトルを生成
-   *
-   * @param storyId - 小説ID
-   * @returns 生成されたタイトル情報
-   * - POST /stories/{story_id}/generate-novel-title/
-   * - 戻り値: {title: string, credit_cost: number}
-   */
-  generateNovelTitle: (storyId: string | number) => unifiedFetchApi<{title: string, credit_cost: number}>(`/stories/${storyId}/generate-novel-title/`, {
-    method: 'POST',
-    body: JSON.stringify({ story_id: storyId }),
-  }),
 
   /**
-   * タイトルまたはキャッチコピーを生成
+   * タイトルまたはキャッチコピーの候補を生成
    *
    * @param storyId - 小説ID
    * @param data - 生成パラメータ
@@ -826,7 +814,7 @@ export const unifiedStoryApi = {
    * @param data.title_type - タイプ（"タイトル" または "キャッチコピー"）
    * @returns 生成されたタイトル/キャッチコピーの候補リスト
    * - POST /stories/{story_id}/generate-title/
-   * - 戻り値: {titles: string, credit_cost: number}
+   * - 戻り値: {titles: string[], credit_cost: number}
    */
   generateTitleOrCatchphrase: (
     storyId: string | number,
@@ -835,7 +823,7 @@ export const unifiedStoryApi = {
       target_content: string,
       title_type: "タイトル" | "キャッチコピー"
     }
-  ) => unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/generate-title/`, {
+  ) => unifiedFetchApi<{titles: string[], credit_cost: number}>(`/stories/${storyId}/generate-title/`, {
     method: 'POST',
     body: JSON.stringify(data),
   }),
@@ -857,7 +845,7 @@ export const unifiedStoryApi = {
       target_content: string,
       word_count: number
     }
-  ) => unifiedFetchApi<Record<string, unknown>>(`/stories/${storyId}/generate-summary/`, {
+  ) => unifiedFetchApi<{summary: string, credit_cost: number}>(`/stories/${storyId}/generate-summary/`, {
     method: 'POST',
     body: JSON.stringify(data),
   }),

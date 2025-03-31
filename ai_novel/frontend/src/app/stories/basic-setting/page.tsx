@@ -57,25 +57,6 @@ interface WorkSettingData {
   updatedAt?: string;         // 更新日時
 }
 
-// フルスクリーンAPI用の型定義
-interface FullScreenDocument extends Document {
-  mozFullScreenElement?: Element;
-  msFullscreenElement?: Element;
-  webkitFullscreenElement?: Element;
-  fullscreenElement: Element | null;
-  mozCancelFullScreen?: () => Promise<void>;
-  msExitFullscreen?: () => Promise<void>;
-  webkitExitFullscreen?: () => Promise<void>;
-  exitFullscreen: () => Promise<void>;
-}
-
-// HTMLElementをフルスクリーン対応にする拡張型
-interface FullScreenHTMLElement extends HTMLElement {
-  msRequestFullscreen?: () => Promise<void>;
-  mozRequestFullScreen?: () => Promise<void>;
-  webkitRequestFullscreen?: () => Promise<void>;
-}
-
 export default function BasicSettingPage() {
   const searchParams = useSearchParams();
   const storyId = searchParams.get('id');
@@ -466,68 +447,26 @@ export default function BasicSettingPage() {
   // 作品設定のコンテンツ
   const WorkSettingContent = () => {
     // ステートの定義
-    const [isFullscreenEdit, setIsFullscreenEdit] = useState(false);
     const [showActs, setShowActs] = useState(false);
 
-    // フルスクリーン表示用のref
-    const fullscreenRef = useRef<HTMLDivElement>(null);
-
-    // フルスクリーントグル関数
-    const toggleFullscreen = () => {
-      if (!fullscreenRef.current) return;
-
-      const doc = document as unknown as FullScreenDocument;
-
-      if (!isFullscreenEdit) {
-        // フルスクリーンモードに入る
-        const element = fullscreenRef.current as unknown as FullScreenHTMLElement;
-        if (element.requestFullscreen) {
-          element.requestFullscreen();
-        } else if (element.mozRequestFullScreen) { // Firefox
-          element.mozRequestFullScreen();
-        } else if (element.webkitRequestFullscreen) { // Chrome, Safari
-          element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) { // IE/Edge
-          element.msRequestFullscreen();
-        }
-      } else {
-        // フルスクリーンモードを終了する
-        if (doc.exitFullscreen) {
-          doc.exitFullscreen();
-        } else if (doc.mozCancelFullScreen) { // Firefox
-          doc.mozCancelFullScreen();
-        } else if (doc.webkitExitFullscreen) { // Chrome, Safari
-          doc.webkitExitFullscreen();
-        } else if (doc.msExitFullscreen) { // IE/Edge
-          doc.msExitFullscreen();
-        }
-      }
+    // スタイル定義
+    const leftAlignedHeaderStyle = {
+      display: 'flex',
+      alignItems: 'center',
+      cursor: 'pointer',
+      marginBottom: '10px'
     };
 
-    // フルスクリーン変更イベントリスナー
-    useEffect(() => {
-      const handleFullscreenChange = () => {
-        const doc = document as unknown as FullScreenDocument;
-        if (!doc.fullscreenElement && !doc.webkitFullscreenElement &&
-          !doc.mozFullScreenElement && !doc.msFullscreenElement) {
-          setIsFullscreenEdit(false);
-        } else {
-          setIsFullscreenEdit(true);
-        }
-      };
+    const expandIconStyle = {
+      marginRight: '8px',
+      fontSize: '14px'
+    };
 
-      document.addEventListener('fullscreenchange', handleFullscreenChange);
-      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
-      return () => {
-        document.removeEventListener('fullscreenchange', handleFullscreenChange);
-        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
-        document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
-        document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-      };
-    }, []);
+    const categoryTitleStyle = {
+      margin: 0,
+      fontSize: '16px',
+      fontWeight: 'medium'
+    };
 
     return (
       <Card className="h-full">
@@ -537,24 +476,19 @@ export default function BasicSettingPage() {
             作品設定
           </CardTitle>
           <CardDescription>小説の世界観や設定情報</CardDescription>
-          <div className="flex justify-end">
-            <Button onClick={toggleFullscreen}>
-              {isFullscreenEdit ? '全画面モード解除' : '全画面モード'}
-            </Button>
-          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-4 mt-4">
             <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
-              <h3 className="text-md font-medium p-4">タイトル</h3>
+              <h3 className="text-md font-medium p-4">仮タイトル</h3>
               <textarea
                 id="title"
                 className="w-full border-none bg-transparent resize-none outline-none p-4 story-textarea th-30"
-                placeholder="タイトルを入力してください"
+                placeholder="仮タイトルを入力してください"
                 defaultValue={workSettingData.title || ''}
                 ref={refs.title}
                 rows={2}
-                aria-label="タイトル"
+                aria-label="仮タイトル"
               />
             </div>
 
@@ -739,7 +673,6 @@ export default function BasicSettingPage() {
 
           </div>
 
-
           {/* 生データ */}
           <div className="bg-white border border-gray-200 rounded-md p-4 w-full">
             <div
@@ -753,7 +686,6 @@ export default function BasicSettingPage() {
             </div>
 
             {showActs && (
-
               <div className="bg-white border border-gray-200 rounded-md p-0 mb-4 overflow-y-auto w-full">
                 <textarea
                   id="raw-content"

@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PlusCircle, Loader2, Edit, Eye, Trash } from 'lucide-react';
+import { PlusCircle, Loader2, Edit, Captions, PenTool, Trash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,7 @@ export default function StoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingStoryId, setDeletingStoryId] = useState<number | null>(null);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
@@ -148,6 +149,8 @@ export default function StoriesPage() {
     }
   };
 
+
+
   // 詳細ページが表示されるべき場合
   if (id) {
     return null; // リダイレクト処理済み
@@ -228,8 +231,8 @@ export default function StoriesPage() {
                     onClick={() => router.push(`/stories/summary?id=${story.id}`)}
                     data-testid={`story-${story.id}-detail-button`}
                   >
-                    <Eye className="h-4 w-4 mr-2" />
-                    詳細
+                    <PenTool className="h-4 w-4 mr-2" />
+                    小説執筆
                   </Button>
                   <Button
                     variant="ghost"
@@ -237,8 +240,8 @@ export default function StoriesPage() {
                     onClick={() => router.push(`/stories/${story.id}/edit`)}
                     data-testid={`edit-story-${story.id}`}
                   >
-                    <Edit className="h-4 w-4 mr-2" />
-                    編集
+                    <Captions className="h-4 w-4 mr-2" />
+                    タイトル、キャッチ、サマリー修正
                   </Button>
                   <Button
                     variant="destructive"
@@ -265,6 +268,6 @@ export default function StoriesPage() {
           ))}
         </div>
       )}
-    </div>
+    </div >
   );
 }

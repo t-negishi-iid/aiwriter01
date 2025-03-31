@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { unifiedStoryApi } from '@/lib/unified-api-client';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Story {
   id: number;
@@ -35,6 +36,7 @@ export default function StoriesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingStoryId, setDeletingStoryId] = useState<number | null>(null);
+  const [deleteConfirmations, setDeleteConfirmations] = useState<Record<number, boolean>>({});
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -149,7 +151,13 @@ export default function StoriesPage() {
     }
   };
 
-
+  // チェックボックスの状態を更新する関数
+  const handleDeleteConfirmChange = (storyId: number, checked: boolean) => {
+    setDeleteConfirmations(prev => ({
+      ...prev,
+      [storyId]: checked
+    }));
+  };
 
   // 詳細ページが表示されるべき場合
   if (id) {
@@ -224,44 +232,66 @@ export default function StoriesPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between pt-2 border-t">
-                <div className="flex gap-2 w-full justify-between">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push(`/stories/summary?id=${story.id}`)}
-                    data-testid={`story-${story.id}-detail-button`}
-                  >
-                    <PenTool className="h-4 w-4 mr-2" />
-                    小説執筆
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => router.push(`/stories/${story.id}/edit`)}
-                    data-testid={`edit-story-${story.id}`}
-                  >
-                    <Captions className="h-4 w-4 mr-2" />
-                    タイトル、キャッチ、サマリー修正
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteClick(story)}
-                    disabled={deletingStoryId === story.id}
-                    data-testid="delete-button"
-                  >
-                    {deletingStoryId === story.id ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        削除中...
-                      </>
-                    ) : (
-                      <>
-                        <Trash className="h-4 w-4 mr-2" />
-                        削除
-                      </>
-                    )}
-                  </Button>
+                <div className="flex flex-col w-full gap-2">
+                  <div className="flex gap-2 w-full justify-between">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/stories/summary?id=${story.id}`)}
+                      data-testid={`story-${story.id}-detail-button`}
+                    >
+                      <PenTool className="h-4 w-4 mr-2" />
+                      小説執筆
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => router.push(`/stories/${story.id}/edit`)}
+                      data-testid={`edit-story-${story.id}`}
+                    >
+                      <Captions className="h-4 w-4 mr-2" />
+                      タイトル、キャッチ、サマリー修正
+                    </Button>
+                  </div>
+                  <div className="flex items-center justify-between border-t pt-2">
+                    <div className="flex items-center space-x-2 h-[33px]">
+                      <div className="flex items-center justify-center h-5 w-5">
+                        <Checkbox
+                          id={`delete-confirm-${story.id}`}
+                          checked={!!deleteConfirmations[story.id]}
+                          onCheckedChange={(checked) => handleDeleteConfirmChange(story.id, !!checked)}
+                          data-testid={`delete-confirm-checkbox-${story.id}`}
+                          className="h-4 w-4 border-2 border-primary"
+                          style={{ height: '33px', width: '33px' }}
+                        />
+                      </div>
+                      <label
+                        htmlFor={`delete-confirm-${story.id}`}
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
+                        小説を削除する
+                      </label>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteClick(story)}
+                      disabled={deletingStoryId === story.id || !deleteConfirmations[story.id]}
+                      data-testid="delete-button"
+                    >
+                      {deletingStoryId === story.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          削除中...
+                        </>
+                      ) : (
+                        <>
+                          <Trash className="h-4 w-4 mr-2" />
+                          削除
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardFooter>
             </Card>

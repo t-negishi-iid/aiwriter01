@@ -288,6 +288,19 @@ class TitleRequestSerializer(serializers.Serializer):
     story_id = serializers.IntegerField(required=True)
 
 
+class TitleGenerationRequestSerializer(serializers.Serializer):
+    """タイトル・キャッチコピー生成リクエストシリアライザ"""
+    basic_setting = serializers.CharField(required=True)
+    target_content = serializers.CharField(required=True)
+    title_type = serializers.CharField(required=True)  # "タイトル" または "キャッチコピー"
+
+
+class SummaryGenerationRequestSerializer(serializers.Serializer):
+    """サマリー生成リクエストシリアライザ"""
+    target_content = serializers.CharField(required=True)
+    word_count = serializers.IntegerField(required=True)
+
+
 class TitleSerializer(serializers.ModelSerializer):
     """タイトルシリアライザ"""
     ai_story = AIStorySerializer(read_only=True)

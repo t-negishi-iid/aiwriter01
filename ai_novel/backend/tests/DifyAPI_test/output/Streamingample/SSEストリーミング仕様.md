@@ -1,5 +1,7 @@
 # SSEストリーミング仕様
 
+文字通信の「data:」を削除し、JSON形式の文字列にしたもの。
+
 ## ワークフロー開始
 
 {"event": "workflow_started", "workflow_run_id": "46dbdc1a-0d55-40fb-a196-785251baeb5c", "task_id": "5827c114-8c64-4625-b532-4caab7798187", "data": {"id": "46dbdc1a-0d55-40fb-a196-785251baeb5c", "workflow_id": "ae8c492c-53e6-4e80-843a-8f8bbfed5225", "sequence_number": 77, "inputs": {"basic_setting": "# 基本設定\n\n## 仮題\n『リバース・メモリーズ』\n\n## サマリー\n東京の高校に通う主人公・片桐悠は、ある日突如として一部の記憶を失っていることに気づく。（中略）「真鍋沙耶」という名前が出てきた途端、悠の頭に鈍い痛みが走る。", "act_number": 1, "episode_number": 1, "sys.files": [], "sys.user_id": "test_user_id", "sys.app_id": "0382253c-5aa6-488e-9022-2131fc268571", "sys.workflow_id": "ae8c492c-53e6-4e80-843a-8f8bbfed5225", "sys.workflow_run_id": "46dbdc1a-0d55-40fb-a196-785251baeb5c"}, "created_at": 1743063352}}

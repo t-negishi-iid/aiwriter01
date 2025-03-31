@@ -1,0 +1,4 @@
+=== サマリー生成メソッドのテストログ ===
+開始時刻: 2025-03-31 10:29:04
+
+エラー: DifyStreamingAPI.generate_summary_stream() got an unexpected keyword argument 'basic_setting'

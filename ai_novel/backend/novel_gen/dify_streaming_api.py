@@ -104,8 +104,12 @@ class DifyStreamingAPI:
             'api_key': 'app-J845W1BSeaOD3z4hKVGQ5aQu'
         },
         'title': {
-            'app_id': 'b2bd1609-9fd1-4cdd-8f95-4f2b32bcdf75',
-            'api_key': 'app-wOwBxUnKb9kA8BYqQinc8Mb9'
+            'app_id': 'ba4a278b-30ec-4e29-bd67-385a712ab8d5',
+            'api_key': 'app-4Znqhygxc3PmUX96K8NZXJW3'
+        },
+        'summary': {
+            'app_id': 'ede58bca-4c46-4f08-8c29-0e7a24653557',
+            'api_key': 'app-NTCU9Cr9Mi4v5wThtmVuyVPI'
         }
     }
 
@@ -459,24 +463,24 @@ class DifyStreamingAPI:
     def generate_title_stream(
         self,
         basic_setting: str,
-        all_characters_list: List[Dict[str, Any]],
-        all_act_details_list: List[Dict[str, Any]],
-        all_episode_details_list: List[Dict[str, Any]],
         target_content: str,
-        target_type: str,
+        title_type: str,
         user_id: str,
         test_mode: bool = None
     ) -> Iterator[Dict[str, Any]]:
         """
-        タイトルを生成（ストリーミングモード）
+        タイトルもしくはキャッチコピーの候補を5つ生成（ストリーミングモード）
+
+        Difyからのレスポンスは以下の形式です：
+
 
         Args:
             basic_setting: 基本設定
-            all_characters_list: キャラクター詳細リスト
-            all_act_details_list: 幕詳細リスト
-            all_episode_details_list: エピソード詳細リスト
+            削除　all_characters_list: キャラクター詳細リスト
+            削除　all_act_details_list: 幕詳細リスト
+            削除　all_episode_details_list: エピソード詳細リスト
             target_content: ターゲットコンテンツ
-            target_type: ターゲットタイプ（episode, act, novel）
+            title_type: タイトルタイプ（"タイトル" or "キャッチコピー"）
             user_id: ユーザーID
             test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
 
@@ -486,18 +490,42 @@ class DifyStreamingAPI:
         # 使用するテストモードフラグを決定
         current_test_mode = test_mode if test_mode is not None else self.test_mode
 
-        # データをシリアライズ
-        all_characters_str = json.dumps(all_characters_list, ensure_ascii=False)
-        all_act_details_str = json.dumps(all_act_details_list, ensure_ascii=False)
-        all_episode_details_str = json.dumps(all_episode_details_list, ensure_ascii=False)
-
         inputs = {
             "basic_setting": basic_setting,
-            "all_characters": all_characters_str,
-            "all_act_details": all_act_details_str,
-            "all_episode_details": all_episode_details_str,
             "target_content": target_content,
-            "target_type": target_type
+            "title_type": title_type
         }
 
         yield from self._make_streaming_request("title", inputs, user_id)
+
+    def generate_summary_stream(
+        self,
+        target_content: str,
+        word_count: int,
+        user_id: str,
+        test_mode: bool = None
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        タイトルもしくはキャッチコピーの候補を5つ生成（ストリーミングモード）
+
+        Difyからのレスポンスは以下の形式です：
+
+
+        Args:
+            target_content: ターゲットコンテンツ
+            word_count: 設定ワード数
+            user_id: ユーザーID
+            test_mode: テストモードフラグ（指定しない場合はインスタンス初期化時の値を使用）
+
+        Yields:
+            Dict[str, Any]: レスポンスの各チャンク
+        """
+        # 使用するテストモードフラグを決定
+        current_test_mode = test_mode if test_mode is not None else self.test_mode
+
+        inputs = {
+            "target_content": target_content,
+            "word_count": word_count
+        }
+
+        yield from self._make_streaming_request("summary", inputs, user_id)

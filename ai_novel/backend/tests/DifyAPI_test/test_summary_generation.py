@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Dify Streaming API - タイトル生成のテスト用スクリプト
+Dify Streaming API - サマリー生成のテスト用スクリプト
 """
 
 import os
@@ -236,37 +236,32 @@ def process_streaming_response(response_generator: Iterator[Dict[str, Any]], log
     return chunk_count, all_text, final_data
 
 
-def test_create_novel_title_stream(target_content=None, title_type="タイトル"):
+def test_create_summary_stream(target_content=None, word_count=200):
     """
-    タイトル生成メソッドのテスト
-    
+    サマリー生成メソッドのテスト
+
     Args:
-        target_content: タイトルを生成する対象のコンテンツ
-        title_type: タイトルタイプ（"タイトル" または "キャッチコピー"）
-    
+        target_content: サマリーを生成する対象のコンテンツ
+        word_count: 単語数上限
+
     Returns:
-        str: 生成されたタイトル（複数の候補）
+        str: 生成されたサマリー
     """
     # 現在時刻をフォーマットしてファイル名に使用
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file_path = os.path.join(os.path.dirname(__file__), f"output/title_generation_log_{timestamp}.txt")
-    result_file_path = os.path.join(os.path.dirname(__file__), f"output/title_generation_result_{timestamp}.txt")
+    log_file_path = os.path.join(os.path.dirname(__file__), f"output/summary_generation_log_{timestamp}.txt")
+    result_file_path = os.path.join(os.path.dirname(__file__), f"output/summary_generation_result_{timestamp}.txt")
 
     # ログファイルの初期化
     with open(log_file_path, 'w', encoding='utf-8') as log_file:
-        log_file.write("=== タイトル生成メソッドのテストログ ===\n")
+        log_file.write("=== サマリー生成メソッドのテストログ ===\n")
         log_file.write(f"開始時刻: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-    logging.info("===== タイトル生成メソッドのテスト開始 =====")
-    
-    generated_titles = ""
+    logging.info("===== サマリー生成メソッドのテスト開始 =====")
+
+    generated_summary = ""
 
     try:
-        # 基本設定ファイルの読み込み
-        basic_setting_path = os.path.join(os.path.dirname(__file__), "input/basic_setting.txt")
-        basic_setting = load_test_data(basic_setting_path)
-        logging.info("基本設定を読み込みました")
-
         # ターゲットコンテンツがない場合は、all_contents.txtから読み込む
         if target_content is None:
             all_contents_path = os.path.join(os.path.dirname(__file__), "input/all_contents.txt")
@@ -285,7 +280,7 @@ def test_create_novel_title_stream(target_content=None, title_type="タイトル
                             int(f.split('act')[1].split('_')[0]),  # 幕番号
                             int(f.split('episode')[1].split('.')[0])  # エピソード番号
                         ))
-                        
+
                         # すべてのエピソード本文を連結
                         combined_content = ""
                         for content_file in sorted_files:
@@ -293,14 +288,14 @@ def test_create_novel_title_stream(target_content=None, title_type="タイトル
                             if match:
                                 act_number = int(match.group(1))
                                 episode_number = int(match.group(2))
-                                
+
                                 # エピソードヘッダーを追加
                                 combined_content += f"\n\n## 第{act_number}幕第{episode_number}エピソード\n\n"
-                                
+
                                 # エピソード本文を追加
                                 episode_text = load_test_data(os.path.join(contents_dir, content_file))
                                 combined_content += episode_text
-                        
+
                         target_content = combined_content
                         logging.info(f"小説全体の本文を作成しました: {len(target_content)}文字")
                     else:
@@ -313,7 +308,7 @@ def test_create_novel_title_stream(target_content=None, title_type="タイトル
         # ファイルパスをログに記録
         logging.info(f"ログファイル: {log_file_path}")
         logging.info(f"結果ファイル: {result_file_path}")
-        logging.info(f"タイトルタイプ: {title_type}")
+        logging.info(f"単語数上限: {word_count}")
 
         # APIクライアントの初期化
         dify_client = DifyStreamingAPI()
@@ -321,11 +316,10 @@ def test_create_novel_title_stream(target_content=None, title_type="タイトル
         # 開始時刻
         start_time = time.time()
 
-        # タイトル生成メソッドの呼び出し（新しいAPI仕様に合わせて）
-        response_generator = dify_client.generate_title_stream(
-            basic_setting=basic_setting,
+        # サマリー生成メソッドの呼び出し
+        response_generator = dify_client.generate_summary_stream(
             target_content=target_content,
-            title_type=title_type,
+            word_count=word_count,
             user_id="test_user_id"
         )
 
@@ -336,56 +330,53 @@ def test_create_novel_title_stream(target_content=None, title_type="タイトル
         elapsed_time = time.time() - start_time
         logging.info(f"処理時間: {elapsed_time:.2f}秒")
 
-        # タイトル候補を抽出
+        # サマリーを抽出
         if final_data:
             if isinstance(final_data, str) and final_data.strip():
-                generated_titles = final_data
-                logging.info(f"最終チャンクから抽出したタイトル候補: {generated_titles}")
-            elif isinstance(final_data, list):
-                generated_titles = "\n".join(final_data)
-                logging.info(f"リスト形式のタイトル候補: {generated_titles}")
+                generated_summary = final_data
+                logging.info(f"最終チャンクから抽出したサマリー: {generated_summary[:100]}...")
             else:
                 # その他の場合（未知の形式）
                 logging.warning(f"最終データの形式が不明です: {type(final_data)}")
-                generated_titles = str(final_data)
+                generated_summary = str(final_data)
                 logging.warning("文字列化したデータを使用します。")
         else:
             # 最終チャンクが見つからない場合は、連結したテキストを使用
-            generated_titles = all_text
+            generated_summary = all_text
             logging.warning("最終チャンクが見つかりませんでした。連結したテキストを使用します。")
 
         # 結果をファイルに保存
         with open(result_file_path, 'w', encoding='utf-8') as f:
-            f.write(generated_titles)
+            f.write(generated_summary)
 
-        logging.info(f"タイトル生成結果を保存しました: {result_file_path}")
+        logging.info(f"サマリー生成結果を保存しました: {result_file_path}")
 
         # 結果が空でないか確認
-        if not generated_titles.strip():
-            logging.warning("生成されたタイトル候補が空です")
+        if not generated_summary.strip():
+            logging.warning("生成されたサマリーが空です")
 
     except Exception as e:
         logging.error(f"テスト実行中にエラーが発生しました: {e}")
         with open(log_file_path, 'a', encoding='utf-8') as log_file:
             log_file.write(f"\nエラー: {e}\n")
 
-    logging.info("===== タイトル生成メソッドのテスト終了 =====")
-    
-    return generated_titles
+    logging.info("===== サマリー生成メソッドのテスト終了 =====")
+
+    return generated_summary
 
 
 def main():
     """
     メイン関数
     """
-    parser = argparse.ArgumentParser(description='Dify Streaming API - タイトル生成のテスト')
-    parser.add_argument('--title-type', choices=['タイトル', 'キャッチコピー'], default='タイトル',
-                        help='生成するタイトルのタイプ（タイトルまたはキャッチコピー）')
+    parser = argparse.ArgumentParser(description='Dify Streaming API - サマリー生成のテスト')
+    parser.add_argument('--word-count', type=int, default=200,
+                        help='生成するサマリーの単語数上限')
     parser.add_argument('--content-file', type=str, default=None,
                         help='使用するコンテンツファイルのパス（指定しない場合はall_contents.txtまたはcontentsディレクトリから自動的に読み込む）')
-    
+
     args = parser.parse_args()
-    
+
     # コンテンツファイルを読み込む
     target_content = None
     if args.content_file:
@@ -396,16 +387,16 @@ def main():
         else:
             logging.error(f"指定されたコンテンツファイルが見つかりません: {content_path}")
             return
-    
-    # タイトル生成テストを実行
-    generated_titles = test_create_novel_title_stream(
+
+    # サマリー生成テストを実行
+    generated_summary = test_create_summary_stream(
         target_content=target_content,
-        title_type=args.title_type
+        word_count=args.word_count
     )
-    
+
     # 結果を標準出力に表示
-    print("\n===== 生成されたタイトル候補 =====")
-    print(generated_titles)
+    print("\n===== 生成されたサマリー =====")
+    print(generated_summary)
 
 
 if __name__ == "__main__":

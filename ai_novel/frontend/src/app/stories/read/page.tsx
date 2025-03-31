@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getStoryDetail, getActs, getEpisodes } from './utils/api-client';
+import { StoryTabs } from '@/components/story/StoryTabs';
+import { StoryProvider } from '@/components/story/StoryProvider';
 
 // 型定義
 interface Story {
@@ -50,7 +52,7 @@ export default function ReadPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const storyId = searchParams.get('id');
-  
+
   const [story, setStory] = useState<Story | null>(null);
   const [acts, setActs] = useState<Act[]>([]);
   const [episodes, setEpisodes] = useState<Record<number, Episode[]>>({});
@@ -131,48 +133,54 @@ export default function ReadPage() {
   }
 
   return storyId && story ? (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">{story.title}</h1>
-      
-      <div className="space-y-8">
-        {acts.map((act) => (
-          <div key={act.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {act.title || `第${act.act_number}幕`}
-            </h2>
-            
-            <div className="space-y-2">
-              {episodes[act.act_number]?.length > 0 ? (
-                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {episodes[act.act_number].map((episode) => (
-                    <li key={episode.id} className="py-3">
-                      <Link
-                        href={`/stories/read/reader?id=${storyId}&act=${act.act_number}&episode=${episode.episode_number}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-between"
-                      >
-                        <span>
-                          {episode.title || `第${episode.episode_number}話`}
-                        </span>
-                        <span className="text-gray-500 text-sm">
-                          読む →
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500">エピソードがありません</p>
-              )}
-            </div>
+    <StoryProvider storyId={storyId}>
+      <div className="container mx-auto py-6">
+        <StoryTabs storyId={storyId} activeTab="read" />
+
+        <div className="mt-6">
+          <h1 className="text-2xl font-bold mb-6">{story.title}</h1>
+
+          <div className="space-y-8">
+            {acts.map((act) => (
+              <div key={act.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  {act.title || `第${act.act_number}幕`}
+                </h2>
+
+                <div className="space-y-2">
+                  {episodes[act.act_number]?.length > 0 ? (
+                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {episodes[act.act_number].map((episode) => (
+                        <li key={episode.id} className="py-3">
+                          <Link
+                            href={`/stories/read/reader?id=${storyId}&act=${act.act_number}&episode=${episode.episode_number}`}
+                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-between"
+                          >
+                            <span>
+                              {episode.title || `第${episode.episode_number}話`}
+                            </span>
+                            <span className="text-gray-500 text-sm">
+                              読む →
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500">エピソードがありません</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {acts.length === 0 && (
+              <div className="text-center p-8">
+                <p className="text-gray-500">この小説にはまだ幕が登録されていません</p>
+              </div>
+            )}
           </div>
-        ))}
-        
-        {acts.length === 0 && (
-          <div className="text-center p-8">
-            <p className="text-gray-500">この小説にはまだ幕が登録されていません</p>
-          </div>
-        )}
+        </div>
       </div>
-    </div>
+    </StoryProvider>
   ) : null;
 }

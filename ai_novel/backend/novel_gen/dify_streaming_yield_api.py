@@ -444,59 +444,59 @@ class DifyStreamingYieldAPI:
         yield from self._make_streaming_request("title", inputs, user_id)
 
 
-    def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
-        """
-        最終チャンクからMarkdownコンテンツを抽出します。
+def get_markdown_from_last_chunk(last_chunk: Dict[str, Any], all_chunks: List[Dict[str, Any]] = None) -> str:
+    """
+    最終チャンクからMarkdownコンテンツを抽出します。
 
-        Args:
-            last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
-            all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
+    Args:
+        last_chunk: 最終チャンク（通常は done=True フラグが含まれる）
+        all_chunks: 全チャンクリスト（エピソード詳細生成APIなど、特殊なフォーマットに対応）
 
-        Returns:
-            str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
-        """
-        try:
-            # 最優先：最終チャンク（node_finished イベント）からのデータ抽出
-            if last_chunk and "event" in last_chunk and last_chunk["event"] == "node_finished":
-                if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
-                    result = last_chunk["data"]["outputs"]["result"]
-                    if isinstance(result, str) and result:
-                        logger.debug("node_finishedイベントからMarkdownを抽出しました")
-                        return result
-
-            # 次に優先：標準的なDify API形式からMarkdownを抽出
+    Returns:
+        str: 抽出されたMarkdownテキスト。抽出に失敗した場合は空文字列。
+    """
+    try:
+        # 最優先：最終チャンク（node_finished イベント）からのデータ抽出
+        if last_chunk and "event" in last_chunk and last_chunk["event"] == "node_finished":
             if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
                 result = last_chunk["data"]["outputs"]["result"]
-
-                # resultが文字列の場合はそのまま返す
-                if isinstance(result, str):
-                    logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
+                if isinstance(result, str) and result:
+                    logger.debug("node_finishedイベントからMarkdownを抽出しました")
                     return result
-                # リストの場合はJSON文字列に変換
-                elif isinstance(result, list):
-                    logger.debug("リスト形式のresultをJSON文字列に変換しました")
-                    return json.dumps(result, ensure_ascii=False)
 
-            # text_chunkイベントからの抽出を試みる
-            if all_chunks:
-                last_text_chunks = [
-                    chunk for chunk in all_chunks
-                    if chunk.get("event") == "text_chunk"
-                    and "data" in chunk
-                    and "text" in chunk["data"]
-                ]
+        # 次に優先：標準的なDify API形式からMarkdownを抽出
+        if "data" in last_chunk and "outputs" in last_chunk["data"] and "result" in last_chunk["data"]["outputs"]:
+            result = last_chunk["data"]["outputs"]["result"]
 
-                if last_text_chunks:
-                    # 最後のtext_chunkを使用
-                    text_content = last_text_chunks[-1]["data"]["text"]
-                    if text_content:
-                        logger.debug("text_chunkイベントからMarkdownを抽出しました")
-                        return text_content
+            # resultが文字列の場合はそのまま返す
+            if isinstance(result, str):
+                logger.debug("標準的なDify APIレスポンスからMarkdownを抽出しました")
+                return result
+            # リストの場合はJSON文字列に変換
+            elif isinstance(result, list):
+                logger.debug("リスト形式のresultをJSON文字列に変換しました")
+                return json.dumps(result, ensure_ascii=False)
 
-            logger.error("Markdownコンテンツの抽出に失敗しました")
-            if last_chunk:
-                logger.error(f"最終チャンク: {json.dumps(last_chunk, ensure_ascii=False)}")
-            return ""
-        except Exception as e:
-            logger.error(f"Markdownコンテンツの抽出中にエラーが発生しました: {str(e)}")
-            return ""
+        # text_chunkイベントからの抽出を試みる
+        if all_chunks:
+            last_text_chunks = [
+                chunk for chunk in all_chunks
+                if chunk.get("event") == "text_chunk"
+                and "data" in chunk
+                and "text" in chunk["data"]
+            ]
+
+            if last_text_chunks:
+                # 最後のtext_chunkを使用
+                text_content = last_text_chunks[-1]["data"]["text"]
+                if text_content:
+                    logger.debug("text_chunkイベントからMarkdownを抽出しました")
+                    return text_content
+
+        logger.error("Markdownコンテンツの抽出に失敗しました")
+        if last_chunk:
+            logger.error(f"最終チャンク: {json.dumps(last_chunk, ensure_ascii=False)}")
+        return ""
+    except Exception as e:
+        logger.error(f"Markdownコンテンツの抽出中にエラーが発生しました: {str(e)}")
+        return ""

@@ -91,7 +91,7 @@ APIレスポンスのステータスコードは、以下の基準に従って�
 | 機能 | バックエンドエンドポイント | HTTP メソッド | フロントエンド関数 | 推奨フロントエンドURL |
 |------|--------------------------|--------------|------------------|----------------------|
 | 幕一覧取得 | `/stories/{storyId}/acts/` | GET | `plotApi.getPlot(storyId)` | `/api/story-acts?id={storyId}` |
-| 幕詳細取得 | `/stories/{storyId}/acts/{actId}/` | GET | - | `/api/story-act?story_id={storyId}&act_id={actId}` |
+| 幕詳細取得 | `/stories/{storyId}/acts/{actNumber}/` | GET | - | `/api/story-act?story_id={storyId}&act_id={actNumber}` |
 | プロット生成 | `/stories/{storyId}/create-plot-detail/` | POST | `plotApi.createPlot(storyId)` | `/api/story-create-plot?id={storyId}` |
 | プロット更新 | `/stories/{storyId}/basic-setting/` | PATCH | `plotApi.updatePlotDetail(storyId, data)` | `/api/story-plot-update?id={storyId}` |
 
@@ -99,18 +99,18 @@ APIレスポンスのステータスコードは、以下の基準に従って�
 
 | 機能 | バックエンドエンドポイント | HTTP メソッド | フロントエンド関数 | 推奨フロントエンドURL |
 |------|--------------------------|--------------|------------------|----------------------|
-| エピソード一覧 | `/acts/{actId}/episodes/` | GET | `episodeApi.getEpisodes(storyId)` | `/api/act-episodes?id={actId}` |
-| エピソード詳細 | `/acts/{actId}/episodes/{episodeId}/` | GET | `episodeApi.getEpisode(storyId, episodeId)` | `/api/act-episode?act_id={actId}&episode_id={episodeId}` |
+| エピソード一覧 | `/stories/{storyId}/acts/{actNumber}/episodes/` | GET | `episodeApi.getEpisodes(actNumber)` | `/api/act-episodes?id={actNumber}` |
+| エピソード詳細 | `/stories/{storyId}/acts/{actNumber}/episodes/{episodeNumber}/` | GET | `episodeApi.getEpisode(actNumber, episodeNumber)` | `/api/act-episode?act_id={actNumber}&episode_id={episodeNumber}` |
 | ストーリーのエピソード一覧 | `/stories/{storyId}/episodes/` | GET | - | `/api/story-episodes?id={storyId}` |
-| エピソード生成 | `/stories/{storyId}/create-episode-details/` | POST | `episodeApi.createEpisodes(storyId)` | `/api/story-create-episodes?id={storyId}` |
+| エピソード生成 | `/stories/{storyId}/acts/{actNumber}/episodes/create/` | POST | `episodeApi.createEpisodes(actNumber)` | `/api/story-create-episodes?id={storyId}&act_number={actNumber}` |
 
 ### 7. エピソード本文 (EpisodeContent)
 
 | 機能 | バックエンドエンドポイント | HTTP メソッド | フロントエンド関数 | 推奨フロントエンドURL |
 |------|--------------------------|--------------|------------------|----------------------|
-| 本文取得 | `/episodes/{episodeId}/content/` | GET | `episodeApi.getEpisodeContent(storyId, episodeId)` | `/api/episode-content?id={episodeId}` |
-| 本文生成 | `/stories/{storyId}/create-episode-content/` | POST | `episodeApi.createEpisodeContent(storyId, episodeId)` | `/api/story-create-episode-content?id={storyId}&episode_id={episodeId}` |
-| 本文更新 | `/episodes/{episodeId}/content/` | PATCH | `episodeApi.updateEpisodeContent(storyId, episodeId, data)` | `/api/episode-content-update?id={episodeId}` |
+| 本文取得 | `/stories/{storyId}/acts/{actNumber}/episodes/{episodeNumber}/content/` | GET | `episodeApi.getEpisodeContent(episodeNumber)` | `/api/episode-content?id={episodeNumber}` |
+| 本文生成 | `/stories/{storyId}/acts/{actNumber}/episodes/{episodeNumber}/content/create/` | POST | `episodeApi.createEpisodeContent(episodeNumber)` | `/api/story-create-episode-content?id={storyId}&act_number={actNumber}&episode_id={episodeNumber}` |
+| 本文更新 | `/stories/{storyId}/acts/{actNumber}/episodes/{episodeNumber}/content/` | PATCH | `episodeApi.updateEpisodeContent(episodeNumber, data)` | `/api/episode-content-update?id={episodeNumber}` |
 
 ### 8. タイトル生成 (Title)
 

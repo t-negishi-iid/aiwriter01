@@ -13,24 +13,26 @@
 
 | メソッド | エンドポイント | 説明 |
 |---------|--------------|------|
-| GET | `/api/episodes/{episode_id}/content/` | エピソード本文取得 |
-| PUT | `/api/episodes/{episode_id}/content/` | エピソード本文更新 |
-| DELETE | `/api/episodes/{episode_id}/content/` | エピソード本文削除 |
-| POST | `/api/episodes/{episode_id}/generate-content/` | エピソード本文生成 |
+| GET | `/api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/` | エピソード本文取得 |
+| PUT | `/api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/` | エピソード本文更新 |
+| DELETE | `/api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/` | エピソード本文削除 |
+| POST | `/api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/create/` | エピソード本文生成 |
 
 ## エピソード本文取得
 
 ### リクエスト
 
 ```http
-GET /api/episodes/{episode_id}/content/
+GET /api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/
 ```
 
 #### URLパラメータ
 
 | パラメータ | 型 | 必須 | 説明 |
 |----------|---|------|-----|
-| episode_id | integer | はい | エピソードID |
+| story_id | integer | はい | ストーリーID |
+| act_number | integer | はい | 幕番号 |
+| episode_number | integer | はい | エピソード番号 |
 
 ### レスポンス
 
@@ -59,14 +61,16 @@ GET /api/episodes/{episode_id}/content/
 ### リクエスト
 
 ```http
-PUT /api/episodes/{episode_id}/content/
+PUT /api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/
 ```
 
 #### URLパラメータ
 
 | パラメータ | 型 | 必須 | 説明 |
 |----------|---|------|-----|
-| episode_id | integer | はい | エピソードID |
+| story_id | integer | はい | ストーリーID |
+| act_number | integer | はい | 幕番号 |
+| episode_number | integer | はい | エピソード番号 |
 
 #### リクエストボディ
 
@@ -107,14 +111,16 @@ PUT /api/episodes/{episode_id}/content/
 ### リクエスト
 
 ```http
-DELETE /api/episodes/{episode_id}/content/
+DELETE /api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/
 ```
 
 #### URLパラメータ
 
 | パラメータ | 型 | 必須 | 説明 |
 |----------|---|------|-----|
-| episode_id | integer | はい | エピソードID |
+| story_id | integer | はい | ストーリーID |
+| act_number | integer | はい | 幕番号 |
+| episode_number | integer | はい | エピソード番号 |
 
 ### レスポンス
 
@@ -135,14 +141,16 @@ DELETE /api/episodes/{episode_id}/content/
 ### リクエスト
 
 ```http
-POST /api/episodes/{episode_id}/generate-content/
+POST /api/stories/{story_id}/acts/{act_number}/episodes/{episode_number}/content/create/
 ```
 
 #### URLパラメータ
 
 | パラメータ | 型 | 必須 | 説明 |
 |----------|---|------|-----|
-| episode_id | integer | はい | エピソードID |
+| story_id | integer | はい | ストーリーID |
+| act_number | integer | はい | 幕番号 |
+| episode_number | integer | はい | エピソード番号 |
 
 #### リクエストボディ
 
